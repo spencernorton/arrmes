@@ -1,0 +1,59 @@
+{
+  "schema_version": 1,
+  "dataset": "arrmes.direct-tool-candidate.v4",
+  "status": "pre_inference_corpus_audited_diagnostic_candidate",
+  "frozen_at_utc": "2026-11-02T09:15:49.613584+00:00",
+  "authorship": "NorviTechGH project contribution: newly authored synthetic template structures, grouped paraphrases and invented entity catalogue",
+  "license": "MIT",
+  "license_file": "LICENSE",
+  "source_commit": "e5e76b80ac3f0c2f222bfcd629ae51c76a0cabd4",
+  "source_files": {
+    "src/arrmes/catalog.py": {
+      "sha256": "31c91fc318f6e1f2a94f2f69e3efeebb5f6f8f9916cda149b86f377cb375d66e"
+    },
+    "src/arrmes/model.py": {
+      "sha256": "a3618d05cf257ae4dd92f2c25413e8188810010aa10069eac20a9faeb2d5b81b"
+    },
+    "src/arrmes/protocol.py": {
+      "sha256": "c04333b299f02c12757545e58ea46cdece1bf06155892ed94b4193e4b7e2bcf5"
+    },
+    "src/arrmes/planner.py": {
+      "sha256": "1a74bfdd88ec81d121a85b4dec270ababb6bf67c091685edf1af85f570482dd2"
+    }
+  },
+  "contract_version": "arrmes.tools.v2",
+  "contract_sha256": "e34f94ec5110423f7e5dfc0309c5e8f10988f158253559f88f34d9d977a2efe8",
+  "tools_canonical_json_sha256": "350e395b8c9b9dfa745201b1d39cb7bea6f494b57db3cf90cc50320b3a3b16ba",
+  "developer_policy_utf8_sha256": "f9e5c24d28cdd0f284edea479cae9969cd671580fea0864b40acf1fddcc4b8d1",
+  "authoring_basis": [
+    "fixed v2 tool contract",
+    "published one-call developer policy",
+    "general safety and scope invariants"
+  ],
+  "selection_oracles_used": [],
+  "evaluated_model_inferences_before_freeze": 0,
+  "teacher_model_calls": 0,
+  "runtime_or_verifier_calls_for_gold_selection": 0,
+  "private_training_files_redistributed": false,
+  "random_sampling": false,
+  "random_seed": null,
+  "expansion": "Fixed catalogue rotation; eight substitutions per entity-bearing family; five grouped paraphrases per global family.",
+  "label_review": "Contract-based author labels; schema/default/context validated; no independent semantic adjudication.",
+  "author_blinding": "Author had prior project/audit context; no predictions for this set were generated or consulted.",
+  "training_corpus": {
+    "rows": 4389,
+    "bytes": 2137817,
+    "sha256": "59f4e8085cc096434a5b7395ce476fed06990c109ca5e232cfe774d285a4de73",
+    "manifest_sha256": "6ae0e8dedf25adb1b6c594fd2ab21f9de1b4d15086fde220bd28d90f104947f6"
+  },
+  "public_adapter_training_lineage": "unverified; local manifested corpus identity does not establish complete public checkpoint training lineage",
+  "semantic_scenario_disjointness": "not established; familiar tool intents intentionally recur",
+  "legacy_template_family_disjointness": "not proven by legacy entity-oriented family IDs; audited lexical-template proxy reported separately",
+  "training_use": "forbidden; no fine-tuning, teacher distillation, adapter selection or routing-rule tuning against this freeze",
+  "tracks": {
+    "A": "1000 first-pass direct-tool inputs with canonical gold calls",
+    "B": "32 separate synthetic malformed-wire decoder fault injections only",
+    "C": "not provided; no fixture execution or production calls"
+  },
+  "post_inference_corrections": "Preserve this freeze and results; publish erratum and a new dataset version rather than editing labels silently."
+}

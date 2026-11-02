@@ -1,18 +1,20 @@
 # Service capability audit and native read workflows
 
 The released `arrmes.tools.v2` catalog has **20 names: 18 service operations and
-two control operations** (`clarify`, `unsupported`). The code names ten service
-categories, rather than the nine claimed in older prose. A catalog entry, a
+two control operations** (`clarify`, `unsupported`). The code names ten tool
+categories; discovery and requests share a legacy portal, so this is not a
+physical-service count. Older prose summarized nine services without separating
+tool labels, gateway facades and actual upstream APIs. A catalog entry, a
 training label, a sandbox handler and a working live integration are separate
 evidence. Several release claims combined them.
 
 [The before matrix](capabilities-before.json) preserves the release audit. [The current matrix](capabilities-after.json) records native operations, scopes, route layers and fixture coverage. The released v2 catalog and historical sandbox handlers remain separate from this native API qualification. A fixture test does not prove compatibility with every actual upstream deployment.
 
-This increment adds **29 native read workflows over seven service APIs**. Each
+Current coverage includes **31 native read workflows over eight service APIs**. Each
 advertised service/operation pair is tested from an explicit natural-language
 request through `BoundedExecutor` to a loopback HTTP service fixture under
-`NetworkIsolationGuard`. These are HTTP contract tests, not tests against real
-Sonarr, Radarr, Lidarr, Bazarr, qBittorrent, Tautulli or Seerr binaries. No
+`NetworkIsolationGuard`. These per-pair checks use HTTP fixtures. Selected
+actual Sonarr and Seerr binary checks are described separately below. No
 production service was used for training, evaluation or mutation.
 
 An additional actual Sonarr 4.0.20.3014 ARM64 instance passes eight bounded
@@ -26,6 +28,19 @@ and successful follow-up are both retained in `experiments/portable-v1/`.
 No seeded entity, missing-media semantics, discovery or write was qualified.
 All temporary containers, networks, app/proxy processes and configuration were
 removed; the pinned image cache remains for reproduction.
+
+An actual Seerr 3.5.1 AMD64 binary on Linux passes **25/25** bounded
+identity/empty-read checks, with **22/22** Linux harness boundary tests. The
+mapped identity and its database-generated creation timestamp, API-key/user-header
+behavior and empty caller-owned request page are accepted by Arrmes's native
+read helpers. The explicit health phrase also executes through the runtime and
+executor without inference. Two initial failures remain recorded: a Docker
+image-ID assumption before startup, and a missing-key 401 that the harness first
+expected to be 403. [Qualification and raw evidence](seerr-upstream-qualification.md)
+separate these checks from metadata search, complete title-based request status,
+populated requests, submission/confirmation/lifecycle, normal external login and
+direct TCP/TLS, which remain unqualified against this binary. No request POST
+or production service was used; temporary test resources were removed.
 
 Six existing neural v2 reads also execute directly against configured native
 services: `tv_status`, `tv_missing`, `movie_status`, `music_status`,
@@ -43,20 +58,27 @@ test is recorded separately from the 29 explicit grammar checks.
   missing inventory, metadata lookup, download queue, event history and health.
   Missing inventory never sends `MissingEpisodeSearch`. New reads preserve
   nested series/episode metadata so queue and missing rows retain their target.
+  The trained indexer-search action now has a native confirmed controller with
+  fixed aired/monitored missing episode IDs and optional season scope.
 - **Radarr:** v2 had movie status and an indexer-search write. Native reads add
   global library, monitored missing inventory, metadata lookup, queue, history
   and health. Metadata lookup calls `movie/lookup`; it does not add a movie or
   start a download.
+  The trained `movie_search` can separately confirm a one-ID native indexer
+  command; metadata discovery and consequential search remain different actions.
 - **Lidarr:** v2 had artist/album status and indexer-search writes. Native reads
   add artist library, monitored missing albums, artist metadata lookup, queue,
   history and health. Track-level management and album-specific discovery remain
   gaps.
+  Native confirmed search supports one exact album or an explicitly requested,
+  bounded artist missing-album set. Track/disc/format restrictions clarify.
 - **Bazarr:** absent from v2 at every layer. Native reads now report missing
   movie or TV subtitles, subtitle status for an exact movie/series title, and
   health issues. Movie and TV scope is explicit. TV subtitle status first
   resolves the series through the bounded library, then reads its episodes;
-  duplicate titles clarify. Subtitle download, upload, deletion, synchronization
-  and language-profile changes remain unsupported.
+  duplicate titles clarify. A separate confirmed provider-search/candidate-download
+  workflow handles one exact movie or episode with explicit language/flags.
+  Upload, deletion, synchronization and profile changes remain unsupported.
 - **qBittorrent:** v2's live listing uses a QUI facade, and its live pause/resume
   actions are explicitly unsupported. Native reads now list torrents with
   bounded offset pagination, report transfer speeds/counters and inspect
@@ -74,17 +96,22 @@ test is recorded separately from the 29 explicit grammar checks.
   [seerr-team/seerr](https://github.com/seerr-team/seerr), with native `/api/v1`.
   New reads cover server status and paginated metadata search. `Seer` is accepted
   as an explicit NL spelling alias for this configured native service.
-  Identity-sensitive request listing, approval and creation are not implemented
-  in this adapter.
+  A separate caller-bound adapter now provides title-specific owned request
+  status and confirmed standard movie submission. Trusted subject-to-user mappings
+  and current account fingerprints are required. TV/4K submission, approval,
+  cancellation and retries remain unsupported. Actual 3.5.1 identity and empty-read
+  qualification does not qualify metadata search or the full request workflow.
 - **Legacy `seer_discover` and Request Service:** the old tool calls a custom
   request-portal discovery route, rather than native Seerr. The local service
   migration record says this portal moved discovery to TMDB and retired Seerr
   reads before this release. Existing request status/submission behavior and
   gateway-owner identity restrictions are distinct from native Seerr support.
-- **Bitmagnet:** v2's fixed read-only GraphQL search uses the BitAgent facade.
-  It is not a separately configured or version-qualified native Bitmagnet
-  integration. Native endpoint authentication, schema handshake and search
-  pagination remain gaps.
+- **Bitmagnet:** v2's gateway search uses the BitAgent facade. The new native
+  adapter connects directly to upstream Bitmagnet for bounded indexed metadata
+  search and health, including estimated counts and `hasNextPage` pagination.
+  The existing trained `bitmagnet_search` action also uses that native connection
+  when configured. [Native setup and exact qualification](native-bitmagnet.md)
+  distinguish fixed read queries from mutations and fixtures from actual binaries.
 - **Armiger and DH-Waypoint:** their v2 sandbox fixtures are implemented, but
   the initial live methods used a local regex approximation and an unrelated
   batch service respectively. Those results cannot substantiate live Armiger
@@ -96,7 +123,7 @@ test is recorded separately from the 29 explicit grammar checks.
 The v6 model and frozen v2 tool prompt remain intact. The new `service_query`
 contract is a separate v3 extension. Its route is a conservative deterministic
 parser requiring an explicit service mention and a recognized read intent.
-Responses identify `routing_source=explicit_service_deterministic`; these
+Read responses identify `routing_source=explicit_service_deterministic`; these
 successes must not be counted as raw neural accuracy or additional fine-tuned
 model knowledge. This delivers useful native reads while model/data expansion
 is still unqualified.
@@ -114,6 +141,8 @@ Show movie subtitles for "Sintel" in Bazarr
 Show qBittorrent transfer speeds
 Show Tautulli activity
 Look up "Sintel" in Seerr
+Search Bitmagnet for "Sintel"
+Show Bitmagnet health
 Show Sonarr queue and Radarr health
 ```
 
@@ -126,6 +155,43 @@ neural v2 route, with native execution where implemented. Unqualified
 paraphrases and context references are explicit gaps for
 these new reads.
 
+The new Bazarr write phrases report `explicit_bazarr_deterministic`; explicit
+Seerr request phrases report `explicit_seerr_deterministic`. Neither is attributed
+to neural inference. Existing trained Arr/Seerr/Bitmagnet tools retain their v2
+route when an explicit grammar does not match, with actual-model successes and
+failures documented in [the workflow evaluation](native-workflow-evaluation.md).
+
+## Confirmed subtitles, requests and indexer searches
+
+[Bazarr](bazarr-subtitles.md) requires `media:manage` even for its provider-search
+GET because that operation has external effects. Search and download each require
+a separate confirmation. Candidates are server-issued, caller/target/language/
+profile/path/version bound and short-lived. Duplicate IDs, mixed-series pages,
+unknown selections and stale candidates fail before provider effects. Download
+acceptance is dispatched, not correlated file completion.
+
+[Seerr](native-requests.md) requires a trusted subject mapping and sends the
+effective-user header on every call. `requests:read` returns only matching owned
+requests. `requests:create` permits one confirmed standard movie submission,
+with current account-incarnation checks before lookup and immediately before
+POST. Completed means that caller's matching request exists, not downloaded media.
+Missing mappings never fall back to a credential-owner gateway.
+
+[Native Arr searches](native-arr-writes.md) require `media:manage`, complete
+inventory and fresh signed snapshots. Sonarr 4/API v3, Radarr 6/API v3 and
+Lidarr 3/API v1 use fixed positive-ID command bodies. A command is dispatched
+once with no retry; search-job evidence and media-file completion stay separate.
+Artist-wide sets exclude complete/unreleased/unmonitored albums; unknown empty
+scope clarifies. Album searches need an explicit performer relationship.
+
+Selectors absent from these schemas cannot be silently dropped: individual
+episodes/ranges, tracks/discs, quality profiles and conditional writes clarify
+or refuse. Movie/TV context cannot establish a different entity role. Explicitly
+quoted literals stay distinct from pronouns, and typographic negation does not
+offer a write. The model-free server remains read-only by default; the
+[trusted opt-in](portable-runtime.md) enables only documented explicit Bazarr/
+Seerr phrases with scopes and confirmation still enforced.
+
 The runtime supports at most four independent native read clauses (or the
 configured executor step bound). It validates all clauses and scopes before
 dispatch, keeps titles containing conjunctions intact, and can continue another
@@ -136,10 +202,11 @@ agent execution language.
 `service_query` validates the service/operation pair as well as its arguments.
 Permissions depend on the selected service: `media:read` for the three *arr
 services, Bazarr and Seerr; `torrents:read` for qBittorrent; `activity:read` for
-Tautulli. The adapter checks the current authenticated principal again before
+Tautulli; `releases:read` for Bitmagnet. The adapter checks the current authenticated principal again before
 network access. It never accepts caller/model URLs, raw IDs, credentials, HTTP
-methods or arbitrary endpoints. All `service_query` upstream calls are GET
-requests. Native transfer mutations have a separate confirmed boundary below.
+methods or arbitrary endpoints. REST `service_query` calls use GET. Bitmagnet
+uses POST for two immutable GraphQL read queries; arbitrary documents and
+mutations are forbidden. Native transfer mutations have a separate confirmed boundary below.
 
 ## Confirmed native torrent controls
 
@@ -201,7 +268,8 @@ Example file (replace placeholders locally and keep the file out of Git):
     "bazarr": {"base_url": "http://localhost:6767", "api_key": "replace-locally"},
     "qbittorrent": {"base_url": "http://localhost:8080", "session_id": "replace-locally"},
     "tautulli": {"base_url": "http://localhost:8181", "api_key": "replace-locally"},
-    "seerr": {"base_url": "http://localhost:5055", "api_key": "replace-locally"}
+    "seerr": {"base_url": "http://localhost:5055", "api_key": "replace-locally"},
+    "bitmagnet": {"base_url": "http://localhost:3333"}
   }
 }
 ```
@@ -236,8 +304,9 @@ local file paths, IP addresses and credential fields, including nested fields.
 Audited source revisions, exact content digests and retrieval times are in
 [capabilities-api-sources.json](capabilities-api-sources.json). Upstream
 application releases and API path versions are separate facts. The selected
-empty-library Sonarr 4.0.20.3014 check above is the only real upstream application
-version tested in this increment; the remaining service contracts use fixtures.
+empty-library Sonarr 4.0.20.3014 and Seerr 3.5.1 identity/empty-read checks above
+exercise actual upstream binaries. Their selected operations and transport
+limits remain separate from broader fixture coverage.
 
 - **Sonarr:** the pinned upstream
   [v3 OpenAPI contract](https://github.com/Sonarr/Sonarr/blob/bc54afbdd0e38bdb0fca4785fcf7d7a6af77bf9a/src/Sonarr.Api.V3/openapi.json)
@@ -270,18 +339,23 @@ version tested in this increment; the remaining service contracts use fixtures.
   This adapter uses the API-key header, requiring Tautulli v2.18.0 or newer;
   older query-string-key installations are not qualified.
 - **Seerr:** the pinned
-  [API schema](https://github.com/seerr-team/seerr/blob/b185621e8e48743bb38adaa0d15b334626b7b100/seerr-api.yml)
+  [stable 3.5.1 API schema](https://github.com/seerr-team/seerr/blob/564bfb08b54caa374bddaf820abfd226e5e69151/seerr-api.yml)
   defines status and paginated search under `/api/v1` and API-key header
-  authentication. This does not establish compatibility with an arbitrary
-  differently named Seer service or an older Overseerr/Jellyseerr deployment.
-- **Bitmagnet:** the
-  [upstream project](https://github.com/bitmagnet-io/bitmagnet) documents a
-  GraphQL-based indexer/search engine. The existing BitAgent facade is a fork
-  integration; its specific search schema does not qualify every upstream
-  Bitmagnet version.
+  authentication. Stable identity, User and request-filter source digests accompany
+  the actual binary checks described above. Earlier develop-schema audit records
+  are retained separately. This does not qualify metadata search against the
+  binary or establish compatibility with another Seerr version, a differently
+  named Seer service or an older Overseerr/Jellyseerr deployment.
+- **Bitmagnet:** the pinned
+  [native GraphQL schema](https://github.com/bitmagnet-io/bitmagnet/blob/4d4042acdddfa1af05bfaf092a68c97b1e3698e2/graphql/schema/query.graphqls)
+  defines `version`, health/workers and `torrentContent.search`. The search/model
+  schema is unchanged in audited `v0.10.1-beta.1` source. Both fixed queries
+  validate against those upstream schemas. Native binaries remain untested;
+  proxy authentication, estimated counts and fixed POST read safeguards are
+  documented in [the native adapter guide](native-bitmagnet.md).
 
 Run the native workflow regression suite with
-`python -m pytest -q tests/test_native_services.py`. The tests include all
+`python -m pytest -q tests/test_native_services.py tests/test_native_bitmagnet.py`. The tests include all
 advertised pairs, real loopback requests, root runtime NL integration,
 permission denial before network, ambiguity, pagination, application errors,
 response bounds, nested redaction and redirect credential containment.

@@ -1,0 +1,226 @@
+{
+  "frozen_at": "2026-11-02T08:22:00.890780+00:00",
+  "source_file_sha256": [
+    {
+      "path": "data/native-arr-workflows-v1/scenarios.json",
+      "digest": "857f67a9a0925f07b6ee25edc8ff619d575bb51debe4a01d85928db117425bfe"
+    },
+    {
+      "path": "scripts/benchmark_native_write_smoke.py",
+      "digest": "8f9964840cffd613f524c2606e71b0698f3259659b9733fc92c93bcf7866d4bf"
+    },
+    {
+      "path": "src/arrmes/__init__.py",
+      "digest": "cdedcd366964b959141748c0ba70b7c4e0422a06617893999ea4f9f87d1a13a2"
+    },
+    {
+      "path": "src/arrmes/__main__.py",
+      "digest": "6d8b7d7846a845059d7a3107143f11131f63c5511d669b44085b15ec5e3d2279"
+    },
+    {
+      "path": "src/arrmes/adapters.py",
+      "digest": "199a21e864c81438cb355d5e9c0193b42efd5bc848e033019e183be2787a666d"
+    },
+    {
+      "path": "src/arrmes/auth.py",
+      "digest": "04a5bac9f5d328ad08142e70428f4b1dc75460c8ef9fa62b55ded95ef8bb77e8"
+    },
+    {
+      "path": "src/arrmes/backends.py",
+      "digest": "963af834bd76fb4d872628a32bcf1c68c448ac5359d91016e91ed2ee8a785cbd"
+    },
+    {
+      "path": "src/arrmes/catalog.py",
+      "digest": "31c91fc318f6e1f2a94f2f69e3efeebb5f6f8f9916cda149b86f377cb375d66e"
+    },
+    {
+      "path": "src/arrmes/cli.py",
+      "digest": "7e43e7a751c051b52cb0c517b49458a3551599391f1591f8d30e2f396d4f8a69"
+    },
+    {
+      "path": "src/arrmes/corpus.py",
+      "digest": "d378023367c61e4b93724890636090daa383b449c661c21412331f0c061d8425"
+    },
+    {
+      "path": "src/arrmes/evaluate.py",
+      "digest": "5db320cab4188bd777021044d110583f897d029bb3d7d688913a26a672edb5c3"
+    },
+    {
+      "path": "src/arrmes/executor.py",
+      "digest": "8f2f586449b31e604a75e8b9fd39d52c0486b31cd531851a2c5911b4974b5dee"
+    },
+    {
+      "path": "src/arrmes/explicit.py",
+      "digest": "593e19ff9a43665e28bff3192ebb881172b039f050855df35bc0fa8c54f44231"
+    },
+    {
+      "path": "src/arrmes/live_adapter.py",
+      "digest": "eefd545ecf1503514b06e273321c2942eb276e4490850fddba46194e52ce368f"
+    },
+    {
+      "path": "src/arrmes/model.py",
+      "digest": "a3618d05cf257ae4dd92f2c25413e8188810010aa10069eac20a9faeb2d5b81b"
+    },
+    {
+      "path": "src/arrmes/planner.py",
+      "digest": "9f1028bf1311a07a6b099374890e61b1fcb6455ce41f0b9f4c62a3be19ed2a70"
+    },
+    {
+      "path": "src/arrmes/probe.py",
+      "digest": "473b3cbd87e8fa1e1b374ec5fcd8888750ef3e4c6a5b95d40fcf226561abbdc8"
+    },
+    {
+      "path": "src/arrmes/protocol.py",
+      "digest": "c04333b299f02c12757545e58ea46cdece1bf06155892ed94b4193e4b7e2bcf5"
+    },
+    {
+      "path": "src/arrmes/sandbox/__init__.py",
+      "digest": "3d24a42f654890e59903e0eaeecfbad9086f5e016721906d166fad4e6e7be8e0"
+    },
+    {
+      "path": "src/arrmes/sandbox/isolation.py",
+      "digest": "5ae98b74892812c46be6bb8dd75ea5ebff5498ec87f27881602fd6b625db92e9"
+    },
+    {
+      "path": "src/arrmes/sandbox/sanitize.py",
+      "digest": "7c437cc32dadbc00056c53fb505ca769812ca3e1a7d54b9ca0e68b329309e7c0"
+    },
+    {
+      "path": "src/arrmes/sandbox/server.py",
+      "digest": "f5dac79768e388b3a9e1e07dc0b5f402463c87988477d72cf3419228c099d851"
+    },
+    {
+      "path": "src/arrmes/server.py",
+      "digest": "2634ff20c68ff682753e3d1a01db3b3d6187656c30a25a635d79f0ffdc999b92"
+    },
+    {
+      "path": "src/arrmes/service_router.py",
+      "digest": "35543eb6dcbbf899e0c95b4daa856767791c9bce30ad4de288d6d19e8a03a6e2"
+    },
+    {
+      "path": "src/arrmes/services/__init__.py",
+      "digest": "83031f18ee6a4cb69ab599bbb3aede1131b42f9a9b43d33ab01f9aa4930322f3"
+    },
+    {
+      "path": "src/arrmes/services/arr_writes.py",
+      "digest": "2e2feb888829405bfcb64d103427d52a227a08896ca24424945bf7842a2ec12c"
+    },
+    {
+      "path": "src/arrmes/services/bazarr_routing.py",
+      "digest": "38ae3ab2feecdc6fc9fa2274fa5a48189e9aabad5c37e79bfcd465491e47625a"
+    },
+    {
+      "path": "src/arrmes/services/bazarr_subtitles.py",
+      "digest": "7a47e995cc997d6274d862768f104722ef884a36338343450d53e01edbebe518"
+    },
+    {
+      "path": "src/arrmes/services/bitmagnet.py",
+      "digest": "c29f893879c1e2f8c3935f51c5c6ae94aab057646d8802eef3063ae57b724712"
+    },
+    {
+      "path": "src/arrmes/services/contract.py",
+      "digest": "58bf788942fe440fbae2298e80769eb10aa89a63168d569ce588f2f622f4a765"
+    },
+    {
+      "path": "src/arrmes/services/media.py",
+      "digest": "54ee4e979012eb59d544c340e52fc81fb404e310856826865f0b6b649a729ac6"
+    },
+    {
+      "path": "src/arrmes/services/native.py",
+      "digest": "770ea738372ba677697beb926e94ece0183e83b234d5433c870253d991e8f874"
+    },
+    {
+      "path": "src/arrmes/services/request_routing.py",
+      "digest": "22c5236fce585a458e83973c4998c8a6f4605876cc7c492fd1ce1c961b9be467"
+    },
+    {
+      "path": "src/arrmes/services/requests.py",
+      "digest": "8e9619a12a440c2a7c57e32aad70ad9e1f254e97064a10d04321015739ec0e43"
+    },
+    {
+      "path": "src/arrmes/services/routing.py",
+      "digest": "6812d99974e679ed12055548bc11c74efcc236548e0b88060f0de17364473ca2"
+    },
+    {
+      "path": "src/arrmes/services/transfers.py",
+      "digest": "b1c1c79830135b46981455ee74a34ccd5b21f54068a0805fe13b910270960414"
+    },
+    {
+      "path": "src/arrmes/workflows.py",
+      "digest": "5eaf0e64adf8f365376be2841a43c9493648f04f2c8740698eac8f8b0e0d68c0"
+    },
+    {
+      "path": "tests/test_bazarr_subtitles.py",
+      "digest": "a3fe47a0e97292655c7a7b7489e9b92ac867cd110c318f34ec8c8beb435f14fa"
+    },
+    {
+      "path": "tests/test_native_arr_writes.py",
+      "digest": "e40c3e3a9722da3e3f702151fcde129bbcacab330eae0c7220cf0d04c62f97ad"
+    },
+    {
+      "path": "tests/test_native_bitmagnet.py",
+      "digest": "58a599142a82132034a87533659ac3369db3f70aedad76300ba9e0f73a0268ec"
+    },
+    {
+      "path": "tests/test_native_requests.py",
+      "digest": "a41f0d762e391aa4f5a927bfa60fed0903cf1b33ef0b609c4b522584003b6416"
+    }
+  ],
+  "inputs_sha256": "857f67a9a0925f07b6ee25edc8ff619d575bb51debe4a01d85928db117425bfe",
+  "model_artifacts": {
+    "base": [
+      {
+        "file": "added_tokens.json",
+        "bytes": 707,
+        "sha256": "c0284b582e14987fbd3d5a2cb2bd139084371ed9acbae488829a1c900833c680"
+      },
+      {
+        "file": "config.json",
+        "bytes": 937,
+        "sha256": "15d3ac26c043ae477273ed5802ee0f0b33bb14f18c9d3dd70910c02d906e3f1f"
+      },
+      {
+        "file": "model.safetensors",
+        "bytes": 335450584,
+        "sha256": "392e8d466d56100ada00eb82031fb854297fc9e389b7d303eba3af114e87bce2"
+      },
+      {
+        "file": "model.safetensors.index.json",
+        "bytes": 49731,
+        "sha256": "7b294141456f6904936db03c00bca50fb5f6198f652fe8483f9cd2a1018accfb"
+      },
+      {
+        "file": "special_tokens_map.json",
+        "bytes": 613,
+        "sha256": "76862e765266b85aa9459767e33cbaf13970f327a0e88d1c65846c2ddd3a1ecd"
+      },
+      {
+        "file": "tokenizer.json",
+        "bytes": 11422654,
+        "sha256": "aeb13307a71acd8fe81861d94ad54ab689df773318809eed3cbe794b4492dae4"
+      },
+      {
+        "file": "tokenizer_config.json",
+        "bytes": 9706,
+        "sha256": "253153d0738ceb4c668d2eff957714dd2bea0b56de772a9fdccd96cbf517e6a0"
+      },
+      {
+        "file": "vocab.json",
+        "bytes": 2776833,
+        "sha256": "ca10d7e9fb3ed18575dd1e277a2579c16d108e32f27439684afa0e10b1440910"
+      }
+    ],
+    "adapter": [
+      {
+        "file": "adapter_config.json",
+        "bytes": 1002,
+        "sha256": "f8ab50f3345507a94bf860afe71244e50f0157aeeb664b2ff41d6d320df5532f"
+      },
+      {
+        "file": "adapters.safetensors",
+        "bytes": 10113392,
+        "sha256": "a9a7ab8705d68e16f0e9597d96e2ddf58b6f3dfffcecf683e2b36c8b11f23fab"
+      }
+    ]
+  }
+}

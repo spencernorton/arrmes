@@ -51,7 +51,8 @@ def test_native_only_main_requires_explicit_native_configuration(tmp_path, monke
         server.main()
 
 
-def test_native_only_main_bootstraps_without_model_or_inference_runtime(tmp_path, monkeypatch):
+@pytest.mark.parametrize("gate, writes", [(None, False), ("0", False), ("1", True)])
+def test_native_only_main_bootstraps_without_model_or_inference_runtime(tmp_path, monkeypatch, gate, writes):
     from arrmes import server
     from arrmes.auth import token_digest
     import json
@@ -64,6 +65,10 @@ def test_native_only_main_bootstraps_without_model_or_inference_runtime(tmp_path
                        "ARRMES_MODEL_PATH": str(tmp_path / "not-downloaded.gguf")}.items():
         monkeypatch.setenv(key, value)
     monkeypatch.delenv("ARRMES_GATEWAY_URL", raising=False)
+    if gate is None:
+        monkeypatch.delenv("ARRMES_NATIVE_CONFIRMED_WRITES", raising=False)
+    else:
+        monkeypatch.setenv("ARRMES_NATIVE_CONFIRMED_WRITES", gate)
 
     def unexpected(*args, **kwargs):
         raise AssertionError("The explicit native-only mode must not create an inference backend")
@@ -81,7 +86,8 @@ def test_native_only_main_bootstraps_without_model_or_inference_runtime(tmp_path
     def make_server(service, **kwargs):
         assert not service.health()["neural_model_loaded"]
         assert service.health()["backend"] == "native-only"
-        assert service.write_mode == "disabled" and not service.executor.allow_writes
+        assert service.write_mode == ("confirm" if writes else "disabled")
+        assert service.executor.allow_writes is writes
         return FakeServer()
 
     monkeypatch.setattr(server, "create_http_server", make_server)

@@ -1,0 +1,18 @@
+{
+  "official_tag": "ghcr.io/seerr-team/seerr:v3.5.1",
+  "index_digest": "sha256:d8fab675b55ad293ded98fd71efcfd46054cbad9746534ae1cc4794a88c0b3be",
+  "computed_index_digest": "sha256:d8fab675b55ad293ded98fd71efcfd46054cbad9746534ae1cc4794a88c0b3be",
+  "amd64_manifest_digest": "sha256:2636191726a315dbd75228537f7be74b2fa7498998bb22e37b5b5c8756018fba",
+  "manifest_header_digest": "sha256:2636191726a315dbd75228537f7be74b2fa7498998bb22e37b5b5c8756018fba",
+  "computed_manifest_digest": "sha256:2636191726a315dbd75228537f7be74b2fa7498998bb22e37b5b5c8756018fba",
+  "config_digest": "sha256:61f6fa0cf472caa95736d00fa624aea848f687b2ac899c2370a509de93e8abba",
+  "compressed_layer_bytes": 254180426,
+  "source_labels": {
+    "org.opencontainers.image.licenses": "MIT",
+    "org.opencontainers.image.revision": "564bfb08b54caa374bddaf820abfd226e5e69151",
+    "org.opencontainers.image.source": "https://github.com/seerr-team/seerr",
+    "org.opencontainers.image.version": "v3.5.1"
+  },
+  "collected_at_utc": "2026-11-02T09:53:07.995595+00:00",
+  "cosign_signature_verification": "not performed; not available on qualification host"
+}

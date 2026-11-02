@@ -1,0 +1,573 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-11-02T09:44:12.958822+00:00",
+  "track": "actual_seerr_3_5_1_identity_empty_read_qualification",
+  "all_checks_passed": false,
+  "checks": {
+    "prepared_official_image_identity_matches": true,
+    "container_is_bounded_no_gpu_no_ports_no_mounts": true,
+    "empty_database_seeded_only_synthetic_users": true,
+    "actual_upstream_status_3_5_1": true,
+    "mapped_identity_has_actual_created_at": true,
+    "missing_user_header_defaults_to_administrator_one": true,
+    "unknown_user_identity_is_403": true,
+    "bad_key_identity_is_403": true,
+    "missing_key_identity_is_403": false,
+    "actual_caller_owned_empty_request_page": true,
+    "nonadmin_foreign_owner_filter_is_403_even_empty": true,
+    "arrmes_identity_fingerprint_accepts_actual_created_at": true,
+    "arrmes_version_guard_accepts_actual_3_5_1": true,
+    "arrmes_bounded_owned_request_parser_accepts_actual_empty_page": true,
+    "arrmes_request_read_helpers_always_send_mapped_user_and_key": true,
+    "current_missing_scope_denied_without_upstream": true,
+    "missing_mapping_denied_without_upstream": true,
+    "explicit_natural_language_health_executes_against_actual_binary": true,
+    "sdk_no_inference_runtime_imported": true,
+    "application_source_unchanged": true,
+    "all_forwarded_requests_are_allowlisted_gets": true
+  },
+  "wire_audit": [
+    {
+      "method": "GET",
+      "path": "/api/v1/status",
+      "status": 200,
+      "api_key_matches": true,
+      "user_header": "2",
+      "body_sha256": "e17bb58daa0c15c194ec23131ec3208b57523f865d9906ea48336eebf26ec096",
+      "bytes": 140
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/status",
+      "status": 200,
+      "api_key_matches": true,
+      "user_header": "2",
+      "body_sha256": "e17bb58daa0c15c194ec23131ec3208b57523f865d9906ea48336eebf26ec096",
+      "bytes": 140
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200,
+      "api_key_matches": true,
+      "user_header": "2",
+      "body_sha256": "09aaca966934d0eb494c08f993a8056819e4661d3e5114e9d0cfda6863a01bb7",
+      "bytes": 508
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200,
+      "api_key_matches": true,
+      "user_header": null,
+      "body_sha256": "83290df069cce7ddc9656cc6df6a6ce70c8c3fb9bad0deeb911d8d74c93fdfe1",
+      "bytes": 504
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 403,
+      "api_key_matches": true,
+      "user_header": "999999",
+      "body_sha256": "f348e7f385b68f581d118172156480129afef98d756612d2416ae4646d39ed7f",
+      "bytes": 75
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 403,
+      "api_key_matches": false,
+      "user_header": "2",
+      "body_sha256": "f348e7f385b68f581d118172156480129afef98d756612d2416ae4646d39ed7f",
+      "bytes": 75
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 401,
+      "api_key_matches": false,
+      "user_header": "2",
+      "body_sha256": "4c5684109a2726a454a46a4fb689d20340c6818ec3ab370f5efd0e65d52f2231",
+      "bytes": 123
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/request?requestedBy=2&take=2&skip=0&filter=all&sort=added",
+      "status": 200,
+      "api_key_matches": true,
+      "user_header": "2",
+      "body_sha256": "c4c34a7901d6d5e278ce103f4256e63e1fb16362ac38dbf4219361afcde186e7",
+      "bytes": 113
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/request?requestedBy=1&take=2&skip=0&filter=all&sort=added",
+      "status": 403,
+      "api_key_matches": true,
+      "user_header": "2",
+      "body_sha256": "252c385924c08cd5063325c6009545f9652917297ac0a14a34beacdef8396b78",
+      "bytes": 70
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200,
+      "api_key_matches": true,
+      "user_header": "2",
+      "body_sha256": "09aaca966934d0eb494c08f993a8056819e4661d3e5114e9d0cfda6863a01bb7",
+      "bytes": 508
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/status",
+      "status": 200,
+      "api_key_matches": true,
+      "user_header": "2",
+      "body_sha256": "e17bb58daa0c15c194ec23131ec3208b57523f865d9906ea48336eebf26ec096",
+      "bytes": 140
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/request?requestedBy=2&take=2&skip=0&filter=all&sort=added",
+      "status": 200,
+      "api_key_matches": true,
+      "user_header": "2",
+      "body_sha256": "c4c34a7901d6d5e278ce103f4256e63e1fb16362ac38dbf4219361afcde186e7",
+      "bytes": 113
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/status",
+      "status": 200,
+      "api_key_matches": true,
+      "user_header": null,
+      "body_sha256": "e17bb58daa0c15c194ec23131ec3208b57523f865d9906ea48336eebf26ec096",
+      "bytes": 140
+    }
+  ],
+  "startup_failures": [
+    {
+      "error_type": "RuntimeError"
+    },
+    {
+      "error_type": "RuntimeError"
+    },
+    {
+      "error_type": "RuntimeError"
+    },
+    {
+      "error_type": "RuntimeError"
+    },
+    {
+      "error_type": "RuntimeError"
+    }
+  ],
+  "source_basis_commit": "e5e76b80ac3f0c2f222bfcd629ae51c76a0cabd4",
+  "script_sha256": "cf13ff1ad336b800531b732cbea63c1e929cd0aa10fec7707f987b75a5451487",
+  "source_file_sha256": [
+    {
+      "path": "src/arrmes/__init__.py",
+      "sha256_digest": "b31edca85c034cae5331cf758a11406f350362a1aa54d4f1b84c361c2801880f"
+    },
+    {
+      "path": "src/arrmes/__main__.py",
+      "sha256_digest": "6d8b7d7846a845059d7a3107143f11131f63c5511d669b44085b15ec5e3d2279"
+    },
+    {
+      "path": "src/arrmes/adapters.py",
+      "sha256_digest": "199a21e864c81438cb355d5e9c0193b42efd5bc848e033019e183be2787a666d"
+    },
+    {
+      "path": "src/arrmes/auth.py",
+      "sha256_digest": "04a5bac9f5d328ad08142e70428f4b1dc75460c8ef9fa62b55ded95ef8bb77e8"
+    },
+    {
+      "path": "src/arrmes/backends.py",
+      "sha256_digest": "963af834bd76fb4d872628a32bcf1c68c448ac5359d91016e91ed2ee8a785cbd"
+    },
+    {
+      "path": "src/arrmes/catalog.py",
+      "sha256_digest": "31c91fc318f6e1f2a94f2f69e3efeebb5f6f8f9916cda149b86f377cb375d66e"
+    },
+    {
+      "path": "src/arrmes/cli.py",
+      "sha256_digest": "7e43e7a751c051b52cb0c517b49458a3551599391f1591f8d30e2f396d4f8a69"
+    },
+    {
+      "path": "src/arrmes/corpus.py",
+      "sha256_digest": "d378023367c61e4b93724890636090daa383b449c661c21412331f0c061d8425"
+    },
+    {
+      "path": "src/arrmes/evaluate.py",
+      "sha256_digest": "5db320cab4188bd777021044d110583f897d029bb3d7d688913a26a672edb5c3"
+    },
+    {
+      "path": "src/arrmes/executor.py",
+      "sha256_digest": "8f2f586449b31e604a75e8b9fd39d52c0486b31cd531851a2c5911b4974b5dee"
+    },
+    {
+      "path": "src/arrmes/explicit.py",
+      "sha256_digest": "593e19ff9a43665e28bff3192ebb881172b039f050855df35bc0fa8c54f44231"
+    },
+    {
+      "path": "src/arrmes/live_adapter.py",
+      "sha256_digest": "eefd545ecf1503514b06e273321c2942eb276e4490850fddba46194e52ce368f"
+    },
+    {
+      "path": "src/arrmes/model.py",
+      "sha256_digest": "a3618d05cf257ae4dd92f2c25413e8188810010aa10069eac20a9faeb2d5b81b"
+    },
+    {
+      "path": "src/arrmes/planner.py",
+      "sha256_digest": "1a74bfdd88ec81d121a85b4dec270ababb6bf67c091685edf1af85f570482dd2"
+    },
+    {
+      "path": "src/arrmes/probe.py",
+      "sha256_digest": "473b3cbd87e8fa1e1b374ec5fcd8888750ef3e4c6a5b95d40fcf226561abbdc8"
+    },
+    {
+      "path": "src/arrmes/protocol.py",
+      "sha256_digest": "c04333b299f02c12757545e58ea46cdece1bf06155892ed94b4193e4b7e2bcf5"
+    },
+    {
+      "path": "src/arrmes/sandbox/__init__.py",
+      "sha256_digest": "3d24a42f654890e59903e0eaeecfbad9086f5e016721906d166fad4e6e7be8e0"
+    },
+    {
+      "path": "src/arrmes/sandbox/isolation.py",
+      "sha256_digest": "5ae98b74892812c46be6bb8dd75ea5ebff5498ec87f27881602fd6b625db92e9"
+    },
+    {
+      "path": "src/arrmes/sandbox/sanitize.py",
+      "sha256_digest": "7c437cc32dadbc00056c53fb505ca769812ca3e1a7d54b9ca0e68b329309e7c0"
+    },
+    {
+      "path": "src/arrmes/sandbox/server.py",
+      "sha256_digest": "f5dac79768e388b3a9e1e07dc0b5f402463c87988477d72cf3419228c099d851"
+    },
+    {
+      "path": "src/arrmes/server.py",
+      "sha256_digest": "2634ff20c68ff682753e3d1a01db3b3d6187656c30a25a635d79f0ffdc999b92"
+    },
+    {
+      "path": "src/arrmes/service_router.py",
+      "sha256_digest": "35543eb6dcbbf899e0c95b4daa856767791c9bce30ad4de288d6d19e8a03a6e2"
+    },
+    {
+      "path": "src/arrmes/services/__init__.py",
+      "sha256_digest": "83031f18ee6a4cb69ab599bbb3aede1131b42f9a9b43d33ab01f9aa4930322f3"
+    },
+    {
+      "path": "src/arrmes/services/arr_writes.py",
+      "sha256_digest": "01ce0fe5b835ed401fd62dbcf7de6ecabb1fdab5f7c7c58f363f7813783104ac"
+    },
+    {
+      "path": "src/arrmes/services/bazarr_routing.py",
+      "sha256_digest": "38ae3ab2feecdc6fc9fa2274fa5a48189e9aabad5c37e79bfcd465491e47625a"
+    },
+    {
+      "path": "src/arrmes/services/bazarr_subtitles.py",
+      "sha256_digest": "2a5ac8b5430c40e0c3013f00dc67b450a3ef48b29e9ec9acdf1c2213e4a62408"
+    },
+    {
+      "path": "src/arrmes/services/bitmagnet.py",
+      "sha256_digest": "c29f893879c1e2f8c3935f51c5c6ae94aab057646d8802eef3063ae57b724712"
+    },
+    {
+      "path": "src/arrmes/services/contract.py",
+      "sha256_digest": "58bf788942fe440fbae2298e80769eb10aa89a63168d569ce588f2f622f4a765"
+    },
+    {
+      "path": "src/arrmes/services/media.py",
+      "sha256_digest": "54ee4e979012eb59d544c340e52fc81fb404e310856826865f0b6b649a729ac6"
+    },
+    {
+      "path": "src/arrmes/services/native.py",
+      "sha256_digest": "770ea738372ba677697beb926e94ece0183e83b234d5433c870253d991e8f874"
+    },
+    {
+      "path": "src/arrmes/services/request_routing.py",
+      "sha256_digest": "22c5236fce585a458e83973c4998c8a6f4605876cc7c492fd1ce1c961b9be467"
+    },
+    {
+      "path": "src/arrmes/services/requests.py",
+      "sha256_digest": "8e9619a12a440c2a7c57e32aad70ad9e1f254e97064a10d04321015739ec0e43"
+    },
+    {
+      "path": "src/arrmes/services/routing.py",
+      "sha256_digest": "6812d99974e679ed12055548bc11c74efcc236548e0b88060f0de17364473ca2"
+    },
+    {
+      "path": "src/arrmes/services/transfers.py",
+      "sha256_digest": "b1c1c79830135b46981455ee74a34ccd5b21f54068a0805fe13b910270960414"
+    },
+    {
+      "path": "src/arrmes/workflows.py",
+      "sha256_digest": "5eaf0e64adf8f365376be2841a43c9493648f04f2c8740698eac8f8b0e0d68c0"
+    }
+  ],
+  "host": {
+    "system": "Linux",
+    "machine": "x86_64",
+    "kernel": "7.0.0-42-generic"
+  },
+  "image": {
+    "reference": "ghcr.io/seerr-team/seerr@sha256:2636191726a315dbd75228537f7be74b2fa7498998bb22e37b5b5c8756018fba",
+    "index_sha256": "d8fab675b55ad293ded98fd71efcfd46054cbad9746534ae1cc4794a88c0b3be",
+    "config_sha256": "61f6fa0cf472caa95736d00fa624aea848f687b2ac899c2370a509de93e8abba",
+    "source_revision": "564bfb08b54caa374bddaf820abfd226e5e69151",
+    "official_tag": "ghcr.io/seerr-team/seerr:v3.5.1",
+    "signature_verification": "not performed; tag/index/AMD64 manifest/config digests and official OCI labels checked separately",
+    "id": "sha256:2636191726a315dbd75228537f7be74b2fa7498998bb22e37b5b5c8756018fba",
+    "size_bytes": 1342799055,
+    "repo_digests": [
+      "ghcr.io/seerr-team/seerr@sha256:2636191726a315dbd75228537f7be74b2fa7498998bb22e37b5b5c8756018fba"
+    ]
+  },
+  "container_budget": {
+    "cpu": 1,
+    "memory_bytes": 1610612736,
+    "swap_total_bytes": 1610612736,
+    "pids": 128
+  },
+  "cleanup": {
+    "container_removed": true,
+    "proxy_stopped": true,
+    "temporary_directory_removed": true
+  },
+  "image_cache": "Pinned image must already be prepared; retained by this harness. No images pulled or pruned.",
+  "stage": "complete",
+  "preflight_resources": {
+    "cpus": 32,
+    "load_average": [
+      5.35888671875,
+      3.67236328125,
+      3.40087890625
+    ],
+    "mem_available_bytes": 81504440320,
+    "cpu_pressure": "some avg10=0.07 avg60=0.40 avg300=0.26 total=5854686473\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+    "memory_pressure": "some avg10=0.00 avg60=0.04 avg300=0.02 total=79325342\nfull avg10=0.00 avg60=0.04 avg300=0.02 total=75719876"
+  },
+  "docker": {
+    "version": "29.9.2",
+    "os": "linux",
+    "architecture": "x86_64",
+    "cpus": 32,
+    "memory_bytes": 97630294016
+  },
+  "container_policy_actual": {
+    "NanoCpus": 1000000000,
+    "Memory": 1610612736,
+    "MemorySwap": 1610612736,
+    "PidsLimit": 128,
+    "NetworkMode": "none",
+    "ReadonlyRootfs": true,
+    "PortBindings": {},
+    "Binds": null,
+    "DeviceRequests": null,
+    "Devices": [],
+    "CapDrop": [
+      "ALL"
+    ],
+    "SecurityOpt": [
+      "no-new-privileges:true"
+    ],
+    "Tmpfs": {
+      "/app/.next/cache": "rw,size=32m,uid=1000,gid=1000,mode=0700",
+      "/app/config": "rw,size=64m,uid=1000,gid=1000,mode=0700",
+      "/tmp": "rw,size=64m,uid=1000,gid=1000,mode=0700"
+    },
+    "Runtime": "runc"
+  },
+  "bootstrap": {
+    "synthetic_user_ids": [
+      1,
+      2
+    ],
+    "media_requests": 0
+  },
+  "upstream_status": {
+    "http_status": 200,
+    "version": "3.5.1"
+  },
+  "identity_shape": {
+    "http_status": 200,
+    "id": 2,
+    "created_at_present": true,
+    "created_at_timezone_aware": true,
+    "created_at_sha256": "c0a385f3a003dff1f2f8d62da372ee2d266b2bc75cbb0cab659918db00eae374",
+    "email_present": true,
+    "email_value_omitted": true
+  },
+  "empty_request_page": {
+    "http_status": 200,
+    "pageInfo": {
+      "pages": 0,
+      "pageSize": 2,
+      "results": 0,
+      "page": 1
+    },
+    "results": []
+  },
+  "native_request_read_audit": [
+    {
+      "method": "GET",
+      "path": "/api/v1/auth/me",
+      "status": 200,
+      "attempt": 1
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/status",
+      "status": 200,
+      "attempt": 1
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/request",
+      "status": 200,
+      "attempt": 1
+    }
+  ],
+  "native_only_health_response": {
+    "terminal_state": "completed",
+    "proposal": {
+      "name": "service_query",
+      "arguments": {
+        "service": "seerr",
+        "operation": "health"
+      }
+    },
+    "plan": {
+      "contract": "arrmes.tools.v3",
+      "contract_sha256": "68d1383722655f84799dfaf47a2528973e5c4fb41486258af82a8a734bfb484c",
+      "dry_run": false,
+      "executed": true,
+      "status": "planned",
+      "service": "seerr",
+      "operation": "service_query",
+      "arguments": {
+        "service": "seerr",
+        "operation": "health"
+      },
+      "effect": "read",
+      "principal": "synthetic-reader",
+      "requires_entity_resolution": false,
+      "requires_write_authorization": false,
+      "adapter_state": "verified"
+    },
+    "observation": {
+      "status": "verified_ok",
+      "service": "seerr",
+      "operation": "service_query",
+      "http_status": 200,
+      "verified_complete": true,
+      "data": {
+        "source": "native_api",
+        "operation": "health",
+        "items": [],
+        "returned_count": 0,
+        "total_records": 0,
+        "truncated": false,
+        "complete_listing": true,
+        "api_version": "v1",
+        "server_version": "3.5.1"
+      },
+      "audit_trail": [
+        {
+          "method": "GET",
+          "path": "/api/v1/status",
+          "status": 200
+        }
+      ]
+    },
+    "steps_executed": 1,
+    "unsafe_write_blocked": false,
+    "session_context": null,
+    "latency_ms": 1088.51,
+    "routing_source": "explicit_service_deterministic"
+  },
+  "sdk_network_isolation": {
+    "policy": "deny_all_non_loopback_and_unregistered_ports",
+    "allowed_ports": [
+      36491
+    ],
+    "allowed_loopback_connections": 8,
+    "blocked_outbound_attempts_count": 0,
+    "blocked_attempts": [],
+    "evidence_sha256": "19927b9a19d565c171104f8cca9bcd5f431ef21b6611258a0f7ec100f635bb6a"
+  },
+  "limits": {
+    "actual_binary": "Linux x86_64 Seerr3.5.1 official pinned image",
+    "identity": "Two synthetic users inserted with actual stable User ORM; normal external-account setup is not tested.",
+    "owned_requests": "Empty request database only; no nonempty ownership/content/lifecycle qualification.",
+    "request_status_end_to_end": "Not tested: title resolution requires metadata-provider requests deliberately excluded here.",
+    "direct_network_client": "Not tested: GET-only Docker-exec transport forwards unchanged loopback HTTP responses.",
+    "writes": "No HTTP request creation, media/account provider calls, indexer writes, or confirmation redemption.",
+    "latency": "Transport/process startup overhead is not a routing or service performance benchmark."
+  },
+  "container_memory_peak_bytes": 306696192,
+  "postflight_resources": {
+    "cpus": 32,
+    "load_average": [
+      5.37744140625,
+      3.73291015625,
+      3.423828125
+    ],
+    "mem_available_bytes": 81281593344,
+    "cpu_pressure": "some avg10=0.83 avg60=0.55 avg300=0.29 total=5854866978\nfull avg10=0.00 avg60=0.00 avg300=0.00 total=0",
+    "memory_pressure": "some avg10=0.00 avg60=0.04 avg300=0.02 total=79325342\nfull avg10=0.00 avg60=0.04 avg300=0.02 total=75719876"
+  },
+  "runtime": {
+    "python": "3.14.4",
+    "jsonschema": "4.26.0",
+    "installed_distributions": [
+      {
+        "name": "attrs",
+        "version": "26.1.0"
+      },
+      {
+        "name": "iniconfig",
+        "version": "2.3.1"
+      },
+      {
+        "name": "jsonschema",
+        "version": "4.26.0"
+      },
+      {
+        "name": "jsonschema-specifications",
+        "version": "2025.9.1"
+      },
+      {
+        "name": "packaging",
+        "version": "26.3"
+      },
+      {
+        "name": "pip",
+        "version": "25.1.1"
+      },
+      {
+        "name": "pluggy",
+        "version": "1.7.0"
+      },
+      {
+        "name": "Pygments",
+        "version": "2.21.0"
+      },
+      {
+        "name": "pytest",
+        "version": "9.0.2"
+      },
+      {
+        "name": "referencing",
+        "version": "0.37.0"
+      },
+      {
+        "name": "rpds-py",
+        "version": "2026.9.1"
+      }
+    ]
+  },
+  "temporary_networks_created": 0,
+  "persistent_volumes_created": 0
+}

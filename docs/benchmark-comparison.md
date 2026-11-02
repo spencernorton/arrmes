@@ -1,5 +1,10 @@
 # Arrmes comparative diagnostics
 
+This is the dated earlier 80-case/v1.2.0 study. The separate
+[1,000-input comparison](benchmark-acceptance-v4.md) preserves a verifier
+regression at frozen source e5 and the later development fixes. Neither report
+should be read as a fresh accuracy score for the latest candidate.
+
 The published specialist is useful on the measured media tasks, but the broad
 product and qualification claims need narrower wording. On 80 newly authored
 cases, public Arrmes gets **63/80 raw exact** and **68/80 after verification**.

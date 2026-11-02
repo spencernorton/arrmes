@@ -8,7 +8,7 @@ from typing import Any, Iterable
 import unicodedata
 
 from .catalog import (BY_NAME, CONTRACT_VERSION, CONTRACT_VERSION_V3, V3_BY_NAME,
-                      contract_hash, contract_hash_v3)
+                      WRITE_EFFECT_ACTIONS_V3, contract_hash, contract_hash_v3)
 from .protocol import Call, normalized, validate_call
 
 
@@ -39,6 +39,7 @@ _REQUEST_TRACK_RE = re.compile(
     r"existing\s+request|request\s+status|request\s+progress|how\s+is\s+my\s+.*request|"
     r"any\s+(?:update|progress)\s+on\s+my\s+.*request|has\s+my\s+request\s+.*finished|"
     r"is\s+.+\s+(?:already\s+)?requested|did\s+my\s+request\s+.*go\s+through|"
+    r"(?:check|inspect|look\s+up)\s+(?:(?:whether|if)\s+)?(?:my|the|our)\s+(?:existing\s+)?request|"
     r"(?:is|was|has|did)\s+(?:the|my|our)\s+request)\b",
     re.IGNORECASE,
 )
@@ -78,9 +79,11 @@ _PASSIVE_PAUSE_QUERY_RE = re.compile(
     r"^\s*(?:is|are|was|were|has|have|which|what|list|show|check|display|verify|inspect)\b.*\bpaused\b",
     re.IGNORECASE,
 )
-_AFFIRMATIVE_RESUME_RE = re.compile(r"\b(resume|unpause)\b", re.IGNORECASE)
+_AFFIRMATIVE_RESUME_RE = re.compile(r"\b(resume|unpause|resuming|unpausing)\b", re.IGNORECASE)
 _NEGATED_RESUME_RE = re.compile(
-    r"\b(don't\s+(?:resume|unpause)|do\s+not\s+(?:resume|unpause)|never\s+(?:resume|unpause)|without\s+(?:resuming|unpausing))\b",
+    r"\b(?:don't|do\s+not|never|without|avoid|not|no|stop|cease|quit|refrain\s+from)\s+"
+    r"(?:(?:ever|actually|automatically|currently|longer|be|keep|on|start|try|to)\s+)*"
+    r"(?:resum(?:e|ing)|unpaus(?:e|ing))\b",
     re.IGNORECASE,
 )
 _PASSIVE_RESUME_QUERY_RE = re.compile(
@@ -163,6 +166,17 @@ _HISTORY_WORD_RE = re.compile(
     r"\b(history|watched\s+recently|was\s+watched|recently\s+watched)\b",
     re.IGNORECASE,
 )
+
+
+def _has_history_intent(query: str) -> bool:
+    # A contrast such as "current activity, not the watch-history view" does
+    # not authorize silently switching to a different read operation.
+    positive = re.sub(
+        r"\b(?:not|no|without|instead\s+of|rather\s+than)\s+(?:(?:the|a|an|my|its|our|your|their|that|this)\s+)?"
+        r"(?:watch[- ]history|viewing\s+history|history|recently\s+watched|watched\s+recently)\b",
+        " ", query, flags=re.I,
+    )
+    return bool(_HISTORY_WORD_RE.search(positive))
 
 _COMPLEX_RE = re.compile(
     r"\b("
@@ -270,6 +284,121 @@ def _strip_quoted_and_releases(query: str) -> str:
     return s
 
 
+def _quoted_spans(query: str) -> list[str]:
+    return [match[1] or match[2] for match in re.finditer(r'''"([^"\n]+)"|(?<!\w)'([^'\n]+)'(?!\w)''', query)]
+
+
+def _context_role_matches(name: str, slot: str, selected: Any, outside: str) -> bool:
+    if not isinstance(selected, dict) or slot in {"artist", "album", "release_name"}:
+        return False
+    kind = selected.get("media_type")
+    if name.startswith("tv_"):
+        return kind == "tv"
+    if name.startswith("movie_"):
+        return kind == "movie"
+    if name in {"torrent_pause", "torrent_resume"}:
+        return kind == "torrent"
+    if name == "request_media":
+        movie, tv = bool(_MOVIE_WORD_RE.search(outside)), bool(_TV_WORD_RE.search(outside))
+        if movie and not tv:
+            return kind == "movie"
+        if tv and not movie:
+            return kind == "tv"
+    return kind in {"movie", "tv"}
+
+
+def _artist_role_is_explicit(artist: str, album: str, query: str) -> bool:
+    """A token inside an album title cannot also invent its performer."""
+    text = unicodedata.normalize("NFKC", query).casefold()
+    artist, album = (unicodedata.normalize("NFKC", value).casefold() for value in (artist, album))
+    albums = list(re.finditer(r"(?<!\w)" + re.escape(album) + r"(?!\w)", text))
+    for match in re.finditer(r"(?<!\w)" + re.escape(artist) + r"(?!\w)", text):
+        if any(span.start() <= match.start() and match.end() <= span.end()
+               and (span.start(), span.end()) != (match.start(), match.end()) for span in albums):
+            continue
+        before, after = text[:match.start()], text[match.end():]
+        if re.search(r'''\b(?:by|from|(?:whose\s+)?(?:artist|band|performer)(?:\s+is)?)(?:\s*[:=]\s*|\s+)(?:(?:the|artist|band|performer)\s+)?["']?\s*$''', before):
+            return True
+        if re.match(r'''^["']?(?:['’]s\b|\s+album\b)''', after):
+            return True
+    return False
+
+
+def _write_scope_fits_schema(name: str, args: dict[str, Any], query: str) -> bool:
+    """Reject narrower selectors absent from the preserved write representation."""
+    if name not in {"tv_search_missing", "movie_search", "music_search", "request_media"}:
+        return True
+    text = unicodedata.normalize("NFKC", _strip_quoted_and_releases(query)).casefold()
+    # Inspect the user's unquoted scope BEFORE masking model-proposed entities.
+    # Otherwise a proposal can name "track 4" or "1080p" as an album/title,
+    # erase the restriction, and offer a different whole-entity write. Literal
+    # titles containing these words remain expressible with explicit quotes.
+    if re.search(r"\b(4k|uhd|2160p|1080p|720p|480p|hdr|hdr10|hevc|h264|h265|x264|x265|remux|bluray|web[- ]dl|web[- ]rip|lossless|flac|mp3|aac|bitrate|quality|profiles?)\b", text):
+        return False
+    if name == "request_media" and (
+        re.search(r"\b(seasons?|episodes?|quota)\b", text)
+        or not _request_identity_scope_fits_schema(text)
+    ):
+        return False
+    if name == "tv_search_missing":
+        # Season is the only numeric selector this schema can retain. Check
+        # all other numbers/ordinals before removing a universal episode noun:
+        # "every missing episode numbered 6" is still an episode restriction.
+        selectors = _SEASON_NUM_RE.sub(" ", text)
+        selector_words = "|".join((*_SEASON_WORDS, *_SEASON_ORDINALS))
+        if re.search(r"\b\d+\b|\b(?:" + selector_words + r"|numbered|number)\b", selectors):
+            return False
+        episode_scope = re.sub(
+            r"\b(?:every|each)\s+(?:(?:aired|monitored)\s+)*missing\s+episode\b"
+            r"(?=\s*(?:$|[.;!?]|of\b|for\b|in\b|using\b|via\b))", " ", text)
+        if re.search(r"\bepisode(?:\b|\d)|\bs\d{1,4}\s*e\d{1,5}\b|\b\d{1,4}x\d{1,5}\b|\bepisodes\s*(?:#\s*)?\d+\b", episode_scope):
+            return False
+        number_words = "|".join(_SEASON_WORDS)
+        if re.search(r"\bepisodes\s+(?:(?:from|between)\s+)?(?:" + number_words + r")\b|\b(?:" + number_words + r")\s+(?:missing\s+)?episodes\b", text):
+            return False
+        if re.search(r"\b(latest|newest|oldest|first|last|next|previous|selected|random|few|some|several|couple)\b", text):
+            return False
+        if re.search(r"\b(before|after|since|starting|ending|excluding|besides|apart\s+from|other\s+than)\b", text):
+            return False
+        if re.search(r"\b(?:18|19|20|21)\d{2}\b", text) or any(_TRAILING_PAREN_YEAR_RE.match(span) for span in _quoted_spans(query)):
+            return False
+    if name == "music_search":
+        if re.search(r"\b(?:tracks?|songs?|discs?|disks?|cds?)(?:\b|\d)|\b(latest|newest|oldest|first|last|next|previous|selected)\b|\b(?:18|19|20|21)\d{2}\b", text):
+            return False
+        if "album" in args and not _artist_role_is_explicit(str(args.get("artist", "")), args["album"], query):
+            return False
+        if "album" not in args:
+            # Every album is a representable artist-wide set. A named album,
+            # record or single is a different target and cannot be discarded.
+            remainder = re.sub(r"\bevery\s+album\b", " ", text)
+            if re.search(r"\b(album|record|ep|single)\b", remainder):
+                return False
+            artist = _norm_alnum(str(args.get("artist", "")))
+            if any(_norm_alnum(span) != artist for span in _quoted_spans(query)):
+                return False
+    return True
+
+
+def _request_identity_scope_fits_schema(text: str) -> bool:
+    """Allow caller-self and request/media labels, never an identity override.
+
+    The v2 request representation has no user-ID argument. Its trusted caller
+    mapping cannot be selected or overridden by a phrase in the query.
+    """
+    text = re.sub(r"\bunder\s+my\s+(?:own\s+)?account\b", " CALLER ", text, flags=re.I)
+    text = re.sub(r"\bas\s+(?:me|myself)\b", " CALLER ", text, flags=re.I)
+    text = re.sub(
+        r"\bas\s+(?:(?:a|an|my|the)\s+)?"
+        r"(?:(?:standard\s+)?(?:movie|film|tv(?:[- ]series)?|series)\s+)?request\b",
+        " REQUEST ", text, flags=re.I,
+    )
+    text = re.sub(r"\bas\s+(?:a\s+)?(?:movie|film|tv(?:[- ]series)?|series)\b(?=\s*(?:$|[.;!?]|for\b|in\b|through\b))",
+                  " MEDIA ", text, flags=re.I)
+    # Unknown identity may be quoted (now a <QUOTED> placeholder) or missing.
+    # Reject the leftover introducer itself, not only an ASCII word after it.
+    return not re.search(r"\bon\s+behalf\b|\b(?:as|under|user(?:_?id)?|accounts?|admin(?:istrator)?|impersonat\w*)\b", text, re.I)
+
+
 def _infer_clarify_slot(query: str, selected: dict[str, Any] | None = None) -> str:
     if selected is None and _DEICTIC_RE.search(query):
         return "reference"
@@ -371,15 +500,48 @@ def verify_proposal(
     name = call.name
     args = dict(call.arguments)
     selected = (context or {}).get("selected_media") if isinstance(context, dict) else None
-    q_unquoted = _strip_quoted_and_releases(query)
+    q_unquoted = unicodedata.normalize("NFKC", _strip_quoted_and_releases(query)).translate(
+        {0x2018: "'", 0x2019: "'", 0x02BC: "'"})
 
     # 0. Compound multi-action, unsafe instruction, and vague-scope guard (ignoring quoted titles and .mkv filenames)
     if _COMPLEX_RE.search(q_unquoted):
         return validate_call("unsupported", {"reason": "complex"})
+    if name in WRITE_EFFECT_ACTIONS_V3 and re.search(r"\b(if|unless|except|until|only\s+when|provided\s+that|as\s+long\s+as)\b", q_unquoted, re.I):
+        return validate_call("unsupported", {"reason": "complex"})
     if _UNSAFE_RE.search(q_unquoted):
         return validate_call("unsupported", {"reason": "unsafe"})
+    # A validated abstention cannot execute anything. Preserve its reason or
+    # requested slot rather than inventing a different diagnosis on each pass.
+    if name in {"clarify", "unsupported"}:
+        return call
     if _SCOPE_RE.search(q_unquoted):
         return validate_call("clarify", {"slot": "scope"})
+    if name in {"request_status", "request_media"}:
+        # The released request schema cannot carry quality/season/other-user
+        # restrictions. Do not silently discard them when choosing a provider.
+        scope_text = unicodedata.normalize("NFKC", q_unquoted).casefold()
+        if re.search(r"\b(4k|uhd|2160p|1080p|720p|seasons?|episodes?|quality|profile|quota)\b", scope_text) or not _request_identity_scope_fits_schema(scope_text):
+            return validate_call("clarify", {"slot": "scope"})
+        if name == "request_status" and re.search(r"\b(?:18\d{2}|19\d{2}|20\d{2}|21\d{2}|2200|movies?|films?|tv|series)\b", scope_text):
+            return validate_call("clarify", {"slot": "scope"})
+        if name == "request_status" and any(_TRAILING_PAREN_YEAR_RE.match(span) for span in _quoted_spans(query)):
+            return validate_call("clarify", {"slot": "scope"})
+        if name == "request_status" and isinstance(selected, dict) and _DEICTIC_RE.search(q_unquoted):
+            if any(selected.get(key) is not None for key in ("year", "media_type", "season")):
+                # The title-only v2 status call cannot retain a qualified
+                # selected entity. Ask for an unqualified unique title rather
+                # than looking up another remake after losing the qualifier.
+                return validate_call("clarify", {"slot": "scope"})
+    if name in {"bazarr_subtitle_search", "bazarr_subtitle_download"}:
+        from .services.bazarr_routing import route_bazarr_subtitle_query
+        grounded = route_bazarr_subtitle_query(query)
+        if grounded is None:
+            return validate_call("clarify", {"slot": "scope"})
+        if grounded.name in {"clarify", "unsupported"}:
+            return grounded
+        if normalized(grounded) != normalized(call):
+            return validate_call("clarify", {"slot": "scope"})
+        return validate_call(grounded.name, grounded.arguments)
     if name == "service_query":
         from .services import route_service_query
         if contract_version in {"v1", CONTRACT_VERSION}:
@@ -392,13 +554,8 @@ def verify_proposal(
         if normalized(grounded) != normalized(call):
             return validate_call("clarify", {"slot": "scope"})
         return validate_call(grounded.name, grounded.arguments)
-    if name == "unsupported" and args.get("reason") in {"complex", "unsafe"}:
-        if re.search(r"\b(torrent|qbittorrent|sonarr|radarr|lidarr|tautulli|plex|seer|episode|episodes|movie|series|show)\b", q_unquoted, re.IGNORECASE):
-            return validate_call("clarify", {"slot": _infer_clarify_slot(query, selected)})
-        return validate_call("unsupported", {"reason": "out_of_scope"})
-
     # 0b. Service & Tautulli history alignment before entity checks
-    if name == "now_playing" and _HISTORY_WORD_RE.search(q_unquoted):
+    if name == "now_playing" and _has_history_intent(q_unquoted):
         name = "watch_history"
     elif name == "now_playing" and re.search(r"\b(trending|popular|upcoming)\b", q_unquoted, re.IGNORECASE) and not re.search(r"\b(stream|streaming|playing|watching|plex|tautulli)\b", q_unquoted, re.IGNORECASE):
         name = "seer_discover"
@@ -427,6 +584,35 @@ def verify_proposal(
             if name in {"movie_status", "movie_search", "request_media"} and "year" not in args:
                 args["year"] = extracted_year
 
+    # Quoting supplies an explicit full entity boundary. A word inside that
+    # span is not a different requested title. Recover only one uniquely quoted
+    # non-generic entity; multiple quoted spans require clarification rather
+    # than guessing which slot or target the model shortened.
+    quoted = _quoted_spans(query)
+    entity_slots = {_MANDATORY_ENTITY_SLOTS.get(name), _OPTIONAL_ENTITY_SLOTS.get(name)} - {None}
+    quote_only = [{i for i, span in enumerate(quoted) if _is_grounded_in_text(args[slot], span)}
+                  for slot in entity_slots if isinstance(args.get(slot), str)
+                  and not _is_grounded_in_text(args[slot], q_unquoted)
+                  and any(_is_grounded_in_text(args[slot], span) for span in quoted)]
+    if len(quote_only) > 1 and len(set.union(*quote_only)) < len(quote_only):
+        return validate_call("clarify", {"slot": "scope"})
+    for slot in entity_slots:
+        value = args.get(slot)
+        if not isinstance(value, str):
+            continue
+        partial = [span for span in quoted if _is_grounded_in_text(value, span) and _norm_alnum(value) != _norm_alnum(span)]
+        if partial:
+            if len(quoted) != 1 or _norm_alnum(value) in _GENERIC_DOMAIN_PLACEHOLDERS | _DEICTIC_PLACEHOLDERS:
+                return validate_call("clarify", {"slot": "title"})
+            args[slot] = quoted[0]
+    if name in {"movie_status", "movie_search", "request_media"} and isinstance(args.get("title"), str):
+        quoted_year = _TRAILING_PAREN_YEAR_RE.match(args["title"])
+        if quoted_year:
+            year = int(quoted_year[2])
+            if "year" in args and args["year"] != year:
+                return validate_call("clarify", {"slot": "scope"})
+            args.update(title=quoted_year[1].strip(), year=year)
+
     # 2. Check optional entity slots first (strip if ungrounded/placeholder)
     ungrounded_album_dropped = False
     if name in _OPTIONAL_ENTITY_SLOTS:
@@ -435,14 +621,15 @@ def verify_proposal(
             val = args[opt_slot].strip()
             val_norm = _norm_alnum(val)
             in_query = _is_grounded_in_text(val, query)
+            literal_quoted = any(_norm_alnum(span) == val_norm for span in quoted)
             in_selected = bool(
-                selected
+                _context_role_matches(name, opt_slot, selected, q_unquoted)
                 and isinstance(selected.get("title"), str)
-                and _is_grounded_in_text(val, selected["title"])
+                and _norm_alnum(val) == _norm_alnum(selected["title"])
             )
             if (
-                val_norm in _DEICTIC_PLACEHOLDERS
-                or (val_norm in _GENERIC_DOMAIN_PLACEHOLDERS and not in_selected)
+                (val_norm in _DEICTIC_PLACEHOLDERS and not literal_quoted)
+                or (val_norm in _GENERIC_DOMAIN_PLACEHOLDERS and not in_selected and not literal_quoted)
                 or (not in_query and not in_selected)
             ):
                 snapped = None if val_norm in _DEICTIC_PLACEHOLDERS else _snap_entity_to_query(val, query)
@@ -463,8 +650,9 @@ def verify_proposal(
         val = str(args.get(slot, "")).strip()
         val_norm = _norm_alnum(val)
         in_query = _is_grounded_in_text(val, query)
+        literal_quoted = any(_norm_alnum(span) == val_norm for span in quoted)
         in_selected = bool(
-            selected
+            _context_role_matches(name, slot, selected, q_unquoted)
             and isinstance(selected.get("title"), str)
             and _norm_alnum(val) == _norm_alnum(selected["title"])
         )
@@ -504,8 +692,8 @@ def verify_proposal(
                 ):
                     name = "movie_status"
 
-        if val_norm in _DEICTIC_PLACEHOLDERS:
-            if selected and isinstance(selected.get("title"), str) and slot == "title":
+        if val_norm in _DEICTIC_PLACEHOLDERS and not literal_quoted:
+            if _context_role_matches(name, slot, selected, q_unquoted) and isinstance(selected.get("title"), str) and slot == "title":
                 if re.search(r"\b(other\s+version|second\s+one|first\s+one|latest\s+one)\b", query, re.IGNORECASE):
                     return validate_call("clarify", {"slot": "reference"})
                 args["title"] = selected["title"]
@@ -513,7 +701,7 @@ def verify_proposal(
                 in_query = False
             else:
                 return validate_call("clarify", {"slot": "reference"})
-        elif (val_norm in _GENERIC_DOMAIN_PLACEHOLDERS and not in_selected) or (not in_query and not in_selected):
+        elif (val_norm in _GENERIC_DOMAIN_PLACEHOLDERS and not in_selected and not literal_quoted) or (not in_query and not in_selected):
             name = "clarify"
             args = {"slot": _infer_clarify_slot(query, selected)}
 
@@ -557,12 +745,13 @@ def verify_proposal(
     )
 
     if name in {"movie_search", "movie_status"} and has_request_word and not re.search(r"\bradarr\b", q_unquoted, re.IGNORECASE):
-        if has_track_word or has_negated_request:
-            if has_track_word or re.search(r"\b(check|track|status|progress|existing|look\s+up|where)\b", q_unquoted, re.IGNORECASE):
-                name = "request_status"
-                args = {"title": args["title"]}
-            else:
-                return validate_call("clarify", {"slot": "scope"})
+        if has_track_word:
+            name = "request_status"
+            args = {"title": args["title"]}
+        elif has_negated_request:
+            # Mentioning a request only to prohibit it does not change which
+            # library the user asked us to inspect.
+            name = "movie_status"
         elif has_affirmative_request:
             name = "request_media"
             if "media_type" not in args:
@@ -574,13 +763,10 @@ def verify_proposal(
                     args["media_type"] = "movie"
 
     if name == "request_media":
-        if has_negated_request or has_track_word:
-            if has_track_word or re.search(r"\b(check|track|status|progress|existing|look\s+up|where)\b", q_unquoted, re.IGNORECASE):
-                name = "request_status"
-                args = {"title": args["title"]}
-            else:
-                return validate_call("clarify", {"slot": "scope"})
-        elif not has_affirmative_request:
+        if has_track_word:
+            name = "request_status"
+            args = {"title": args["title"]}
+        elif has_negated_request or not has_affirmative_request:
             if _MOVIE_WORD_RE.search(q_unquoted) or args.get("media_type") == "movie":
                 name = "movie_status"
                 args = {k: v for k, v in args.items() if k in {"title", "year"}}
@@ -595,6 +781,13 @@ def verify_proposal(
         name = "music_status"
     elif name == "music_search" and ungrounded_album_dropped:
         return validate_call("clarify", {"slot": _infer_clarify_slot(query, selected)})
+    elif name == "music_search" and "album" not in args:
+        scope_text = _strip_quoted_and_releases(query)
+        artist = str(args.get("artist", ""))
+        if artist:
+            scope_text = re.sub(r"(?<!\w)" + re.escape(artist) + r"(?!\w)", " ENTITY ", scope_text, flags=re.I)
+        if not re.search(r"\b(?:all\s+(?:(?:the|of|missing|monitored|released)\s+)*(?:albums|music)|every\s+album|(?:entire|whole)\s+(?:artist\s+)?(?:catalog(?:ue)?|discography)|discography|missing\s+(?:albums|music)|artist[- ]wide)\b", scope_text, re.I):
+            return validate_call("clarify", {"slot": "scope"})
     elif name == "tv_search_missing" and not has_search_trigger:
         name = "tv_missing" if re.search(r"\b(missing|absent|gaps|holes)\b", q_unquoted, re.IGNORECASE) else "tv_status"
         args.pop("season", None)
@@ -707,6 +900,14 @@ def verify_proposal(
     # 10. Contract version guard (v1 only allows 15 actions)
     if contract_version in {"v1", CONTRACT_VERSION} and name not in BY_NAME:
         return validate_call("unsupported", {"reason": "out_of_scope"})
+    if name in WRITE_EFFECT_ACTIONS_V3 and re.search(r"\b(if|unless|except|until|only\s+when|provided\s+that|as\s+long\s+as)\b", q_unquoted, re.I):
+        return validate_call("unsupported", {"reason": "complex"})
+    if not _write_scope_fits_schema(name, args, query):
+        return validate_call("clarify", {"slot": "scope"})
+    entity_slot = _MANDATORY_ENTITY_SLOTS.get(name)
+    if entity_slot and selected and isinstance(args.get(entity_slot), str):
+        if not _is_grounded_in_text(args[entity_slot], query) and not _context_role_matches(name, entity_slot, selected, q_unquoted):
+            return validate_call("clarify", {"slot": "reference"})
 
     return validate_call(name, args)
 
@@ -733,6 +934,8 @@ def prepare(call: Call, principal: Principal) -> dict[str, Any]:
             "dry_run": True, "executed": False}
     permission = spec.permission
     service = spec.service
+    if call.name in {"bazarr_subtitle_search", "bazarr_subtitle_download"}:
+        base.update(contract=CONTRACT_VERSION_V3, contract_sha256=contract_hash_v3())
     if call.name == "service_query":
         from .services import SERVICE_PERMISSIONS
         service = call.arguments["service"]

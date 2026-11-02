@@ -5,7 +5,7 @@ from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from arrmes.adapters import AdapterObservation, SandboxAdapter
-from arrmes.catalog import V3_BY_NAME, WRITE_EFFECT_ACTIONS
+from arrmes.catalog import V3_BY_NAME, V2_BY_NAME, WRITE_EFFECT_ACTIONS_V3 as WRITE_EFFECT_ACTIONS
 from arrmes.planner import Principal, prepare, verify_proposal
 from arrmes.protocol import Call, InvalidCall, decode, normalized, validate_call
 from arrmes.sandbox.isolation import SandboxIsolationViolation
@@ -91,10 +91,13 @@ def derive_adapter_plan_state(obs: AdapterObservation) -> dict[str, Any]:
         return {"dry_run": False, "executed": False, "adapter_state": "unsupported"}
     if obs.status == "partial":
         return {"dry_run": False, "executed": True, "adapter_state": "partial"}
+    if isinstance(obs.data, dict) and obs.data.get("outcome") == "unknown":
+        return {"dry_run": False, "executed": False, "adapter_state": "unknown_outcome"}
 
     mutation_succeeded = any(
         isinstance(r, dict)
         and r.get("method") in {"POST", "PUT", "DELETE"}
+        and r.get("effect") != "read"
         and isinstance(r.get("status"), int)
         and 200 <= r["status"] < 300
         for r in (obs.audit_trail or [])
@@ -187,7 +190,8 @@ class BoundedExecutor:
 
         effective_context = context if context is not None else (ledger.to_model_context() if ledger is not None else None)
         if query is not None:
-            call = verify_proposal(call, query, effective_context)
+            call = verify_proposal(call, query, effective_context,
+                                   contract_version="v3" if call.name not in V2_BY_NAME else "v2")
 
         plan = prepare(call, principal)
         norm_call = normalized(call)

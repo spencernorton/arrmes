@@ -122,7 +122,9 @@ def query_for(service, operation):
     return f"Show {service} {operation}"
 
 
-@pytest.mark.parametrize("service,operation", [(s, op) for s, ops in SUPPORTED_OPERATIONS.items() for op in sorted(ops)])
+# Bitmagnet's fixed GraphQL POST reads have a separate HTTP contract fixture in
+# test_native_bitmagnet.py; this fixture specifically enforces GET-only REST.
+@pytest.mark.parametrize("service,operation", [(s, op) for s, ops in SUPPORTED_OPERATIONS.items() if s != "bitmagnet" for op in sorted(ops)])
 def test_every_advertised_pair_routes_through_executor_to_native_http(service, operation):
     query = query_for(service, operation)
     call = route_service_query(query)
@@ -247,7 +249,7 @@ def test_filtered_qbittorrent_queue_keeps_existing_v2_state_route():
     assert route_service_query("Show qBittorrent queue of paused torrents") is None
 
 
-@pytest.mark.parametrize("response,error", [((401, {"error": "SECRET"}), "service_authentication_failed"), ((404, {}), "service_api_version_or_route_unsupported"), ("not-json SECRET", "invalid_upstream_json"), ({"records": [], "totalRecords": -1}, "invalid_pagination_count")])
+@pytest.mark.parametrize("response,error", [((401, {"error": "SECRET"}), "service_authentication_failed"), ((404, {}), "service_api_version_or_route_unsupported"), ("not-json SECRET", "invalid_upstream_json"), ('{"records": [], "totalRecords": 0, "totalRecords": 1}', "invalid_upstream_json"), ('{"records": [{"id": 1, "id": 2}], "totalRecords": 1}', "invalid_upstream_json"), ({"records": [], "totalRecords": -1}, "invalid_pagination_count")])
 def test_auth_unavailable_version_and_malformed_errors_are_structured_and_redacted(response, error):
     with native_fixture(lambda *_: response) as (url, _):
         obs = ServiceQueryAdapter({"radarr": ServiceConfig(url)}).execute(Call("service_query", {"service": "radarr", "operation": "queue"}), OWNER)
@@ -397,7 +399,7 @@ def _record_adapter(service, operation, row, *, media_type="movie"):
 
 
 _ROW_PAIRS = [(service, operation) for service, operations in SUPPORTED_OPERATIONS.items()
-              for operation in sorted(operations) if operation not in {"health"} and not (service == "qbittorrent" and operation == "activity")]
+              for operation in sorted(operations) if service != "bitmagnet" and operation not in {"health"} and not (service == "qbittorrent" and operation == "activity")]
 
 
 @pytest.mark.parametrize("service,operation", _ROW_PAIRS)

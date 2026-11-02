@@ -7,6 +7,7 @@ import math
 from pathlib import Path
 import re
 import time
+from types import MappingProxyType
 from typing import Any, Mapping
 import unicodedata
 import urllib.error
@@ -25,6 +26,7 @@ class ServiceConfig:
     base_url: str
     api_key: str = field(default="", repr=False)
     session_id: str = field(default="", repr=False)
+    user_ids: Mapping[str, int] = field(default_factory=dict, repr=False)
 
     def __post_init__(self) -> None:
         p = urllib.parse.urlsplit(self.base_url)
@@ -39,10 +41,17 @@ class ServiceConfig:
             raise ValueError("Invalid API key encoding")
         if not isinstance(self.session_id, str) or (self.session_id and not re.fullmatch(r"[A-Za-z0-9._-]+", self.session_id)):
             raise ValueError("Invalid session cookie encoding")
+        if (not isinstance(self.user_ids, Mapping) or len(self.user_ids) > 256
+                or any(not isinstance(subject, str) or not 1 <= len(subject) <= 200
+                       or subject != subject.strip() or any(ord(c) < 32 or ord(c) == 127 for c in subject)
+                       or type(user_id) is not int or not 1 <= user_id <= 2_147_483_647
+                       for subject, user_id in self.user_ids.items())):
+            raise ValueError("Invalid native service user mapping")
+        object.__setattr__(self, "user_ids", MappingProxyType(dict(self.user_ids)))
 
 
 def load_service_configs(path: str | Path) -> dict[str, ServiceConfig]:
-    """Read {"services": {name: {base_url, api_key?, session_id?}}}. Never log secrets."""
+    """Read operator service roots/credentials and optional trusted Seerr user IDs."""
     p = Path(path).expanduser()
     if p.stat().st_size > 1_048_576:
         raise ValueError("Service registry is too large")
@@ -61,8 +70,10 @@ def load_service_configs(path: str | Path) -> dict[str, ServiceConfig]:
         raise ValueError("Service registry must contain only a services object")
     out: dict[str, ServiceConfig] = {}
     for name, value in raw["services"].items():
-        if name not in SUPPORTED_OPERATIONS or not isinstance(value, dict) or set(value) - {"base_url", "api_key", "session_id"}:
+        if name not in SUPPORTED_OPERATIONS or not isinstance(value, dict) or set(value) - {"base_url", "api_key", "session_id", "user_ids"}:
             raise ValueError("Invalid service registry entry")
+        if name != "seerr" and "user_ids" in value:
+            raise ValueError("Native user mappings are supported only for Seerr")
         if not isinstance(value.get("base_url"), str):
             raise ValueError("Service registry entry requires base_url")
         out[name] = ServiceConfig(**value)
@@ -167,8 +178,8 @@ def _validated_rows(service: str, operation: str, rows: list[dict[str, Any]], *,
                 valid = session and _display(row)
         elif service == "seerr":
             kind = row.get("mediaType")
-            titles = ("title", "originalTitle") if kind == "movie" else ("name", "originalName")
-            valid = _id(row.get("id")) and kind in {"movie", "tv", "person"} and any(_text(row.get(key)) for key in titles)
+            titles = ("title", "originalTitle") if kind in {"movie", "collection"} else ("name", "originalName")
+            valid = _id(row.get("id")) and kind in {"movie", "tv", "person", "collection"} and any(_text(row.get(key)) for key in titles)
         if not valid:
             raise _UpstreamError(f"invalid_{service}_{operation}_record")
     return rows
@@ -215,8 +226,9 @@ class ServiceQueryAdapter:
     """Read-only adapter over explicit native API versions, with finite response/page budgets.
 
     No credentials or URL comes from a tool argument. Every dispatch revalidates
-    the pair and current authenticated scopes. This class contains no HTTP write
-    method, generic endpoint forwarding, automatic login, or application command.
+    the pair and current authenticated scopes. REST reads use GET; the separate
+    Bitmagnet module permits only two immutable GraphQL query documents by POST.
+    There is no generic endpoint forwarding, login or application command.
     """
 
     def __init__(self, configs: Mapping[str, ServiceConfig], *, max_pages: int = 5,
@@ -272,7 +284,15 @@ class ServiceQueryAdapter:
                     decoded = raw.decode("utf-8")
                     def reject_nonfinite(_value):
                         raise ValueError("Non-finite upstream JSON number")
-                    return decoded.strip() if text else json.loads(decoded, parse_constant=reject_nonfinite)
+                    def unique_keys(pairs):
+                        value = {}
+                        for key, item in pairs:
+                            if key in value:
+                                raise ValueError("Duplicate upstream JSON key")
+                            value[key] = item
+                        return value
+                    return decoded.strip() if text else json.loads(decoded, parse_constant=reject_nonfinite,
+                                                                  object_pairs_hook=unique_keys)
                 except (ValueError, UnicodeError, RecursionError) as exc:
                     raise _UpstreamError("invalid_upstream_json") from exc
         except urllib.error.HTTPError as exc:
@@ -508,3 +528,7 @@ class ServiceQueryAdapter:
             "query": args["query"], "page": page + 1}), audit), records_key="results", total_key="totalResults")
         _validated_rows("seerr", "search", rows)
         return self._result("seerr", args, rows, total, truncated, audit, api_version="v1")
+
+    def _bitmagnet(self, args: dict[str, Any], audit: list[dict[str, Any]]) -> AdapterObservation:
+        from .bitmagnet import execute_bitmagnet
+        return execute_bitmagnet(self, args, audit)

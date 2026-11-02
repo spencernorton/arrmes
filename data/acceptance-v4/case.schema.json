@@ -1,0 +1,42 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://example.invalid/arrmes/acceptance-v4/case.schema.json",
+  "title": "Arrmes pre-inference direct-tool diagnostic candidate v4",
+  "type": "object",
+  "required": ["id", "query", "context", "expected", "family_id", "template_family", "scenario_id", "entity_family", "variant_index", "category", "entities", "track", "contract", "execution_policy", "gold_rationale", "provenance"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {"type": "string", "pattern": "^AV4-[0-9]{4}$"},
+    "query": {"type": "string", "minLength": 1, "maxLength": 4096},
+    "context": {"type": "object"},
+    "expected": {
+      "type": "object", "required": ["name", "arguments"], "additionalProperties": false,
+      "properties": {"name": {"type": "string"}, "arguments": {"type": "object"}}
+    },
+    "family_id": {"type": "string", "pattern": "^av4:[a-z-]+$"},
+    "template_family": {"type": "string", "pattern": "^av4:[a-z-]+$"},
+    "scenario_id": {"type": "string", "pattern": "^[a-z-]+$"},
+    "entity_family": {"type": "string", "pattern": "^av4:(global|entities:[a-f0-9]{16})$"},
+    "variant_index": {"type": "integer", "minimum": 0, "maximum": 7},
+    "category": {"enum": ["normal", "write", "negation", "ambiguous", "scope_limit", "unsafe", "reference", "unsupported", "compound", "adversarial"]},
+    "entities": {
+      "type": "array", "maxItems": 8,
+      "items": {
+        "type": "object", "required": ["kind", "name"], "additionalProperties": false,
+        "properties": {"kind": {"enum": ["title", "artist", "album", "torrent", "search", "release"]}, "name": {"type": "string", "minLength": 1, "maxLength": 512}}
+      }
+    },
+    "track": {"const": "A_direct_tool"},
+    "contract": {"const": "arrmes.tools.v2"},
+    "execution_policy": {
+      "type": "object", "required": ["effect", "permission", "confirmation_required"], "additionalProperties": false,
+      "properties": {
+        "effect": {"enum": ["read", "download", "request", "write", "control"]},
+        "permission": {"type": ["string", "null"]},
+        "confirmation_required": {"type": "boolean"}
+      }
+    },
+    "gold_rationale": {"type": "string", "minLength": 1},
+    "provenance": {"type": "string", "minLength": 1}
+  }
+}

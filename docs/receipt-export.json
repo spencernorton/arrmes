@@ -8,7 +8,8 @@
     "Source snapshots validate exported source bytes and retain original SHA; they do not claim byte identity to measured source.",
     "Checksum maps use explicit path/digest records rather than credential-shaped keys.",
     "The comparison summary uses model_id instead of the ambiguous key metadata field; numeric results are unchanged.",
-    "The native integration input manifest uses explicit source path/digest records; cases are unchanged and the original manifest hash remains in its receipt."
+    "The native integration input manifest uses explicit source path/digest records; cases are unchanged and the original manifest hash remains in its receipt.",
+    "Native workflow and C7 operational exports explicitly encode source/origin hashes as digest records. Raw outputs and measured values are preserved; original receipt-byte references resolve through this ledger."
   ],
   "files": [
     {
@@ -560,6 +561,54 @@
       "original_sha256": "3219e1d6df0ef266f3b12ea2d3ea830cee680f7a87cd3cb9237288f02bc1d933",
       "public_sha256": "b7b684773571760525e0ed808b6797f04d05cc7ea6ca547ae084f479730e7834",
       "transformation": "Local paths omitted; checksum maps use explicit path/digest records; synthetic fixture credential assembled from segments. Measurements, API observations and failed-attempt status unchanged."
+    },
+    {
+      "path": "experiments/native-workflows-v1/initial-eight.json",
+      "original_sha256": "cffe1730b3928c12a2688362e42dc418ec0cfb9f5242b8f602e1036a343ccd43",
+      "public_sha256": "35cb8000a1e76005eb8350c8a8ece5733fdaa983d2600e38b61e9857daed20c4",
+      "transformation": "Source checksum maps use explicit path/digest records; configured-origin digests have explicit algorithm/scope/hex encoding. Raw model text, golds, decisions, timing/memory and numeric values are unchanged. Original receipt references continue to name owner-original bytes."
+    },
+    {
+      "path": "experiments/native-workflows-v1/first-cached-replay.json",
+      "original_sha256": "4f290cb0a8bcba47f77667a635a887f4f3c0ab0b493c2f937db39a0af342d486",
+      "public_sha256": "6d00bbbc9374941e584162be3ca71631f317132eb15534ab28e3e885d7976031",
+      "transformation": "Source checksum maps use explicit path/digest records; configured-origin digests have explicit algorithm/scope/hex encoding. Raw model text, golds, decisions, timing/memory and numeric values are unchanged. Original receipt references continue to name owner-original bytes."
+    },
+    {
+      "path": "experiments/native-workflows-v1/final-arr-cached-replay.json",
+      "original_sha256": "a23324ea2e456995420e8e8fec1084bf6d36b1acc30531cdaf587ecc3a3f871c",
+      "public_sha256": "fc5de75162d9c4dad860b1f151f8e6658a38228f9eb9242836968450c514ee6a",
+      "transformation": "Source checksum maps use explicit path/digest records; configured-origin digests have explicit algorithm/scope/hex encoding. Raw model text, golds, decisions, timing/memory and numeric values are unchanged. Original receipt references continue to name owner-original bytes."
+    },
+    {
+      "path": "experiments/native-workflows-v1/initial-eight-input-freeze.json",
+      "original_sha256": "1ac0679336e3bf0c1be4e528ee50b868a26c0bd7241ec93a73180e2d791e35cf",
+      "public_sha256": "04b5e219926b3afc6d59bc8eb71c95694feb65e6f228a0562624df3c011324e6",
+      "transformation": "Source checksum maps use explicit path/digest records; configured-origin digests have explicit algorithm/scope/hex encoding. Raw model text, golds, decisions, timing/memory and numeric values are unchanged. Original receipt references continue to name owner-original bytes."
+    },
+    {
+      "path": "experiments/native-workflows-v1/final-eight-cached-replay.json",
+      "original_sha256": "b2bc41101ad075f86ba5141e5395b12142644a2a8b894a4c4cba6ff183539bc5",
+      "public_sha256": "1b499ce9623f95e4562ed9dad07bb6a6818f2e53700e02665ec47b4e1b13bdb9",
+      "transformation": "Source checksum maps use explicit path/digest records; configured-origin digests have explicit algorithm/scope/hex encoding. Raw model text, golds, decisions, timing/memory and numeric values are unchanged. Original receipt references continue to name owner-original bytes."
+    },
+    {
+      "path": "experiments/native-workflows-v1/arr-four-input-freeze.json",
+      "original_sha256": "8415c279d104c926544d3c1d2d4026ae8ce88bee456b22f68342a2cbde5a9908",
+      "public_sha256": "b9151298df8dfcc89742ca8a92c4d7dd2cd898e4b822740c1bce1266fe2a1c3b",
+      "transformation": "Source checksum maps use explicit path/digest records; configured-origin digests have explicit algorithm/scope/hex encoding. Raw model text, golds, decisions, timing/memory and numeric values are unchanged. Original receipt references continue to name owner-original bytes."
+    },
+    {
+      "path": "experiments/native-workflows-v1/arr-four.json",
+      "original_sha256": "d5b00756c66c7aca463bd178c2b5970ea00b288fee85c2b70fdfbbd102299c03",
+      "public_sha256": "3fd8f5871867fadb3ecb09293cb0dc4c985afe5cf7cdd61e9bf0e270ae227c0f",
+      "transformation": "Source checksum maps use explicit path/digest records; configured-origin digests have explicit algorithm/scope/hex encoding. Raw model text, golds, decisions, timing/memory and numeric values are unchanged. Original receipt references continue to name owner-original bytes."
+    },
+    {
+      "path": "experiments/portable-v1/cpu-export-c7-mac-operational-smoke.json",
+      "original_sha256": "3dd9db49f3ce4a2869bbdc1655431e6371b031a0118804a0284ab2dbb2e8f93b",
+      "public_sha256": "402d247fdf97a7dfa2c1aa7f6210a15da9acdeffa6aea242ec1ff952759fa4d5",
+      "transformation": "Source checksum maps use explicit path/digest records; configured-origin digests have explicit algorithm/scope/hex encoding. Raw model text, golds, decisions, timing/memory and numeric values are unchanged. Original receipt references continue to name owner-original bytes."
     }
   ],
   "attachments": [

@@ -1,4 +1,4 @@
-"""A deliberate model-free mode for explicit native read workflows."""
+"""A deliberate model-free mode for explicit native workflows."""
 from __future__ import annotations
 
 import time
@@ -12,7 +12,8 @@ class NativeOnlyModel(DeterministicBaselineModel):
 
     This is separate from the benchmark's keyword baseline. It loads no weights
     or inference runtime and returns a clarification outside the documented
-    explicit-service read grammar.
+    explicit-service grammar. The HTTP entrypoint defaults writes off; a
+    separate trusted opt-in enables documented confirmation-gated phrases.
     """
 
     backend = "native-only"

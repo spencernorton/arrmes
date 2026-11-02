@@ -1,0 +1,26 @@
+{
+  "source_basis_commit": "e5e76b80ac3f0c2f222bfcd629ae51c76a0cabd4",
+  "runs": {
+    "run-01": {
+      "application_source_files": 35,
+      "all_application_files_match_public_commit": true,
+      "harness_snapshot_matches_recorded_sha256": true,
+      "receipt_original_sha256": "2bfe1b90da9a4e474121232eed21a6609a56253f80907d149f82f7b1f65662eb",
+      "receipt_public_sha256": "8aea3715ee4f4b350bd29906e55e6272f599b9b73ca22be12b1f01a487ac7ed0"
+    },
+    "run-02": {
+      "application_source_files": 35,
+      "all_application_files_match_public_commit": true,
+      "harness_snapshot_matches_recorded_sha256": true,
+      "receipt_original_sha256": "1f001b976fb51dce7ce5d6e717e7bbb1299f4c6d27bfe53a1f5409619d9a7a5e",
+      "receipt_public_sha256": "c24517e2eb163e887c9ecbd1f3b4a12c56d7092efdf73d7d3685da87b0330a71"
+    },
+    "run-03": {
+      "application_source_files": 35,
+      "all_application_files_match_public_commit": true,
+      "harness_snapshot_matches_recorded_sha256": true,
+      "receipt_original_sha256": "941826f607cf22eff5e4530e0d5a45191d50396ad95fe1cb1a92f59bb7b8e750",
+      "receipt_public_sha256": "d5f0a1a9a51ad02d3a7d0ba3bff5a2cd06191faed0dd1b553ce4440bae1a7e72"
+    }
+  }
+}

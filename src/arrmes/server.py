@@ -24,6 +24,8 @@ from arrmes.protocol import Call, InvalidCall, decode, normalized
 from arrmes.service_router import ConfiguredAdapterRouter
 from arrmes.services import ServiceQueryAdapter, load_service_configs, route_service_query
 from arrmes.workflows import native_read_workflow
+from arrmes.services.bazarr_routing import route_bazarr_subtitle_query
+from arrmes.services.request_routing import has_native_request_intent, route_native_request_query
 from arrmes.explicit import NativeOnlyModel
 
 WRITE_MODES = frozenset({"confirm", "shadow", "direct", "disabled"})
@@ -194,21 +196,32 @@ class ArrmesRuntimeService:
             "latency_scope": "Mixed in-process route/execute/confirm durations; execute starts after principal serialization. Excludes HTTP ingress and human confirmation delay.",
         }
 
+    def _explicit_write_route(self, query: str) -> tuple[Call | None, str | None]:
+        request = route_native_request_query(query)
+        configured = getattr(getattr(self.executor.adapter, "native", None), "configs", {})
+        if has_native_request_intent(query) and "seerr" not in configured:
+            request = Call("clarify", {"slot": "scope"})
+        if request is not None:
+            return request, "explicit_seerr_deterministic"
+        subtitle = route_bazarr_subtitle_query(query) if self.native_queries_enabled else None
+        return subtitle, "explicit_bazarr_deterministic" if subtitle is not None else None
+
     def route(self, query: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
         t0 = time.perf_counter()
         if not isinstance(query, str) or not query.strip():
             raise ValueError("Non-empty 'query' string is required")
-        workflow = native_read_workflow(query, max_steps=self.executor.max_steps) if self.native_queries_enabled else None
+        subtitle, explicit_source = self._explicit_write_route(query)
+        workflow = native_read_workflow(query, max_steps=self.executor.max_steps) if self.native_queries_enabled and subtitle is None else None
         if isinstance(workflow, tuple):
             elapsed_ms = (time.perf_counter() - t0) * 1000.0
             self._record_metric("route_requests", elapsed_ms)
             return {"proposal": None, "workflow": [normalized(call) for _, call in workflow],
                     "verified": True, "routing_source": "explicit_service_deterministic",
                     "latency_ms": round(elapsed_ms, 3)}
-        extension = workflow if isinstance(workflow, Call) else route_service_query(query) if self.native_queries_enabled else None
+        extension = subtitle if subtitle is not None else workflow if isinstance(workflow, Call) else route_service_query(query) if self.native_queries_enabled else None
         if extension is not None:
             call = verify_proposal(extension, query, context, contract_version="v3")
-            source = "explicit_service_deterministic"
+            source = explicit_source or "explicit_service_deterministic"
         else:
             with self._lock:
                 inf = self.model.infer(query, context, max_tokens=64)
@@ -255,7 +268,8 @@ class ArrmesRuntimeService:
         ledger = self._get_ledger(principal.subject)
         ledger.advance_turn()
         effective_ctx = context if context is not None else ledger.to_model_context()
-        workflow = native_read_workflow(query, max_steps=self.executor.max_steps) if self.native_queries_enabled else None
+        subtitle, explicit_source = self._explicit_write_route(query)
+        workflow = native_read_workflow(query, max_steps=self.executor.max_steps) if self.native_queries_enabled and subtitle is None else None
         if isinstance(workflow, tuple):
             # Check every scope before the first network call. Independent
             # unavailable-service failures do not prevent other permitted reads.
@@ -284,11 +298,11 @@ class ArrmesRuntimeService:
                     "steps_executed": sum(trace.steps_executed for trace in traces),
                     "unsafe_write_blocked": False, "session_context": ledger.to_model_context(),
                     "routing_source": "explicit_service_deterministic", "latency_ms": round(elapsed_ms, 3)}
-        extension = workflow if isinstance(workflow, Call) else route_service_query(query) if self.native_queries_enabled else None
+        extension = subtitle if subtitle is not None else workflow if isinstance(workflow, Call) else route_service_query(query) if self.native_queries_enabled else None
         if extension is not None:
             trace = self.executor.execute_call(extension, principal, query=query, context=effective_ctx,
                                                ledger=ledger, idempotency_key=idempotency_key)
-            source = "explicit_service_deterministic"
+            source = explicit_source or "explicit_service_deterministic"
         else:
             with self._lock:
                 inf = self.model.infer(query, effective_ctx, max_tokens=64)
@@ -547,7 +561,11 @@ def main() -> None:
     if backend == "native-only":
         if not os.environ.get("ARRMES_SERVICES_FILE", "").strip():
             raise SystemExit("ARRMES_SERVICES_FILE is required for native-only mode")
-        write_mode = "disabled"
+        native_write_gate = os.environ.get("ARRMES_NATIVE_CONFIRMED_WRITES", "0").strip()
+        if native_write_gate not in {"0", "1"}:
+            raise SystemExit("ARRMES_NATIVE_CONFIRMED_WRITES must be 0 or 1")
+        if native_write_gate != "1":
+            write_mode = "disabled"
         mdl: Any = NativeOnlyModel()
     elif model_path or os.environ.get("ARRMES_INFERENCE_URL", "").strip():
         mdl: Any = create_model(

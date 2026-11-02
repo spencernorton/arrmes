@@ -1,0 +1,345 @@
+{
+  "schema_version": 1,
+  "first_pass_cases_per_comparison": 1000,
+  "execution_measured": false,
+  "harness_sha256": "fe1248ca4088f4bc8cac0f973c23493c5d81ea40b74b047751f343e8777f6779",
+  "run_plan_sha256": "302d428af78a132c74e0f47567ded68f5e370a524ba028eb3bd24a16db21ce2b",
+  "rows": [
+    {
+      "label": "released-public",
+      "receipt_sha256": "d192e5681669a9a5c0c032d9354514a1368b163b1f39ffe906abc9bedf53012e",
+      "complete": true,
+      "raw_exact": 770,
+      "translated_exact": 770,
+      "verified_exact": 717,
+      "raw_tool": 835,
+      "native_syntax": 985,
+      "raw_schema": 914,
+      "raw_unexpected_write_proposals": 51,
+      "verified_unexpected_write_proposals": 10,
+      "nonwrite_n": 728,
+      "native_controls": 106,
+      "verified_controls": 68,
+      "raw_macro": {
+        "template_family": 0.771875,
+        "scenario_id": 0.6922814207650273,
+        "entity_family": 0.7858200635244823
+      },
+      "raw_family_CI": {
+        "clusters": 128,
+        "replicates": 2000,
+        "seed": 401,
+        "micro_95": [
+          0.6984282907662083,
+          0.8354806739345887
+        ],
+        "macro_95": [
+          0.701171875,
+          0.837109375
+        ]
+      },
+      "warm_generation_p50_p95": [
+        0.3158575,
+        0.402934
+      ],
+      "infer_p50_p95": [
+        0.3189874379604589,
+        0.4060058750328608
+      ],
+      "init_plus_first_warmup": 2.3988042910350487,
+      "rss_bytes": 724566016,
+      "mlx": {
+        "active_bytes": 932675592,
+        "cache_bytes": 301422034,
+        "peak_allocator_bytes": 2219862088
+      },
+      "verifier": {
+        "raw_error_caught": 164,
+        "raw_error_uncaught": 66,
+        "corrected_raw_error": 42,
+        "damaged_raw_correct": 95,
+        "changed_but_still_wrong": 115,
+        "raw_error_remains": 188,
+        "decoder_rejected": 70,
+        "verifier_boundary_error": 0,
+        "proposal_changed": 252
+      },
+      "sensitivity_controls": {
+        "native": 106,
+        "verified": 76
+      },
+      "source_manifest_sha256": "02372e899ac17a98b877b230ca9c0710cd5aa8d01b90ff7de5a39dace4c42b95",
+      "harness_sha256": "fe1248ca4088f4bc8cac0f973c23493c5d81ea40b74b047751f343e8777f6779",
+      "harness_commit": "5a5f929e92774dd259ec95512d4e8c22bd4f25db",
+      "network_attempts": 0
+    },
+    {
+      "label": "improved-public",
+      "receipt_sha256": "a87d351b55741b2cd8010289a1f0ec0cb0b71209b9ddfacb926abe303b8494f6",
+      "complete": true,
+      "raw_exact": 770,
+      "translated_exact": 770,
+      "verified_exact": 678,
+      "raw_tool": 835,
+      "native_syntax": 985,
+      "raw_schema": 914,
+      "raw_unexpected_write_proposals": 51,
+      "verified_unexpected_write_proposals": 2,
+      "nonwrite_n": 728,
+      "native_controls": 106,
+      "verified_controls": 68,
+      "raw_macro": {
+        "template_family": 0.771875,
+        "scenario_id": 0.6922814207650273,
+        "entity_family": 0.7858200635244823
+      },
+      "raw_family_CI": {
+        "clusters": 128,
+        "replicates": 2000,
+        "seed": 401,
+        "micro_95": [
+          0.6984282907662083,
+          0.8354806739345887
+        ],
+        "macro_95": [
+          0.701171875,
+          0.837109375
+        ]
+      },
+      "warm_generation_p50_p95": [
+        0.31282299999999996,
+        0.400038
+      ],
+      "infer_p50_p95": [
+        0.3158643335045781,
+        0.4034137079725042
+      ],
+      "init_plus_first_warmup": 1.9077972919330932,
+      "rss_bytes": 723910656,
+      "mlx": {
+        "active_bytes": 932675592,
+        "cache_bytes": 301411738,
+        "peak_allocator_bytes": 2219862088
+      },
+      "verifier": {
+        "raw_error_caught": 173,
+        "raw_error_uncaught": 57,
+        "corrected_raw_error": 43,
+        "damaged_raw_correct": 135,
+        "changed_but_still_wrong": 123,
+        "raw_error_remains": 187,
+        "decoder_rejected": 70,
+        "verifier_boundary_error": 0,
+        "proposal_changed": 301
+      },
+      "sensitivity_controls": {
+        "native": 106,
+        "verified": 76
+      },
+      "source_manifest_sha256": "30addfbc6bf29c5746340a0645956b443d361cb124669a4a8d844dc831f4a480",
+      "harness_sha256": "fe1248ca4088f4bc8cac0f973c23493c5d81ea40b74b047751f343e8777f6779",
+      "harness_commit": "5a5f929e92774dd259ec95512d4e8c22bd4f25db",
+      "network_attempts": 0
+    },
+    {
+      "label": "qwen06-base",
+      "receipt_sha256": "f1f159e725dd5495f87b5e1707e9f072978f4b14c3c3e27de60d74425766a6d8",
+      "complete": true,
+      "raw_exact": 396,
+      "translated_exact": 396,
+      "verified_exact": 439,
+      "raw_tool": 479,
+      "native_syntax": 687,
+      "raw_schema": 644,
+      "raw_unexpected_write_proposals": 46,
+      "verified_unexpected_write_proposals": 2,
+      "nonwrite_n": 728,
+      "native_controls": 0,
+      "verified_controls": 32,
+      "raw_macro": {
+        "template_family": 0.40078125,
+        "scenario_id": 0.32151639344262295,
+        "entity_family": 0.5384127054173791
+      },
+      "raw_family_CI": {
+        "clusters": 128,
+        "replicates": 2000,
+        "seed": 401,
+        "micro_95": [
+          0.317907444668008,
+          0.4704112337011033
+        ],
+        "macro_95": [
+          0.321484375,
+          0.4765625
+        ]
+      },
+      "warm_generation_p50_p95": [
+        0.2586935,
+        0.332667
+      ],
+      "infer_p50_p95": [
+        0.2618597295077052,
+        0.33567400003084913
+      ],
+      "init_plus_first_warmup": 2.155103750003036,
+      "rss_bytes": 718979072,
+      "mlx": {
+        "active_bytes": 922583048,
+        "cache_bytes": 303361074,
+        "peak_allocator_bytes": 1669490648
+      },
+      "verifier": {
+        "raw_error_caught": 531,
+        "raw_error_uncaught": 73,
+        "corrected_raw_error": 85,
+        "damaged_raw_correct": 42,
+        "changed_but_still_wrong": 153,
+        "raw_error_remains": 519,
+        "decoder_rejected": 336,
+        "verifier_boundary_error": 0,
+        "proposal_changed": 280
+      },
+      "sensitivity_controls": {
+        "native": 0,
+        "verified": 32
+      },
+      "source_manifest_sha256": "30addfbc6bf29c5746340a0645956b443d361cb124669a4a8d844dc831f4a480",
+      "harness_sha256": "fe1248ca4088f4bc8cac0f973c23493c5d81ea40b74b047751f343e8777f6779",
+      "harness_commit": "5a5f929e92774dd259ec95512d4e8c22bd4f25db",
+      "network_attempts": 0
+    },
+    {
+      "label": "qwen4b-reference",
+      "receipt_sha256": "076f2000ce830f56989db95f0a36a99b2028e0d9203c231a8fdd459f078a638b",
+      "complete": true,
+      "raw_exact": 782,
+      "translated_exact": 782,
+      "verified_exact": 720,
+      "raw_tool": 833,
+      "native_syntax": 888,
+      "raw_schema": 886,
+      "raw_unexpected_write_proposals": 8,
+      "verified_unexpected_write_proposals": 0,
+      "nonwrite_n": 728,
+      "native_controls": 24,
+      "verified_controls": 40,
+      "raw_macro": {
+        "template_family": 0.7865234375,
+        "scenario_id": 0.6288592896174864,
+        "entity_family": 0.8059317033943759
+      },
+      "raw_family_CI": {
+        "clusters": 128,
+        "replicates": 2000,
+        "seed": 401,
+        "micro_95": [
+          0.7112676056338029,
+          0.8485456369107321
+        ],
+        "macro_95": [
+          0.71796875,
+          0.851953125
+        ]
+      },
+      "warm_generation_p50_p95": [
+        0.602248,
+        0.937719
+      ],
+      "infer_p50_p95": [
+        0.6052961045061238,
+        0.9406988329719752
+      ],
+      "init_plus_first_warmup": 5.00400729192188,
+      "rss_bytes": 2651521024,
+      "mlx": {
+        "active_bytes": 3019668488,
+        "cache_bytes": 396877502,
+        "peak_allocator_bytes": 3751895952
+      },
+      "verifier": {
+        "raw_error_caught": 161,
+        "raw_error_uncaught": 57,
+        "corrected_raw_error": 33,
+        "damaged_raw_correct": 95,
+        "changed_but_still_wrong": 32,
+        "raw_error_remains": 185,
+        "decoder_rejected": 98,
+        "verifier_boundary_error": 0,
+        "proposal_changed": 160
+      },
+      "sensitivity_controls": {
+        "native": 24,
+        "verified": 40
+      },
+      "source_manifest_sha256": "30addfbc6bf29c5746340a0645956b443d361cb124669a4a8d844dc831f4a480",
+      "harness_sha256": "fe1248ca4088f4bc8cac0f973c23493c5d81ea40b74b047751f343e8777f6779",
+      "harness_commit": "5a5f929e92774dd259ec95512d4e8c22bd4f25db",
+      "network_attempts": 0
+    },
+    {
+      "label": "deterministic",
+      "receipt_sha256": "f1187e52f9fb57f6c42ca6c571b81f9597d95799b7c592adb85128373c256f44",
+      "complete": true,
+      "raw_exact": 89,
+      "translated_exact": 89,
+      "verified_exact": 105,
+      "raw_tool": 281,
+      "native_syntax": 1000,
+      "raw_schema": 1000,
+      "raw_unexpected_write_proposals": 0,
+      "verified_unexpected_write_proposals": 0,
+      "nonwrite_n": 728,
+      "native_controls": 32,
+      "verified_controls": 40,
+      "raw_macro": {
+        "template_family": 0.096875,
+        "scenario_id": 0.16639344262295083,
+        "entity_family": 0.16157982398004522
+      },
+      "raw_family_CI": {
+        "clusters": 128,
+        "replicates": 2000,
+        "seed": 401,
+        "micro_95": [
+          0.04426559356136821,
+          0.13958125623130607
+        ],
+        "macro_95": [
+          0.05,
+          0.15
+        ]
+      },
+      "warm_generation_p50_p95": [
+        1.4e-05,
+        2.1e-05
+      ],
+      "infer_p50_p95": [
+        1.4125020243227482e-05,
+        2.174999099224806e-05
+      ],
+      "init_plus_first_warmup": 0.00017433398170396686,
+      "rss_bytes": 48922624,
+      "mlx": null,
+      "verifier": {
+        "raw_error_caught": 532,
+        "raw_error_uncaught": 379,
+        "corrected_raw_error": 40,
+        "damaged_raw_correct": 24,
+        "changed_but_still_wrong": 492,
+        "raw_error_remains": 871,
+        "decoder_rejected": 0,
+        "verifier_boundary_error": 0,
+        "proposal_changed": 556
+      },
+      "sensitivity_controls": {
+        "native": 40,
+        "verified": 48
+      },
+      "source_manifest_sha256": "30addfbc6bf29c5746340a0645956b443d361cb124669a4a8d844dc831f4a480",
+      "harness_sha256": "fe1248ca4088f4bc8cac0f973c23493c5d81ea40b74b047751f343e8777f6779",
+      "harness_commit": "5a5f929e92774dd259ec95512d4e8c22bd4f25db",
+      "network_attempts": 0
+    }
+  ]
+}

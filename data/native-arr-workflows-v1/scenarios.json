@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "purpose": "Authored native Arr integration scenarios from existing controlled fixtures; not held-out language acceptance",
+  "training_use": "forbidden",
+  "cases": [
+    {"id": "NAW1-01", "fixture": "arr", "route": "neural_v2", "query": "Download missing episodes of \"Fixture series\" in Sonarr", "expected": {"name": "tv_search_missing", "arguments": {"title": "Fixture series"}}, "terminal": "dispatched", "confirm": true, "expected_mutation": {"name": "EpisodeSearch", "episodeIds": [1, 7]}},
+    {"id": "NAW1-02", "fixture": "arr", "route": "neural_v2", "query": "Search for the movie \"Fixture movie\" (2020) in Radarr", "expected": {"name": "movie_search", "arguments": {"title": "Fixture movie", "year": 2020}}, "terminal": "dispatched", "confirm": true, "expected_mutation": {"name": "MoviesSearch", "movieIds": [2]}},
+    {"id": "NAW1-03", "fixture": "arr", "route": "neural_v2", "query": "Download the album \"Fixture album\" by \"Fixture artist\" in Lidarr", "expected": {"name": "music_search", "arguments": {"artist": "Fixture artist", "album": "Fixture album"}}, "terminal": "dispatched", "confirm": true, "expected_mutation": {"name": "AlbumSearch", "albumIds": [8]}},
+    {"id": "NAW1-04", "fixture": "arr", "route": "neural_v2", "query": "Search all missing albums by \"Fixture artist\" in Lidarr", "expected": {"name": "music_search", "arguments": {"artist": "Fixture artist"}}, "terminal": "dispatched", "confirm": true, "expected_mutation": {"name": "AlbumSearch", "albumIds": [8, 13]}}
+  ]
+}
