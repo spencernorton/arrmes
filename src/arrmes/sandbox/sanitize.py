@@ -630,14 +630,14 @@ def _build_extensible_db(db_path: Path) -> None:
                 size_bytes INTEGER NOT NULL,
                 seeders INTEGER NOT NULL
             );
-            INSERT INTO bitmagnet_torrents VALUES ('bm001', 'Chrono.Harbor.S01.1080p.BluRay.x265', 14_500_000_000, 42);
-            INSERT INTO bitmagnet_torrents VALUES ('bm002', 'Obsidian.Tide.2023.2160p.WEB-DL.HEVC', 28_100_000_000, 87);
-            INSERT INTO bitmagnet_torrents VALUES ('bm003', 'Cobalt.Mirage.1985.1080p.REMUX.AVC', 29_400_000_000, 19);
-            INSERT INTO bitmagnet_torrents VALUES ('bm401', 'Solstice.Ward.S01.2160p.WEB-DL.HEVC', 22_300_000_000, 54);
-            INSERT INTO bitmagnet_torrents VALUES ('bm402', 'Gilded.Maelstrom.1981.1080p.BluRay.x264', 16_800_000_000, 31);
-            INSERT INTO bitmagnet_torrents VALUES ('bm403', 'Brimstone.Ledger.2020.2160p.UHD.REMUX', 45_100_000_000, 63);
-            INSERT INTO bitmagnet_torrents VALUES ('bm404', 'Pale.Reliquary.1978.1080p.REMUX.AVC', 25_900_000_000, 27);
-            INSERT INTO bitmagnet_torrents VALUES ('bm405', 'Thornweld.S01.1080p.WEB-DL.H264', 13_400_000_000, 38);
+            INSERT INTO bitmagnet_torrents VALUES ('bm001', 'Chrono.Harbor.S01.1080p.BluRay.x265', 14500000000, 42);
+            INSERT INTO bitmagnet_torrents VALUES ('bm002', 'Obsidian.Tide.2023.2160p.WEB-DL.HEVC', 28100000000, 87);
+            INSERT INTO bitmagnet_torrents VALUES ('bm003', 'Cobalt.Mirage.1985.1080p.REMUX.AVC', 29400000000, 19);
+            INSERT INTO bitmagnet_torrents VALUES ('bm401', 'Solstice.Ward.S01.2160p.WEB-DL.HEVC', 22300000000, 54);
+            INSERT INTO bitmagnet_torrents VALUES ('bm402', 'Gilded.Maelstrom.1981.1080p.BluRay.x264', 16800000000, 31);
+            INSERT INTO bitmagnet_torrents VALUES ('bm403', 'Brimstone.Ledger.2020.2160p.UHD.REMUX', 45100000000, 63);
+            INSERT INTO bitmagnet_torrents VALUES ('bm404', 'Pale.Reliquary.1978.1080p.REMUX.AVC', 25900000000, 27);
+            INSERT INTO bitmagnet_torrents VALUES ('bm405', 'Thornweld.S01.1080p.WEB-DL.H264', 13400000000, 38);
 
             CREATE TABLE waypoint_state (
                 pipeline_name TEXT PRIMARY KEY,
