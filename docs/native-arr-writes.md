@@ -23,7 +23,8 @@ controller implements these actions; this is not new model training.
   artist-only request is limited to that artist's monitored released albums with
   known missing tracks (`trackCount > trackFileCount`). Complete albums are
   excluded from artist-wide scope. Unknown/zero track metadata clarifies instead
-  of guessing. A fully known empty missing set is a no-op with zero POSTs.
+  of guessing. A fully known empty missing set is a no-op with zero POSTs;
+  an empty selection containing excluded undated monitored albums clarifies.
 
 The existing `music_search` representation has no field distinguishing an explicit
 artist-wide request from a model accidentally omitting an intended album. An
@@ -91,7 +92,8 @@ keys and nonfinite values are rejected, and only positive C# Int32 IDs are used.
 
 A 201/202 response is **dispatched**, not downloaded media. When its response
 contains a correlatable command ID/name/body, one bounded GET reads that command
-ID. The observed command must match the same name and exact ID set without a
+ID. Both the resource name and its body name must match the expected command;
+the observed command must match the exact ID set without a
 broader scope. A successful completed command can set
 `search_job_completion_verified=true`; that describes the indexer-search job
 only. The operation still remains dispatched with `verified_complete=false` and

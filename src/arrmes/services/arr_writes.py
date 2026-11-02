@@ -303,6 +303,9 @@ class NativeArrWriteAdapter:
         service, api, major = ARR_ACTIONS[call.name]
         target = self._identity(service, api, major, audit)
         target.update(getattr(self, {"tv_search_missing":"_tv", "movie_search":"_movie", "music_search":"_music"}[call.name])(call.arguments, audit))
+        if (not target["target_ids"] and call.name == "music_search" and "album" not in call.arguments
+                and target["undated_albums_excluded"]):
+            raise _Clarify("album_release_metadata_incomplete")
         if not target["target_ids"] and not (call.name == "music_search" and "album" not in call.arguments):
             raise _Clarify("no_eligible_search_targets")
         if len(target["target_ids"]) > self.max_targets:
@@ -343,6 +346,8 @@ class NativeArrWriteAdapter:
                 or resource.get("name") != expected["name"] or not isinstance(resource.get("body"), dict)):
             return False
         body = resource["body"]
+        if body.get("name") != expected["name"]:
+            return False
         key = next(k for k in expected if k != "name")
         ids = body.get(key)
         if not isinstance(ids, list) or any(not _api_integer(i) for i in ids) or len(set(ids)) != len(ids) or sorted(ids) != expected[key]:

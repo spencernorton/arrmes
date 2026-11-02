@@ -89,6 +89,8 @@ def arr_fixture(state=None, **options):
                 resource=deepcopy(state.commands[service]);resource.update(status=state.job_status,result=state.job_result)
                 if state.observation_behavior=="wrong_id":resource["id"]+=1
                 if state.observation_behavior=="wrong_name":resource["name"]="MissingEpisodeSearch"
+                if state.observation_behavior=="wrong_body_name":resource["body"]["name"]="MissingEpisodeSearch"
+                if state.observation_behavior=="missing_body_name":resource["body"].pop("name")
                 if state.observation_behavior=="wrong_targets":
                     key=next(k for k in resource["body"] if k!="name");resource["body"][key]=[999]
                 if state.observation_behavior=="extra_scope":resource["body"]["seriesId"]=999
@@ -106,6 +108,8 @@ def arr_fixture(state=None, **options):
             if state.post_behavior=="empty202":return self.respond(202,b'')
             resource={"id":17,"name":body["name"],"body":body,"status":"queued","result":"unknown"}
             if state.post_behavior=="wrong_name":resource["name"]="MissingEpisodeSearch"
+            if state.post_behavior=="wrong_body_name":resource["body"]["name"]="MissingEpisodeSearch"
+            if state.post_behavior=="missing_body_name":resource["body"].pop("name")
             if state.post_behavior=="missing_scope":resource["body"]={"name":body["name"]}
             state.commands[service]=deepcopy(resource)
             self.respond(200 if state.post_behavior=="unexpected200" else 201,resource)
@@ -272,6 +276,18 @@ def test_complete_artist_inventory_is_explicit_noop_not_an_empty_or_global_comma
         assert not posts(state) and "confirm_id" not in result.data
 
 
+@pytest.mark.parametrize("include_complete_album",[False,True])
+def test_empty_artist_scope_with_unknown_release_metadata_requires_clarification(include_complete_album):
+    state=ArrFixtureState(albums=[album(8,releaseDate=None)])
+    if include_complete_album:
+        state.albums.append(album(9,title="Known complete album",statistics={"trackCount":10,"trackFileCount":10}))
+    with arr_fixture(state) as (native,state):
+        result=adapter(native).execute(ARTIST,OWNER)
+        assert result.status=="clarify_required" and not result.verified_complete
+        assert result.data["reason"]=="album_release_metadata_incomplete"
+        assert "confirm_id" not in result.data and not posts(state)
+
+
 @pytest.mark.parametrize("call",[Call(TV.name,{**TV.arguments,"season":99}),Call(MUSIC.name,{**MUSIC.arguments,"album":"Future album"})])
 def test_empty_or_unreleased_exact_scope_clarifies_before_confirmation(call):
     with arr_fixture() as (native,state):
@@ -331,7 +347,7 @@ def test_single_post_failure_never_retries(behavior,outcome):
         assert controller.confirm_write(pending.data["confirm_id"],OWNER).status=="denied" and len(posts(state))==1
 
 
-@pytest.mark.parametrize("behavior",["empty202","wrong_name","missing_scope"])
+@pytest.mark.parametrize("behavior",["empty202","wrong_name","missing_scope","wrong_body_name","missing_body_name"])
 def test_uncorrelatable_acceptance_stays_dispatched(behavior):
     with arr_fixture(ArrFixtureState(post_behavior=behavior)) as (native,state):
         controller=adapter(native);pending=prepare(controller)
@@ -340,7 +356,7 @@ def test_uncorrelatable_acceptance_stays_dispatched(behavior):
         assert not result.data["media_download_completion_verified"] and len(posts(state))==1
 
 
-@pytest.mark.parametrize("behavior",["wrong_id","wrong_name","wrong_targets","extra_scope","unavailable"])
+@pytest.mark.parametrize("behavior",["wrong_id","wrong_name","wrong_body_name","missing_body_name","wrong_targets","extra_scope","unavailable"])
 def test_post_dispatch_job_observation_must_correlate_exact_command_id_and_targets(behavior):
     with arr_fixture(ArrFixtureState(observation_behavior=behavior,job_status="completed",job_result="successful")) as (native,state):
         controller=adapter(native);pending=prepare(controller)
