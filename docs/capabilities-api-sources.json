@@ -111,7 +111,7 @@
       "revision": "e31b30d7351c269dc801876f92ebc59d31fee545",
       "sha256": "add0c17618fb41fefd82572e5df82c21f58fc7c6caf8a1e47083cdfe03036785",
       "retrieved_at": "2026-11-02T03:20:36.753723+00:00",
-      "support_note": "Identity/schema audit only; no newly qualified native adapter"
+      "support_note": "Native health/search read documents now validate against upstream SDL and HTTP fixtures; actual upstream binary remains untested"
     },
     {
       "service": "bitmagnet",
@@ -119,7 +119,7 @@
       "revision": "e31b30d7351c269dc801876f92ebc59d31fee545",
       "sha256": "e23b958d69e49915537f1156d9b9f31fec9a219871637f8a0b63a8b751c7242f",
       "retrieved_at": "2026-11-02T03:20:38.352915+00:00",
-      "support_note": "Identity/schema audit only; no newly qualified native adapter"
+      "support_note": "Native health/search read documents now validate against upstream SDL and HTTP fixtures; actual upstream binary remains untested"
     },
     {
       "service": "bitmagnet",
@@ -127,7 +127,7 @@
       "revision": "e31b30d7351c269dc801876f92ebc59d31fee545",
       "sha256": "caba892f6f4ee1ec64cfffd53ad597f7633d09d273028b3f53294ec6aa24d61f",
       "retrieved_at": "2026-11-02T03:20:38.858728+00:00",
-      "support_note": "Identity/schema audit only; no newly qualified native adapter"
+      "support_note": "Native health/search read documents now validate against upstream SDL and HTTP fixtures; actual upstream binary remains untested"
     },
     {
       "service": "qbittorrent",
@@ -145,6 +145,46 @@
       "retrieved_at": "2026-11-02T03:35:39.695447+00:00",
       "revision_note": "Mutable official wiki; content digest records exact audited document",
       "support_note": "Pause/resume endpoints and paused filter for4.1-4.6 versus stop/start andstopped5.x"
+    },
+    {
+      "service": "bitmagnet",
+      "source_url": "https://github.com/bitmagnet-io/bitmagnet/blob/4d4042acdddfa1af05bfaf092a68c97b1e3698e2/graphql/schema/query.graphqls",
+      "revision": "4d4042acdddfa1af05bfaf092a68c97b1e3698e2",
+      "sha256": "e23b958d69e49915537f1156d9b9f31fec9a219871637f8a0b63a8b751c7242f",
+      "retrieved_at": "2026-11-02T06:31:08.293512+00:00",
+      "support_note": "Stable v0.10.0 native schema/HTTP/auth audit; fixed document SDL validation and HTTP fixtures separate from binary qualification"
+    },
+    {
+      "service": "bitmagnet",
+      "source_url": "https://github.com/bitmagnet-io/bitmagnet/blob/4d4042acdddfa1af05bfaf092a68c97b1e3698e2/graphql/schema/torrent_content.graphqls",
+      "revision": "4d4042acdddfa1af05bfaf092a68c97b1e3698e2",
+      "sha256": "caba892f6f4ee1ec64cfffd53ad597f7633d09d273028b3f53294ec6aa24d61f",
+      "retrieved_at": "2026-11-02T06:31:08.301116+00:00",
+      "support_note": "Stable v0.10.0 native schema/HTTP/auth audit; fixed document SDL validation and HTTP fixtures separate from binary qualification"
+    },
+    {
+      "service": "bitmagnet",
+      "source_url": "https://github.com/bitmagnet-io/bitmagnet/blob/4d4042acdddfa1af05bfaf092a68c97b1e3698e2/graphql/schema/models.graphqls",
+      "revision": "4d4042acdddfa1af05bfaf092a68c97b1e3698e2",
+      "sha256": "745b8535be78df74ce30f8487eb484b18be2ffd72b79901df645a4d4ba04a448",
+      "retrieved_at": "2026-11-02T06:31:08.309613+00:00",
+      "support_note": "Stable v0.10.0 native schema/HTTP/auth audit; fixed document SDL validation and HTTP fixtures separate from binary qualification"
+    },
+    {
+      "service": "bitmagnet",
+      "source_url": "https://github.com/bitmagnet-io/bitmagnet/blob/4d4042acdddfa1af05bfaf092a68c97b1e3698e2/internal/gql/httpserver/httpserver.go",
+      "revision": "4d4042acdddfa1af05bfaf092a68c97b1e3698e2",
+      "sha256": "e8d9042b7bbcf4d84e3612ee867ddf0eda223c1268f7af7e77054aa853f4aae5",
+      "retrieved_at": "2026-11-02T06:31:08.819851+00:00",
+      "support_note": "Stable v0.10.0 native schema/HTTP/auth audit; fixed document SDL validation and HTTP fixtures separate from binary qualification"
+    },
+    {
+      "service": "bitmagnet",
+      "source_url": "https://github.com/bitmagnet-io/bitmagnet/blob/4d4042acdddfa1af05bfaf092a68c97b1e3698e2/bitmagnet.io/index.md",
+      "revision": "4d4042acdddfa1af05bfaf092a68c97b1e3698e2",
+      "sha256": "5518232df09a0fccb5dba5648bec4200cf5111c2b5e98712903aedfcb8592f4b",
+      "retrieved_at": "2026-11-02T06:31:08.827756+00:00",
+      "support_note": "Stable v0.10.0 native schema/HTTP/auth audit; fixed document SDL validation and HTTP fixtures separate from binary qualification"
     }
   ]
 }

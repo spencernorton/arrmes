@@ -122,7 +122,9 @@ def query_for(service, operation):
     return f"Show {service} {operation}"
 
 
-@pytest.mark.parametrize("service,operation", [(s, op) for s, ops in SUPPORTED_OPERATIONS.items() for op in sorted(ops)])
+# Bitmagnet's fixed GraphQL POST reads have a separate HTTP contract fixture in
+# test_native_bitmagnet.py; this fixture specifically enforces GET-only REST.
+@pytest.mark.parametrize("service,operation", [(s, op) for s, ops in SUPPORTED_OPERATIONS.items() if s != "bitmagnet" for op in sorted(ops)])
 def test_every_advertised_pair_routes_through_executor_to_native_http(service, operation):
     query = query_for(service, operation)
     call = route_service_query(query)
@@ -397,7 +399,7 @@ def _record_adapter(service, operation, row, *, media_type="movie"):
 
 
 _ROW_PAIRS = [(service, operation) for service, operations in SUPPORTED_OPERATIONS.items()
-              for operation in sorted(operations) if operation not in {"health"} and not (service == "qbittorrent" and operation == "activity")]
+              for operation in sorted(operations) if service != "bitmagnet" and operation not in {"health"} and not (service == "qbittorrent" and operation == "activity")]
 
 
 @pytest.mark.parametrize("service,operation", _ROW_PAIRS)

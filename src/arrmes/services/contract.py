@@ -12,11 +12,13 @@ SUPPORTED_OPERATIONS = MappingProxyType({
     "qbittorrent": frozenset({"health", "queue", "activity"}),
     "tautulli": frozenset({"health", "activity", "history"}),
     "seerr": frozenset({"health", "search"}),
+    "bitmagnet": frozenset({"health", "search"}),
 })
 SERVICE_PERMISSIONS = MappingProxyType({
     "sonarr": "media:read", "radarr": "media:read", "lidarr": "media:read",
     "bazarr": "media:read", "seerr": "media:read",
     "qbittorrent": "torrents:read", "tautulli": "activity:read",
+    "bitmagnet": "releases:read",
 })
 
 

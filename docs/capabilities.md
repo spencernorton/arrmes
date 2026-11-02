@@ -8,7 +8,7 @@ evidence. Several release claims combined them.
 
 [The before matrix](capabilities-before.json) preserves the release audit. [The current matrix](capabilities-after.json) records native operations, scopes, route layers and fixture coverage. The released v2 catalog and historical sandbox handlers remain separate from this native API qualification. A fixture test does not prove compatibility with every actual upstream deployment.
 
-This increment adds **29 native read workflows over seven service APIs**. Each
+Current coverage includes **31 native read workflows over eight service APIs**. Each
 advertised service/operation pair is tested from an explicit natural-language
 request through `BoundedExecutor` to a loopback HTTP service fixture under
 `NetworkIsolationGuard`. These are HTTP contract tests, not tests against real
@@ -81,10 +81,12 @@ test is recorded separately from the 29 explicit grammar checks.
   migration record says this portal moved discovery to TMDB and retired Seerr
   reads before this release. Existing request status/submission behavior and
   gateway-owner identity restrictions are distinct from native Seerr support.
-- **Bitmagnet:** v2's fixed read-only GraphQL search uses the BitAgent facade.
-  It is not a separately configured or version-qualified native Bitmagnet
-  integration. Native endpoint authentication, schema handshake and search
-  pagination remain gaps.
+- **Bitmagnet:** v2's gateway search uses the BitAgent facade. The new native
+  adapter connects directly to upstream Bitmagnet for bounded indexed metadata
+  search and health, including estimated counts and `hasNextPage` pagination.
+  The existing trained `bitmagnet_search` action also uses that native connection
+  when configured. [Native setup and exact qualification](native-bitmagnet.md)
+  distinguish fixed read queries from mutations and fixtures from actual binaries.
 - **Armiger and DH-Waypoint:** their v2 sandbox fixtures are implemented, but
   the initial live methods used a local regex approximation and an unrelated
   batch service respectively. Those results cannot substantiate live Armiger
@@ -114,6 +116,8 @@ Show movie subtitles for "Sintel" in Bazarr
 Show qBittorrent transfer speeds
 Show Tautulli activity
 Look up "Sintel" in Seerr
+Search Bitmagnet for "Sintel"
+Show Bitmagnet health
 Show Sonarr queue and Radarr health
 ```
 
@@ -136,10 +140,11 @@ agent execution language.
 `service_query` validates the service/operation pair as well as its arguments.
 Permissions depend on the selected service: `media:read` for the three *arr
 services, Bazarr and Seerr; `torrents:read` for qBittorrent; `activity:read` for
-Tautulli. The adapter checks the current authenticated principal again before
+Tautulli; `releases:read` for Bitmagnet. The adapter checks the current authenticated principal again before
 network access. It never accepts caller/model URLs, raw IDs, credentials, HTTP
-methods or arbitrary endpoints. All `service_query` upstream calls are GET
-requests. Native transfer mutations have a separate confirmed boundary below.
+methods or arbitrary endpoints. REST `service_query` calls use GET. Bitmagnet
+uses POST for two immutable GraphQL read queries; arbitrary documents and
+mutations are forbidden. Native transfer mutations have a separate confirmed boundary below.
 
 ## Confirmed native torrent controls
 
@@ -201,7 +206,8 @@ Example file (replace placeholders locally and keep the file out of Git):
     "bazarr": {"base_url": "http://localhost:6767", "api_key": "replace-locally"},
     "qbittorrent": {"base_url": "http://localhost:8080", "session_id": "replace-locally"},
     "tautulli": {"base_url": "http://localhost:8181", "api_key": "replace-locally"},
-    "seerr": {"base_url": "http://localhost:5055", "api_key": "replace-locally"}
+    "seerr": {"base_url": "http://localhost:5055", "api_key": "replace-locally"},
+    "bitmagnet": {"base_url": "http://localhost:3333"}
   }
 }
 ```
@@ -274,14 +280,16 @@ version tested in this increment; the remaining service contracts use fixtures.
   defines status and paginated search under `/api/v1` and API-key header
   authentication. This does not establish compatibility with an arbitrary
   differently named Seer service or an older Overseerr/Jellyseerr deployment.
-- **Bitmagnet:** the
-  [upstream project](https://github.com/bitmagnet-io/bitmagnet) documents a
-  GraphQL-based indexer/search engine. The existing BitAgent facade is a fork
-  integration; its specific search schema does not qualify every upstream
-  Bitmagnet version.
+- **Bitmagnet:** the pinned
+  [native GraphQL schema](https://github.com/bitmagnet-io/bitmagnet/blob/4d4042acdddfa1af05bfaf092a68c97b1e3698e2/graphql/schema/query.graphqls)
+  defines `version`, health/workers and `torrentContent.search`. The search/model
+  schema is unchanged in audited `v0.10.1-beta.1` source. Both fixed queries
+  validate against those upstream schemas. Native binaries remain untested;
+  proxy authentication, estimated counts and fixed POST read safeguards are
+  documented in [the native adapter guide](native-bitmagnet.md).
 
 Run the native workflow regression suite with
-`python -m pytest -q tests/test_native_services.py`. The tests include all
+`python -m pytest -q tests/test_native_services.py tests/test_native_bitmagnet.py`. The tests include all
 advertised pairs, real loopback requests, root runtime NL integration,
 permission denial before network, ambiguity, pagination, application errors,
 response bounds, nested redaction and redirect credential containment.

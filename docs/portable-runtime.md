@@ -167,7 +167,7 @@ import hashlib, json, os, secrets
 token = secrets.token_urlsafe(32)
 registry = {"clients": [{"subject": "local:operator",
     "token_sha256": hashlib.sha256(token.encode()).hexdigest(),
-    "scopes": ["media:read", "torrents:read", "activity:read"]}]}
+    "scopes": ["media:read", "torrents:read", "activity:read", "releases:read"]}]}
 for path, body in [("clients.json", json.dumps(registry)),
                    ("client-header.txt", "Authorization: Bearer " + token + "\n")]:
     descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)

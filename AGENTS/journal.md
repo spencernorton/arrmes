@@ -1,3 +1,23 @@
+## 2026-11-01 Native Bitmagnet reads
+
+Added direct native Bitmagnet indexed metadata search and health, with two
+immutable GraphQL read documents, scoped explicit quoted-query routing and a
+bridge for the existing trained bitmagnet_search action. Plain unquoted searches
+retain the neural v2 route; model-free mode clarifies outside its explicit grammar.
+Pagination follows hasNextPage rather than an estimated count. Response limits,
+nonadvancing/changing pages, malformed data, GraphQL partial errors, proxy auth and
+redirects fail closed or remain partial. Returned magnets use validated hashes
+without upstream tracker URLs. No mutation document or generic POST is accepted.
+
+The full local suite passed 465 tests with one skip; 258 focused native/routing
+checks also passed. Both documents validate against full primary SDL at stable
+v0.10.0 and the audited v0.10.1-beta.1 revision (four schema checks, zero errors).
+Those checks are separate from actual upstream application execution, which was
+not tested here. The v2 tool hash, weights, frozen inputs and old receipts remain
+unchanged. Configuration, capability matrix, primary digests and reproduction
+commands are documented. Basic/SSO authentication and advanced Bitmagnet
+management remain gaps; the optional API key is only for an operator's proxy.
+
 ## 2026-11-01 Final validation of the portable/native increment
 
 Fresh confirmation catalogs fix a defect found in independent review; 16 new
