@@ -1,5 +1,11 @@
 # Changelog
 
+## [1.4.2] - 2026-11-02
+
+### Added
+- Multi-suite open-model accuracy comparison charts (`docs/figures/arrmes_v7_open_model_accuracy_comparison.{png,pdf}` and updated `arrmes_v7_acceptance_v5_accuracy_bounds.{png,pdf}`) comparing Arrmes v1.4 (`ArrmesNeuralRouterV3`, `Arrmes Qwen3-0.6B`, `Arrmes FunctionGemma-270M`) against `Qwen3-4B Instruct 2507`, `Qwen3-1.7B`, `IBM Granite 4.0 350M BF16/Q4`, untuned base models, and deterministic rules across `overnight-v1` (`N=80`), `acceptance-v4` (`N=1,000`), and locked `acceptance-v5` (`N=2,460`).
+- With vs. Without Arrmes efficiency and footprint comparison charts (`docs/figures/arrmes_v7_claude_sonnet_and_resource_comparison.{png,pdf}` and updated `arrmes_v7_runtime_latency_memory_footprint.{png,pdf}`) comparing Claude Sonnet 4.6 task completion time, token usage, and local RAM / GPU VRAM / weight footprint across Arrmes backends and open models.
+
 ## [1.4.0] - 2026-11-02
 
 ### Added
