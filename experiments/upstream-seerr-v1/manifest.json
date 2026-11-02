@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "topic": "Actual Seerr3.5.1 identity and empty reads",
+  "source_basis_commit": "e5e76b80ac3f0c2f222bfcd629ae51c76a0cabd4",
+  "successful_run": "run-03.json",
+  "initial_failures_retained": [
+    "run-01.json",
+    "run-02.json"
+  ],
+  "actual_binary_checks_passed": 25,
+  "linux_harness_tests_passed": 22,
+  "qualified": "Actual stable binary status, identity/header semantics and empty owned-request reads; explicit SDK health through GET-only Docker-exec transport",
+  "not_qualified": [
+    "populated requests or title metadata resolution",
+    "submission/confirmation/lifecycle",
+    "external media-account setup",
+    "direct TCP/TLS client",
+    "other Seerr versions",
+    "model inference or performance"
+  ],
+  "files": {
+    "experiments/upstream-seerr-v1/cleanup-verification.json": {
+      "sha256": "c4c07b7e56bf2904d2e13c63446277d727e1dee5169a527f4e4b855ac0780c1d",
+      "bytes": 643
+    },
+    "experiments/upstream-seerr-v1/hardware.json": {
+      "sha256": "a3e514bd8bdbad3ba64d0cae3579ac65745f83d2e7805e2a92c3b443fc719b05",
+      "bytes": 169
+    },
+    "experiments/upstream-seerr-v1/harness-sources.jsonl": {
+      "sha256": "b9af585de7468545cdce1ce60b8380e799d2cdd4b3f9295ed3c48c5f624ecec8",
+      "bytes": 85224
+    },
+    "experiments/upstream-seerr-v1/primary-image-identity.json": {
+      "sha256": "dab3b2c9e75d57506bd7553d3e23c817e026e05f3a2a26eff55213a115c521fa",
+      "bytes": 1127
+    },
+    "experiments/upstream-seerr-v1/receipt-export.json": {
+      "sha256": "a93f7793e58eadb3b094fcb737dc81a102f8f5761778bc0583539b84b7257f5a",
+      "bytes": 1246
+    },
+    "experiments/upstream-seerr-v1/run-01.json": {
+      "sha256": "8aea3715ee4f4b350bd29906e55e6272f599b9b73ca22be12b1f01a487ac7ed0",
+      "bytes": 7353
+    },
+    "experiments/upstream-seerr-v1/run-02.json": {
+      "sha256": "c24517e2eb163e887c9ecbd1f3b4a12c56d7092efdf73d7d3685da87b0330a71",
+      "bytes": 18103
+    },
+    "experiments/upstream-seerr-v1/run-03.json": {
+      "sha256": "d5f0a1a9a51ad02d3a7d0ba3bff5a2cd06191faed0dd1b553ce4440bae1a7e72",
+      "bytes": 19734
+    },
+    "experiments/upstream-seerr-v1/source-verification.json": {
+      "sha256": "e78b1609c90cb43d89849e266155b6f0729ba0621ddb29e0e332671310a8daff",
+      "bytes": 1207
+    },
+    "scripts/smoke_seerr_upstream.py": {
+      "sha256": "ba90adf5ae1fd6ea790ac60bc4d8f6135f69fa566ab727e4c8be7c4d04cde58f",
+      "bytes": 27867
+    },
+    "tests/test_smoke_seerr_upstream.py": {
+      "sha256": "8fe603157b0da3ff45105ae5c3ca04bda036bd11e1477c6cebbfa9154a1cff45",
+      "bytes": 6744
+    },
+    "docs/seerr-upstream-qualification.md": {
+      "sha256": "198bfd12ea9f6fbdf3569d023f6b7f50da172fbcfa8b8bdba291ca2297198ad1",
+      "bytes": 8745
+    }
+  }
+}
