@@ -182,10 +182,14 @@ class NativeBazarrSubtitleAdapter:
             rows = payload.get("data") if isinstance(payload, dict) else None
             if (not isinstance(rows, list) or len(rows) > self.native.max_records or any(not isinstance(r, dict)
                     or not _positive(r.get("sonarrEpisodeId")) or not _positive(r.get("sonarrSeriesId"))
-                    or type(r.get("season")) is not int or type(r.get("episode")) is not int for r in rows)):
+                    or r["sonarrSeriesId"] != series["sonarrSeriesId"]
+                    or type(r.get("season")) is not int or type(r.get("episode")) is not int for r in rows)
+                    or len({r["sonarrEpisodeId"] for r in rows}) != len(rows)):
                 raise _UpstreamError("invalid_bazarr_episode_catalogue")
-            exact = [r for r in rows if r["sonarrSeriesId"] == series["sonarrSeriesId"]
-                     and r["season"] == args["season"] and r["episode"] == args["episode"]]
+            # Provider operations address the canonical episode ID, not its
+            # season/episode coordinates. Validate the whole bounded response
+            # before selecting a target, including rows at other positions.
+            exact = [r for r in rows if r["season"] == args["season"] and r["episode"] == args["episode"]]
             if len(exact) != 1:
                 raise _UpstreamError("subtitle_episode_not_uniquely_resolved", 409)
             row = dict(exact[0])

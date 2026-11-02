@@ -359,6 +359,92 @@ def test_episode_identity_and_coordinates_are_rechecked(field, value):
         assert not result.verified_complete and not posts(state)
 
 
+@pytest.mark.parametrize("extra", [
+    pytest.param({"sonarrEpisodeId": 40}, id="duplicate-id-different-position"),
+    pytest.param({"sonarrEpisodeId": 41, "sonarrSeriesId": 9}, id="different-series"),
+    pytest.param({"sonarrEpisodeId": True}, id="boolean-id"),
+    pytest.param({"sonarrEpisodeId": 0}, id="zero-id"),
+    pytest.param({"sonarrEpisodeId": -1}, id="negative-id"),
+    pytest.param({"sonarrEpisodeId": "41"}, id="string-id"),
+])
+def test_entire_episode_inventory_must_be_valid_before_minting_confirmation(extra):
+    fixture = BazarrFixture()
+    fixture.episodes.append({**fixture.episodes[0], "season": 2, "episode": 5, **extra})
+    with bazarr_fixture(fixture) as (native, state):
+        result = NativeBazarrSubtitleAdapter(native).execute(Call("bazarr_subtitle_search", EPISODE_ARGS), OWNER)
+        assert result.status == "error" and result.data["error"] == "invalid_bazarr_episode_catalogue"
+        assert "confirm_id" not in result.data
+        assert not provider_gets(state) and not posts(state)
+
+
+@pytest.mark.parametrize("action", ["search", "download"])
+@pytest.mark.parametrize("extra", [
+    pytest.param({"sonarrEpisodeId": 40}, id="duplicate-id-different-position"),
+    pytest.param({"sonarrEpisodeId": 41, "sonarrSeriesId": 9}, id="different-series"),
+])
+def test_changed_episode_inventory_blocks_confirmed_search_and_download_without_effects(action, extra):
+    with bazarr_fixture() as (native, state):
+        adapter = NativeBazarrSubtitleAdapter(native)
+        if action == "search":
+            pending = adapter.execute(Call("bazarr_subtitle_search", EPISODE_ARGS), OWNER)
+            assert pending.status == "confirmation_required"
+        else:
+            pending, _ = pending_download(adapter, EPISODE_ARGS)
+        effects_before = (deepcopy(provider_gets(state)), deepcopy(posts(state)))
+        calls_before = len(state.calls)
+        state.episodes.append({**state.episodes[0], "season": 2, "episode": 5, **extra})
+        result = adapter.confirm_write(pending.data["confirm_id"], OWNER)
+        assert result.status == "error" and result.data["error"] == "invalid_bazarr_episode_catalogue"
+        assert any(c["path"] == "/api/episodes" for c in state.calls[calls_before:])
+        assert (provider_gets(state), posts(state)) == effects_before
+        assert adapter.confirm_write(pending.data["confirm_id"], OWNER).status == "denied"
+        assert (provider_gets(state), posts(state)) == effects_before
+
+
+@pytest.mark.parametrize("media_type, inventory, identity", [
+    ("movie", "movies", "radarrId"), ("episode", "series", "sonarrSeriesId"),
+])
+@pytest.mark.parametrize("bad_id", [9, True, 0, -1, "9"])
+def test_complete_movie_and_series_catalogues_reject_duplicate_or_invalid_non_target_ids(media_type, inventory, identity, bad_id):
+    fixture = BazarrFixture()
+    rows = getattr(fixture, inventory)
+    rows.extend([{**rows[0], identity: 9, "title": "Other fixture title", "year": "1980"},
+                 {**rows[0], identity: bad_id, "title": "Third fixture title", "year": "1990"}])
+    arguments = MOVIE_ARGS if media_type == "movie" else EPISODE_ARGS
+    with bazarr_fixture(fixture, page_size=1) as (native, state):
+        result = NativeBazarrSubtitleAdapter(native).execute(Call("bazarr_subtitle_search", arguments), OWNER)
+        assert result.status == "error" and result.data["error"] == "invalid_subtitle_entity_catalogue"
+        assert len([c for c in state.calls if c["path"] == "/api/" + inventory]) == 3
+        assert "confirm_id" not in result.data
+        assert not provider_gets(state) and not posts(state)
+
+
+@pytest.mark.parametrize("media_type, inventory, identity", [
+    ("movie", "movies", "radarrId"), ("episode", "series", "sonarrSeriesId"),
+])
+@pytest.mark.parametrize("action", ["search", "download"])
+def test_fresh_movie_and_series_catalogues_reject_duplicate_non_target_ids_before_effects(media_type, inventory, identity, action):
+    arguments = MOVIE_ARGS if media_type == "movie" else EPISODE_ARGS
+    with bazarr_fixture(page_size=1) as (native, state):
+        adapter = NativeBazarrSubtitleAdapter(native)
+        if action == "search":
+            pending = adapter.execute(Call("bazarr_subtitle_search", arguments), OWNER)
+            assert pending.status == "confirmation_required"
+        else:
+            pending, _ = pending_download(adapter, arguments)
+        effects_before = (deepcopy(provider_gets(state)), deepcopy(posts(state)))
+        calls_before = len(state.calls)
+        rows = getattr(state, inventory)
+        rows.extend([{**rows[0], identity: 9, "title": "Other fixture title", "year": "1980"},
+                     {**rows[0], identity: 9, "title": "Third fixture title", "year": "1990"}])
+        result = adapter.confirm_write(pending.data["confirm_id"], OWNER)
+        assert result.status == "error" and result.data["error"] == "invalid_subtitle_entity_catalogue"
+        assert len([c for c in state.calls[calls_before:] if c["path"] == "/api/" + inventory]) == 3
+        assert (provider_gets(state), posts(state)) == effects_before
+        assert adapter.confirm_write(pending.data["confirm_id"], OWNER).status == "denied"
+        assert (provider_gets(state), posts(state)) == effects_before
+
+
 def test_confirmation_namespace_and_action_are_not_interchangeable():
     with bazarr_fixture() as (native, state):
         adapter = NativeBazarrSubtitleAdapter(native)
