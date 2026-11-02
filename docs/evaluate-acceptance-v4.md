@@ -75,7 +75,7 @@ the original immutable source records; matching version strings are insufficient
 
 Prepare the exact licensed source-only snapshots. They contain 19 released
 and 35 improved Python files plus the source license, notice and provenance;
-they contain no weights, credentials or historical repository tree. These
+they contain no weights, credentials or historical repository tree.
 Each text JSONL snapshot records exact UTF-8 file contents and checksums;
 the extractor reconstructs the original bytes and refuses an existing or
 symlinked destination. No compressed-binary rule waiver is needed. These
@@ -99,6 +99,7 @@ local models listed in the run plan. Set local `MODEL` and `ADAPTER` paths.
 For the first comparison:
 
 ```sh
+mkdir -p work/acceptance-v4-reproduction
 python scripts/evaluate_acceptance_v4.py \
   --source-root work/runtime-released/src \
   --runtime-revision a536483a75ada2d4d26f7bc93ee0790695f6e697 \
@@ -110,7 +111,29 @@ python scripts/evaluate_acceptance_v4.py \
   --adapter "$ADAPTER" \
   --adapter-repository NorviTech/arrmes-qwen3-0.6b \
   --adapter-revision 8a9bcf224e6f9fd6bf238267093c70360ee837cb \
-  --output experiments/acceptance-v4/released-public.json
+  --output work/acceptance-v4-reproduction/released-public.json
+```
+
+For the improved comparison, use the improved snapshot and its frozen revision
+with the same model/adapter flags and `--label improved-public`. For the untuned
+comparison, keep that improved snapshot, use `--label qwen06-base` and omit all
+adapter flags. For the stronger reference, set the model path to the separately
+downloaded pinned 4B artifact and use its identity from the plan:
+
+```sh
+python scripts/evaluate_acceptance_v4.py \
+  --source-root work/runtime-improved/src \
+  --runtime-revision e5e76b80ac3f0c2f222bfcd629ae51c76a0cabd4 \
+  --runtime-source-snapshot --label qwen4b-reference --backend mlx \
+  --model "$MODEL_4B" \
+  --model-repository mlx-community/Qwen3-4B-Instruct-2507-4bit \
+  --model-revision 50d427756c6b1b2fe0c0a10f67fbda1fc8e82c1b \
+  --output work/acceptance-v4-reproduction/qwen4b-reference.json
+python scripts/evaluate_acceptance_v4.py \
+  --source-root work/runtime-improved/src \
+  --runtime-revision e5e76b80ac3f0c2f222bfcd629ae51c76a0cabd4 \
+  --runtime-source-snapshot --label deterministic --backend deterministic \
+  --output work/acceptance-v4-reproduction/deterministic.json
 ```
 
 Use the remaining run-plan labels and identities with the improved snapshot,

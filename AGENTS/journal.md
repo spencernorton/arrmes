@@ -1,3 +1,9 @@
+## 2026-11-02 — complete integrated source and reproduction checks
+
+- Combined source cb4f064 passes 959 tests with one optional export skip. Independent final review passes all61 new guard regressions; recorded-only native replays remain7/8 and4/4, retaining raw5/9 and verifier8/9 over nine neural rows. No fresh model inference or acceptance score.
+- Complete tracked candidate publication scan covers289files/52,042,940bytes: zero unaccepted findings with the canonical merged baseline and real gitleaks8.24.2. The first synthetic-home-path failure remains in the owner audit.
+- The original frozen harness and19/35-file licensed source snapshots reconstruct byte-exact runtime trees without old Git objects. Reproduction outputs now use fresh work paths rather than existing immutable results. Public PR3 remains subject to its own final exact-head checks.
+
 ## 2026-11-02 Published-ref reproduction metadata
 
 Added exact source-byte resolution against published squash tags or licensed
