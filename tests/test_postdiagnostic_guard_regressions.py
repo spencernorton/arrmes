@@ -130,6 +130,8 @@ def test_universal_missing_episode_wording_does_not_invent_a_narrow_selector(que
 @pytest.mark.parametrize("restriction", [
     "episode 6", "episodes three through five", "every second missing episode",
     "the newest missing episode", "every missing episode except episode 6",
+    "every missing episode from 2 through 5", "each missing episode numbered 6",
+    "every missing episode 6", "missing episodes from 2 to 5",
 ])
 def test_universal_wording_never_erases_actual_episode_restrictions(restriction):
     result = verify_proposal(Call("tv_search_missing", {"title": SERIES}),
@@ -202,6 +204,15 @@ def test_resume_status_question_is_not_authorization_to_resume():
     result = verify_proposal(Call("torrent_resume", {"title": TRANSFER}),
         f'Has torrent "{TRANSFER}" resumed yet?')
     assert result.name != "torrent_resume"
+
+
+@pytest.mark.parametrize("prohibition", [
+    "No resuming", "Stop resuming", "Do not keep on resuming", "No unpausing",
+])
+def test_resume_prohibitions_do_not_authorize_a_state_change(prohibition):
+    result = verify_proposal(Call("torrent_resume", {"title": TRANSFER}),
+        f'{prohibition} the torrent "{TRANSFER}".')
+    assert result.name in {"clarify", "torrent_list", "unsupported"}
 
 
 def test_negated_history_view_does_not_replace_current_activity():
