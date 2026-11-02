@@ -154,6 +154,11 @@ def test_timed_region_contains_only_infer():
     assert calls == [("development only", None, 64)]
 
 
+def test_missing_os_rss_module_remains_unmeasured(monkeypatch):
+    monkeypatch.setattr(bench, "resource", None)
+    assert bench.process_memory() is None
+
+
 def test_cluster_macro_and_bootstrap_respect_family_sizes():
     rows = [{"group": "large", "ok": True}] * 8 + [{"group": "small", "ok": False}]
     scores = bench.group_scores(rows, "group", lambda row: row["ok"])

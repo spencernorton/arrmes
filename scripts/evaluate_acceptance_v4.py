@@ -20,7 +20,10 @@ from pathlib import Path
 import platform
 import random
 import re
-import resource
+try:
+    import resource
+except ImportError:  # Core integrity tests also run on native Windows.
+    resource = None
 import statistics
 import subprocess
 import sys
@@ -333,6 +336,8 @@ def artifact_identity(path, role, repository, revision):
 
 
 def process_memory():
+    if resource is None:
+        return None
     return int(resource.getrusage(resource.RUSAGE_SELF).ru_maxrss * (1 if sys.platform == "darwin" else 1024))
 
 
@@ -397,7 +402,14 @@ def run(args):
     for key in ["runtime_revision", "backend", "model_repository", "model_revision", "adapter_repository", "adapter_revision"]:
         if getattr(args, key, None) != run_plan.get(key):
             raise ValueError("Run arguments differ from prespecified plan: " + key)
-    source = source_identity(args.source_root, args.runtime_revision)
+    def identify_source():
+        if getattr(args, "runtime_git_ref", None) or getattr(args, "runtime_source_snapshot", False):
+            # Metadata-only reproduction path added after the first five runs.
+            # The exact original harness is retained separately by digest.
+            from acceptance_source_identity import resolve_source
+            return resolve_source(args.source_root, args.runtime_revision, getattr(args, "runtime_git_ref", None))
+        return source_identity(args.source_root, args.runtime_revision)
+    source = identify_source()
     runtime = runtime_modules(args.source_root)
     catalog = runtime["catalog"]
     tools = catalog.tools_v2()
@@ -428,6 +440,9 @@ def run(args):
         for key in ["machdep.cpu.brand_string", "hw.memsize"]:
             hardware[key] = subprocess.check_output(["sysctl", "-n", key], text=True).strip()
     metadata = {"schema_version": 1, "label": args.label, "recorded_at": datetime.now(timezone.utc).isoformat(),
+                "harness_code_version": 2,
+                "original_first_pass_harness_sha256": "fe1248ca4088f4bc8cac0f973c23493c5d81ea40b74b047751f343e8777f6779",
+                "post_freeze_code_change": "Optional exact-byte published Git-ref/source-snapshot resolution and optional OS RSS import for native Windows integrity tests. Inference/grading unchanged; original five-run receipts remain unchanged; new reproduction runs use this new harness digest.",
                 "tracks": {"A": "Common strict native direct-tool model scores", "B": "Actual selected runtime's processed proposal then decoder/verifier; no executor", "C": "not measured"},
                 "dataset_commit": FROZEN_DATA_COMMIT, "dataset_sha256": sha256(args.dataset), "manifest_sha256": sha256(Path(args.dataset).with_name("manifest.json")),
                 "dataset_status": manifest["status"], "harness_sha256": sha256(__file__), "harness_commit": git_output(["rev-parse", "HEAD"]).decode().strip(),
@@ -489,7 +504,7 @@ def run(args):
                 metadata["rows"] = graded
                 metadata["synthetic_fault_injections"] = fault_injections(runtime)
                 metadata["network"] = guard.evidence_summary()
-            source_identity(args.source_root, args.runtime_revision)
+            identify_source()
             read_dataset(args.dataset)
             for artifact, path in zip(artifacts, [args.model] + ([args.adapter] if args.adapter else [])):
                 if artifact != artifact_identity(path, artifact["role"], artifact["repository"], artifact["revision"]):
@@ -523,6 +538,9 @@ def main():
     parser.add_argument("--dataset", default=str(ROOT / "data/acceptance-v4/cases.jsonl"))
     parser.add_argument("--source-root", required=True)
     parser.add_argument("--runtime-revision", choices=[FROZEN_RUNTIME, RELEASE_RUNTIME], required=True)
+    source_identity_options = parser.add_mutually_exclusive_group()
+    source_identity_options.add_argument("--runtime-git-ref", help="Published source-equivalent tag/ref, verified against frozen file records; metadata-only reproduction")
+    source_identity_options.add_argument("--runtime-source-snapshot", action="store_true", help="Use checksum-verified frozen source bytes without historical Git objects")
     parser.add_argument("--label", required=True)
     parser.add_argument("--backend", choices=["mlx", "deterministic"], default="mlx")
     parser.add_argument("--model")

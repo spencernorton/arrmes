@@ -1,3 +1,23 @@
+## 2026-11-02 Published-ref reproduction metadata
+
+Added exact source-byte resolution against published squash tags or licensed
+source-only snapshots, preserving
+the original inference harness verbatim and all five receipt/journal digests.
+The optional resolver checks complete Git and local source inventories against
+the original runtime vectors. It records the actual published commit and its
+frozen byte-equivalent source identity separately. No ancestry is invented.
+
+The post-freeze entry point also makes OS RSS imports optional for native
+Windows integrity tests. Original inference, timed-call, grading and run-loop
+logic is unchanged; explicit AST comparisons verify the limited metadata diff.
+All 49 focused checks pass, including source tampering, wrong refs, extra
+modules, manifest drift and byte-for-byte preservation of every original result.
+No model inference or numeric rescoring accompanied this change. Documentation
+uses exact licensed source snapshots and records both harness versions explicitly.
+The 19 released and 35 improved Python files reconstruct byte for byte from
+bounded text records, avoiding unavailable branch ancestry and compressed-byte
+false positives. Snapshot extraction preserves existing paths and unrelated data.
+
 ## 2026-11-02 — retain relative scope and publish the losing comparison
 
 - Independent review adds before/after episode subsets to the unrepresentable write scopes. Sixty-one new regression checks pass; the first 59-check result remains historical rather than being overwritten.

@@ -62,13 +62,36 @@ and entity macro accuracies and clustered bootstrap intervals use a fixed
 intervals quantify this authored set's clustered variability, not an external
 population or unmeasured hardware.
 
-To prepare exact unmodified runtime trees from the repository:
+The five original runs used the exact frozen harness, retained at
+`experiments/acceptance-v4/evaluate_acceptance_v4-frozen.py` with SHA-256
+`fe1248ca4088f4bc8cac0f973c23493c5d81ea40b74b047751f343e8777f6779`.
+No numeric rescoring or model reruns followed. The current entry point adds
+only an optional published-ref/source-snapshot resolver and an optional OS RSS import for
+native Windows integrity tests after that freeze. Its new digest is
+recorded for future reproduction runs. This lets a public squash tag reproduce
+identical runtime bytes without requiring the historical branch ancestor.
+The resolver checks every Git and supplied local Python source file against
+the original immutable source records; matching version strings are insufficient.
+
+Prepare the exact licensed source-only snapshots. They contain 19 released
+and 35 improved Python files plus the source license, notice and provenance;
+they contain no weights, credentials or historical repository tree. These
+Each text JSONL snapshot records exact UTF-8 file contents and checksums;
+the extractor reconstructs the original bytes and refuses an existing or
+symlinked destination. No compressed-binary rule waiver is needed. These
+snapshots are for offline evaluation. The current product can include later
+fixes and need not have the same bytes as the measured runtime.
 
 ```sh
-mkdir -p work/runtime-released work/runtime-improved
-git archive a536483a75ada2d4d26f7bc93ee0790695f6e697 src | tar -x -C work/runtime-released
-git archive e5e76b80ac3f0c2f222bfcd629ae51c76a0cabd4 src | tar -x -C work/runtime-improved
-PYTHONPATH=src python -m pytest -q tests/test_evaluate_acceptance_v4.py
+python scripts/acceptance_source_identity.py \
+  --frozen-commit a536483a75ada2d4d26f7bc93ee0790695f6e697 \
+  --extract-into work/runtime-released
+python scripts/acceptance_source_identity.py \
+  --frozen-commit e5e76b80ac3f0c2f222bfcd629ae51c76a0cabd4 \
+  --extract-into work/runtime-improved
+PYTHONPATH=src python -m pytest -q tests/test_evaluate_acceptance_v4.py tests/test_acceptance_source_identity.py
+python scripts/acceptance_source_identity.py --source-root work/runtime-improved/src \
+  --frozen-commit e5e76b80ac3f0c2f222bfcd629ae51c76a0cabd4
 ```
 
 Install the optional MLX dependencies on Apple Silicon and obtain the pinned
@@ -79,6 +102,7 @@ For the first comparison:
 python scripts/evaluate_acceptance_v4.py \
   --source-root work/runtime-released/src \
   --runtime-revision a536483a75ada2d4d26f7bc93ee0790695f6e697 \
+  --runtime-source-snapshot \
   --label released-public --backend mlx \
   --model "$MODEL" \
   --model-repository mlx-community/Qwen3-0.6B-4bit \
@@ -89,7 +113,13 @@ python scripts/evaluate_acceptance_v4.py \
   --output experiments/acceptance-v4/released-public.json
 ```
 
-Use the remaining run-plan labels and identities with the improved tree.
+Use the remaining run-plan labels and identities with the improved snapshot,
+frozen runtime revision and `--runtime-source-snapshot`. The resolver rejects
+any changed or extra Python file. It records no observed Git commit for a
+source-only snapshot, only its verified frozen byte-equivalent identity.
+Source-identical published tags can alternatively use `--runtime-git-ref REF`;
+the helper checks both the Git tree and local files. Full-history checkouts may
+still use historical commit IDs without either optional identity flag.
 Every output and sibling `.raw.jsonl` is created exclusively; existing results
 are never overwritten. The raw journal flushes every native output before any
 gold-dependent work. Source, artifact, input, plan and harness digests are

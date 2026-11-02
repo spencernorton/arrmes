@@ -1,0 +1,89 @@
+{
+  "schema_version": 1,
+  "recorded_at_utc": "2026-11-02T10:27:02.414304+00:00",
+  "change_scope": "Post-first-pass metadata-only published-ref/source-snapshot identity plus optional OS RSS import for Windows integrity tests. No runtime, input, prompt, model, generation or scoring changes.",
+  "original_inference_harness": {
+    "file": "evaluate_acceptance_v4-frozen.py",
+    "sha256": "fe1248ca4088f4bc8cac0f973c23493c5d81ea40b74b047751f343e8777f6779"
+  },
+  "reproduction_entrypoint": {
+    "file": "scripts/evaluate_acceptance_v4.py",
+    "code_version": 2,
+    "sha256": "5366f274f8be693f6d0ab732c889b1a30014ab204bb54cb4655676b6927f9e34"
+  },
+  "metadata_resolver": {
+    "file": "scripts/acceptance_source_identity.py",
+    "sha256": "740f34c2b923a9681130794f97927ab41f52c3bee638057fe53320be7c74a684"
+  },
+  "trusted_source_manifest": {
+    "file": "runtime-source-manifests.json",
+    "sha256": "02cfd1b735c1a47f7ca3c009f7beb0f78de0045cf3e509a85c61260d1dfa012c"
+  },
+  "original_first_pass_receipts": [
+    {
+      "file": "released-public.json",
+      "sha256": "d192e5681669a9a5c0c032d9354514a1368b163b1f39ffe906abc9bedf53012e",
+      "raw_journal_file": "released-public.raw.jsonl",
+      "raw_journal_sha256": "76c2900e2123a2e461c9021f41a88c4a3cb18ae86ddbb5aaa065289dbefbda06",
+      "cases": 1000
+    },
+    {
+      "file": "improved-public.json",
+      "sha256": "a87d351b55741b2cd8010289a1f0ec0cb0b71209b9ddfacb926abe303b8494f6",
+      "raw_journal_file": "improved-public.raw.jsonl",
+      "raw_journal_sha256": "3ff392963163f4300a002b7f0ee15430120ceafab78766a3d2f352ab6df2a50a",
+      "cases": 1000
+    },
+    {
+      "file": "qwen06-base.json",
+      "sha256": "f1f159e725dd5495f87b5e1707e9f072978f4b14c3c3e27de60d74425766a6d8",
+      "raw_journal_file": "qwen06-base.raw.jsonl",
+      "raw_journal_sha256": "0248443413672e984d6e315e9a215963de149f8d3a8199bc6da027642a1b51e2",
+      "cases": 1000
+    },
+    {
+      "file": "qwen4b-reference.json",
+      "sha256": "076f2000ce830f56989db95f0a36a99b2028e0d9203c231a8fdd459f078a638b",
+      "raw_journal_file": "qwen4b-reference.raw.jsonl",
+      "raw_journal_sha256": "460b9472cd1abb6cc4d270ed831b243e7769d5ab33487a0b2c6b948886126029",
+      "cases": 1000
+    },
+    {
+      "file": "deterministic.json",
+      "sha256": "f1187e52f9fb57f6c42ca6c571b81f9597d95799b7c592adb85128373c256f44",
+      "raw_journal_file": "deterministic.raw.jsonl",
+      "raw_journal_sha256": "a18170077c68624e538bb771c10ceec86db8d881b3af41a4ddd080705dfc11f5",
+      "cases": 1000
+    }
+  ],
+  "original_receipts_rewritten": false,
+  "original_scores_rescored": false,
+  "model_inference_rerun_for_this_code_change": false,
+  "validation": {
+    "tests_passed": 49,
+    "scope": "Integrity/unit tests, actual byte-verified local source-snapshot extraction, and source-equivalent local Git-ref check only; no new published-tag or hardware generation test.",
+    "frozen_grading_and_timed_infer_function_ast_equal": true,
+    "frozen_run_loop_ast_equal_after_removing_declared_metadata_resolution": true
+  },
+  "published_ref_requirement": "The selected release tag must match every original runtime source record; changed or extra Python modules fail closed. No ancestry or human-owner attestation is asserted.",
+  "source_snapshot_index": {
+    "file": "runtime-source-archives.json",
+    "sha256": "e2cd992269a54f6b89dca612de3226d9b399c214ddda143cf610f2b7ecf53bca"
+  },
+  "source_snapshots": [
+    {
+      "label": "released",
+      "file": "sources/released.jsonl",
+      "bytes": 388895,
+      "sha256": "3731fe542b4da863a97bb6b67fd79cb7b836d9188338c2ec48260c9da5ed0639",
+      "source_files": 19
+    },
+    {
+      "label": "improved",
+      "file": "sources/improved.jsonl",
+      "bytes": 629050,
+      "sha256": "3b4401b75022d1819cc78cecc1d58216c2004f17a2703afdd81c6f8e4ae42c81",
+      "source_files": 35
+    }
+  ]
+}
