@@ -134,3 +134,10 @@ The local suite passed 387 tests with one optional export skip; Windows/macOS/
 Linux Python CI and pinned Windows CPU compilation passed on 44c16f4. Actual
 Windows generation and live upstream service binaries remain unqualified.
 Final evidence integration is validated on its own subsequent head.
+## 2026-11-02 — preserve frozen diagnostics and repair proposal scope checks
+
+- The frozen 1,000-case comparison at runtime e5e76b8 reports 770 raw exact calls, 678 after verification versus released verification 717, and two remaining unexpected write proposals. Preserve all original inputs, raw outputs, scores and sources; post-output repairs and cached replays are development evidence, not fresh acceptance.
+- Inspect unquoted scope before masking proposed entity text, so a track/quality/episode selector cannot become an unrelated album/title. Literal names containing selector words require explicit quoting. Album confirmations now include each selected title and ID. A new isolated wrong-album regression is blocked before preflight; no production calls.
+- Preserve validated control calls after trusted unsafe/compound guards; recognize bounded caller-self/request-class phrases and explicit performer labels; keep negated request reads in the library and recognize positive resuming without converting a negated history reference into history. Narrow/conditional/foreign-identity writes still abstain.
+- Forty-six independent post-diagnostic regressions pass. Integrated core validation: 910 passed, one optional export skip. No weight, training, benchmark-gold or recorded model-output changes. Independent review and final publication gates remain pending.
+

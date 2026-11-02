@@ -39,6 +39,7 @@ _REQUEST_TRACK_RE = re.compile(
     r"existing\s+request|request\s+status|request\s+progress|how\s+is\s+my\s+.*request|"
     r"any\s+(?:update|progress)\s+on\s+my\s+.*request|has\s+my\s+request\s+.*finished|"
     r"is\s+.+\s+(?:already\s+)?requested|did\s+my\s+request\s+.*go\s+through|"
+    r"(?:check|inspect|look\s+up)\s+(?:(?:whether|if)\s+)?(?:my|the|our)\s+(?:existing\s+)?request|"
     r"(?:is|was|has|did)\s+(?:the|my|our)\s+request)\b",
     re.IGNORECASE,
 )
@@ -78,9 +79,11 @@ _PASSIVE_PAUSE_QUERY_RE = re.compile(
     r"^\s*(?:is|are|was|were|has|have|which|what|list|show|check|display|verify|inspect)\b.*\bpaused\b",
     re.IGNORECASE,
 )
-_AFFIRMATIVE_RESUME_RE = re.compile(r"\b(resume|unpause)\b", re.IGNORECASE)
+_AFFIRMATIVE_RESUME_RE = re.compile(r"\b(resume|unpause|resuming|unpausing)\b", re.IGNORECASE)
 _NEGATED_RESUME_RE = re.compile(
-    r"\b(don't\s+(?:resume|unpause)|do\s+not\s+(?:resume|unpause)|never\s+(?:resume|unpause)|without\s+(?:resuming|unpausing))\b",
+    r"\b(?:don't|do\s+not|never|without|avoid|not|refrain\s+from)\s+"
+    r"(?:(?:ever|actually|automatically|be|keep|start|try|to)\s+)*"
+    r"(?:resum(?:e|ing)|unpaus(?:e|ing))\b",
     re.IGNORECASE,
 )
 _PASSIVE_RESUME_QUERY_RE = re.compile(
@@ -163,6 +166,17 @@ _HISTORY_WORD_RE = re.compile(
     r"\b(history|watched\s+recently|was\s+watched|recently\s+watched)\b",
     re.IGNORECASE,
 )
+
+
+def _has_history_intent(query: str) -> bool:
+    # A contrast such as "current activity, not the watch-history view" does
+    # not authorize silently switching to a different read operation.
+    positive = re.sub(
+        r"\b(?:not|no|without|instead\s+of|rather\s+than)\s+(?:(?:the|a|an|my|its|our|your|their|that|this)\s+)?"
+        r"(?:watch[- ]history|viewing\s+history|history|recently\s+watched|watched\s+recently)\b",
+        " ", query, flags=re.I,
+    )
+    return bool(_HISTORY_WORD_RE.search(positive))
 
 _COMPLEX_RE = re.compile(
     r"\b("
@@ -303,7 +317,7 @@ def _artist_role_is_explicit(artist: str, album: str, query: str) -> bool:
                and (span.start(), span.end()) != (match.start(), match.end()) for span in albums):
             continue
         before, after = text[:match.start()], text[match.end():]
-        if re.search(r'''\b(?:by|from|artist|band|performer)\s*:?\s+(?:(?:the|artist|band|performer)\s+)?["']?\s*$''', before):
+        if re.search(r'''\b(?:by|from|(?:whose\s+)?(?:artist|band|performer)(?:\s+is)?)(?:\s*[:=]\s*|\s+)(?:(?:the|artist|band|performer)\s+)?["']?\s*$''', before):
             return True
         if re.match(r'''^["']?(?:['’]s\b|\s+album\b)''', after):
             return True
@@ -315,15 +329,20 @@ def _write_scope_fits_schema(name: str, args: dict[str, Any], query: str) -> boo
     if name not in {"tv_search_missing", "movie_search", "music_search", "request_media"}:
         return True
     text = unicodedata.normalize("NFKC", _strip_quoted_and_releases(query)).casefold()
-    for field in ("title", "artist", "album"):
-        value = args.get(field)
-        if isinstance(value, str) and value:
-            literal = unicodedata.normalize("NFKC", value).casefold()
-            text = re.sub(r"(?<!\w)" + re.escape(literal) + r"(?!\w)", " ENTITY ", text)
+    # Inspect the user's unquoted scope BEFORE masking model-proposed entities.
+    # Otherwise a proposal can name "track 4" or "1080p" as an album/title,
+    # erase the restriction, and offer a different whole-entity write. Literal
+    # titles containing these words remain expressible with explicit quotes.
     if re.search(r"\b(4k|uhd|2160p|1080p|720p|480p|hdr|hdr10|hevc|h264|h265|x264|x265|remux|bluray|web[- ]dl|web[- ]rip|lossless|flac|mp3|aac|bitrate|quality|profiles?)\b", text):
         return False
+    if name == "request_media" and (
+        re.search(r"\b(seasons?|episodes?|quota)\b", text)
+        or not _request_identity_scope_fits_schema(text)
+    ):
+        return False
     if name == "tv_search_missing":
-        if re.search(r"\bepisode(?:\b|\d)|\bs\d{1,4}\s*e\d{1,5}\b|\b\d{1,4}x\d{1,5}\b|\bepisodes\s*(?:#\s*)?\d+\b", text):
+        episode_scope = re.sub(r"\b(?:every|each)\s+(?:(?:aired|monitored)\s+)*missing\s+episode\b", " ", text)
+        if re.search(r"\bepisode(?:\b|\d)|\bs\d{1,4}\s*e\d{1,5}\b|\b\d{1,4}x\d{1,5}\b|\bepisodes\s*(?:#\s*)?\d+\b", episode_scope):
             return False
         number_words = "|".join(_SEASON_WORDS)
         if re.search(r"\bepisodes\s+(?:(?:from|between)\s+)?(?:" + number_words + r")\b|\b(?:" + number_words + r")\s+(?:missing\s+)?episodes\b", text):
@@ -347,6 +366,24 @@ def _write_scope_fits_schema(name: str, args: dict[str, Any], query: str) -> boo
             if any(_norm_alnum(span) != artist for span in _quoted_spans(query)):
                 return False
     return True
+
+
+def _request_identity_scope_fits_schema(text: str) -> bool:
+    """Allow caller-self and request/media labels, never an identity override.
+
+    The v2 request representation has no user-ID argument. Its trusted caller
+    mapping cannot be selected or overridden by a phrase in the query.
+    """
+    text = re.sub(r"\bunder\s+my\s+(?:own\s+)?account\b", " CALLER ", text, flags=re.I)
+    text = re.sub(r"\bas\s+(?:me|myself)\b", " CALLER ", text, flags=re.I)
+    text = re.sub(
+        r"\bas\s+(?:(?:a|an|my|the)\s+)?"
+        r"(?:(?:standard\s+)?(?:movie|film|tv(?:[- ]series)?|series)\s+)?request\b",
+        " REQUEST ", text, flags=re.I,
+    )
+    text = re.sub(r"\bas\s+(?:a\s+)?(?:movie|film|tv(?:[- ]series)?|series)\b(?=\s*(?:$|[.;!?]|for\b|in\b|through\b))",
+                  " MEDIA ", text, flags=re.I)
+    return not re.search(r"\bon\s+behalf\b|\bas\s+\w+|\b(?:user(?:_?id)?|accounts?|admin(?:istrator)?|impersonat\w*)\b", text, re.I)
 
 
 def _infer_clarify_slot(query: str, selected: dict[str, Any] | None = None) -> str:
@@ -460,16 +497,17 @@ def verify_proposal(
         return validate_call("unsupported", {"reason": "complex"})
     if _UNSAFE_RE.search(q_unquoted):
         return validate_call("unsupported", {"reason": "unsafe"})
+    # A validated abstention cannot execute anything. Preserve its reason or
+    # requested slot rather than inventing a different diagnosis on each pass.
+    if name in {"clarify", "unsupported"}:
+        return call
     if _SCOPE_RE.search(q_unquoted):
         return validate_call("clarify", {"slot": "scope"})
     if name in {"request_status", "request_media"}:
         # The released request schema cannot carry quality/season/other-user
         # restrictions. Do not silently discard them when choosing a provider.
         scope_text = unicodedata.normalize("NFKC", q_unquoted).casefold()
-        literal = " ".join(unicodedata.normalize("NFKC", str(args.get("title", ""))).casefold().split())
-        if literal:
-            scope_text = re.sub(r"(?<!\w)" + re.escape(literal) + r"(?!\w)", " ENTITY ", scope_text)
-        if re.search(r"\b(4k|uhd|2160p|1080p|720p|seasons?|episodes?|quality|profile|quota|on\s+behalf)\b|\bas\s+(?!movie\b|tv\b)\w+", scope_text):
+        if re.search(r"\b(4k|uhd|2160p|1080p|720p|seasons?|episodes?|quality|profile|quota)\b", scope_text) or not _request_identity_scope_fits_schema(scope_text):
             return validate_call("clarify", {"slot": "scope"})
         if name == "request_status" and re.search(r"\b(?:18\d{2}|19\d{2}|20\d{2}|21\d{2}|2200|movies?|films?|tv|series)\b", scope_text):
             return validate_call("clarify", {"slot": "scope"})
@@ -503,13 +541,8 @@ def verify_proposal(
         if normalized(grounded) != normalized(call):
             return validate_call("clarify", {"slot": "scope"})
         return validate_call(grounded.name, grounded.arguments)
-    if name == "unsupported" and args.get("reason") in {"complex", "unsafe"}:
-        if re.search(r"\b(torrent|qbittorrent|sonarr|radarr|lidarr|tautulli|plex|seer|episode|episodes|movie|series|show)\b", q_unquoted, re.IGNORECASE):
-            return validate_call("clarify", {"slot": _infer_clarify_slot(query, selected)})
-        return validate_call("unsupported", {"reason": "out_of_scope"})
-
     # 0b. Service & Tautulli history alignment before entity checks
-    if name == "now_playing" and _HISTORY_WORD_RE.search(q_unquoted):
+    if name == "now_playing" and _has_history_intent(q_unquoted):
         name = "watch_history"
     elif name == "now_playing" and re.search(r"\b(trending|popular|upcoming)\b", q_unquoted, re.IGNORECASE) and not re.search(r"\b(stream|streaming|playing|watching|plex|tautulli)\b", q_unquoted, re.IGNORECASE):
         name = "seer_discover"
@@ -699,12 +732,13 @@ def verify_proposal(
     )
 
     if name in {"movie_search", "movie_status"} and has_request_word and not re.search(r"\bradarr\b", q_unquoted, re.IGNORECASE):
-        if has_track_word or has_negated_request:
-            if has_track_word or re.search(r"\b(check|track|status|progress|existing|look\s+up|where)\b", q_unquoted, re.IGNORECASE):
-                name = "request_status"
-                args = {"title": args["title"]}
-            else:
-                return validate_call("clarify", {"slot": "scope"})
+        if has_track_word:
+            name = "request_status"
+            args = {"title": args["title"]}
+        elif has_negated_request:
+            # Mentioning a request only to prohibit it does not change which
+            # library the user asked us to inspect.
+            name = "movie_status"
         elif has_affirmative_request:
             name = "request_media"
             if "media_type" not in args:
@@ -716,13 +750,10 @@ def verify_proposal(
                     args["media_type"] = "movie"
 
     if name == "request_media":
-        if has_negated_request or has_track_word:
-            if has_track_word or re.search(r"\b(check|track|status|progress|existing|look\s+up|where)\b", q_unquoted, re.IGNORECASE):
-                name = "request_status"
-                args = {"title": args["title"]}
-            else:
-                return validate_call("clarify", {"slot": "scope"})
-        elif not has_affirmative_request:
+        if has_track_word:
+            name = "request_status"
+            args = {"title": args["title"]}
+        elif has_negated_request or not has_affirmative_request:
             if _MOVIE_WORD_RE.search(q_unquoted) or args.get("media_type") == "movie":
                 name = "movie_status"
                 args = {k: v for k, v in args.items() if k in {"title", "year"}}

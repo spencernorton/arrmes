@@ -328,6 +328,9 @@ class NativeArrWriteAdapter:
                     "reason":"no_eligible_released_missing_albums","resolved_entity":target,
                     "media_download_completion_verified":False}, audit, complete=True)
             summary = f"Run {target['command']['name']} in {target['service']} for {target.get('title',target.get('artist'))!r}; exact target IDs: {target['target_ids']}. May enqueue downloads; does not change monitoring."
+            if target['command']['name'] == 'AlbumSearch':
+                albums = ', '.join(f"{title!r} (ID {identity})" for title, identity in zip(target['album_titles'], target['target_ids']))
+                summary += f" Album targets: {albums}."
             if self.write_mode == "shadow":
                 return _obs(call.name, "shadow_logged", {"summary":summary,"resolved_entity":target}, audit)
             token = self.confirmation_store.mint(principal, call, summary=summary, resolved_entity=target)
