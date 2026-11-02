@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.1 — 2026-11-02
+
+- Add standard-library GGUF inspection and an artifact-bound CPU generation/fixture smoke helper.
+- Add a manually dispatched Windows CPU qualification workflow with pinned runtime, model hash and v1.2.0 product source; actual Windows generation remains pending execution.
+- Retain exact-artifact Mac CPU operational evidence separately from model accuracy benchmarks.
+
 ## 1.2.0 — 2026-11-01
 
 - Add 29 native read workflows, including Bazarr subtitle status and explicit Sonarr/Radarr/Lidarr queue, library, missing, metadata and health queries.

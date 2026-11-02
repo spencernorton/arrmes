@@ -1,0 +1,66 @@
+name: Windows CPU model smoke
+on:
+  workflow_dispatch:
+    inputs:
+      model_url:
+        description: Approved public URL for the fixed c7d6f1ee CPU-exported Q4 artifact
+        required: true
+        type: string
+permissions:
+  contents: read
+jobs:
+  cpu-generation:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          path: automation
+      - name: Obtain the qualified product source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          ref: e76bfcfa2fd9d9e2397cae9b89ae91a5fc84243a
+          persist-credentials: false
+          path: product
+      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
+        with:
+          python-version: "3.12"
+          architecture: x64
+      - name: Install core Python dependencies only
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force work | Out-Null
+          python -m venv work/venv
+          if ($LASTEXITCODE -ne 0) { throw 'Virtual environment creation failed' }
+          & work/venv/Scripts/python.exe -m pip install ./product
+          if ($LASTEXITCODE -ne 0) { throw 'Core package installation failed' }
+      - name: Download and verify approved public artifacts
+        shell: pwsh
+        env:
+          MODEL_URL: ${{ inputs.model_url }}
+        run: |
+          $modelUri = [Uri]$env:MODEL_URL
+          $githubModel = $modelUri.Host -eq 'github.com' -and $modelUri.AbsolutePath.StartsWith('/spencernorton/arrmes/releases/download/')
+          $hfModel = $modelUri.Host -eq 'huggingface.co' -and $modelUri.AbsolutePath.StartsWith('/NorviTech/')
+          if ($modelUri.Scheme -ne 'https' -or $modelUri.UserInfo -or $modelUri.Query -or $modelUri.Fragment -or -not ($githubModel -or $hfModel)) { throw 'Model must use an approved public HTTPS release origin without credentials/query/fragment' }
+          Invoke-WebRequest 'https://github.com/ggml-org/llama.cpp/releases/download/b11429/llama-b11429-bin-win-cpu-x64.zip' -OutFile work/runtime.zip
+          if ((Get-FileHash work/runtime.zip -Algorithm SHA256).Hash.ToLowerInvariant() -ne '1283323272b04cd07905816a597a0da810918102de958f4ff6f7bbaa70ed2efe') { throw 'Official CPU runtime SHA-256 mismatch' }
+          Expand-Archive work/runtime.zip -DestinationPath work/runtime
+          Invoke-WebRequest $modelUri.AbsoluteUri -OutFile work/model.gguf
+          if ((Get-FileHash work/model.gguf -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'c7d6f1eef1eb4cd0f93769dadca7e270f3c3d470cfb542240733859c7d02f255') { throw 'Approved experimental model SHA-256 mismatch' }
+      - name: Run real CPU generation and controlled fixture smoke
+        shell: pwsh
+        run: |
+          $executables = @(Get-ChildItem work/runtime -Recurse -File -Filter llama-server.exe)
+          if ($executables.Count -ne 1) { throw 'Expected exactly one official llama-server.exe' }
+          & work/venv/Scripts/python.exe automation/scripts/smoke_portable_model.py --model work/model.gguf --llama-server $executables[0].FullName --threads 2 --output work/windows-cpu-model-smoke.json
+          if ($LASTEXITCODE -ne 0) { throw 'Actual CPU model smoke failed' }
+      - name: Retain actual run evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: windows-cpu-model-smoke
+          path: work/windows-cpu-model-smoke.json
+          if-no-files-found: warn
+          retention-days: 30
