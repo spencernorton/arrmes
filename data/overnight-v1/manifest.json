@@ -1,0 +1,20 @@
+{
+  "schema_version": 1,
+  "dataset": "data/overnight-v1/routing-heldout.jsonl",
+  "sha256": "1ed8e3e83c78a22d37991e7b2ef861464bf2bf6c224c782e81bc352005a31e14",
+  "cases": 80,
+  "frozen_at": "2026-11-02T03:06:02.178108+00:00",
+  "training_allowed": false,
+  "method": "Authored before inference. Fictional media entities not in retained release datasets. New exact queries and template identifiers. No claim of unbiased random sampling. Actions necessarily overlap the v2 contract. Scenario combinations and utterances are new; individual action scenarios are shared by design.",
+  "entity_renaming": {
+    "Chrono Harbor": "Quartz Orchard",
+    "Obsidian Tide": "Velvet Meridian",
+    "Copper Horizon": "Marble Semaphore",
+    "Daft Punk": "The Juniper Assembly",
+    "Random Access Memories": "Winter Postcards"
+  },
+  "repetitions": 3,
+  "max_output_tokens": 160,
+  "decoding": "greedy; thinking disabled where template supports it; identical v2 tools and policy; native wire formats",
+  "exclusion": "No training or parameter selection on this dataset. Subsequent code fixes evaluated on these rows must be labelled diagnostic."
+}

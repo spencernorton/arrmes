@@ -7,6 +7,7 @@ from typing import Any
 
 CONTRACT_VERSION = "arrmes.tools.v1"
 CONTRACT_VERSION_V2 = "arrmes.tools.v2"
+CONTRACT_VERSION_V3 = "arrmes.tools.v3"
 
 
 def text(description: str, limit: int = 200) -> dict:
@@ -104,6 +105,21 @@ V2_ACTIONS = ACTIONS + V2_EXTRA_ACTIONS
 V2_BY_NAME = {a.name: a for a in V2_ACTIONS}
 WRITE_EFFECT_ACTIONS = frozenset(a.name for a in V2_ACTIONS if a.effect in {"download", "request", "write"})
 
+# The released neural model continues to receive precisely tools_v2(). Native
+# service reads use an explicitly identified deterministic route. Keep the v2
+# schema and hash unchanged so historical experiments remain reproducible.
+SERVICE_QUERY_ACTION = Action(
+    "service_query", "Inspect a configured native media service. Read only.",
+    "configured-service", "read", None,
+    {"service": text("Configured service name", 32),
+     "operation": text("Supported read operation", 32),
+     "query": text("Explicit title or search text", 256),
+     "media_type": choice("movie", "tv")},
+    ("service", "operation"),
+)
+V3_ACTIONS = V2_ACTIONS + (SERVICE_QUERY_ACTION,)
+V3_BY_NAME = {a.name: a for a in V3_ACTIONS}
+
 
 def tools() -> list[dict]:
     return [a.tool() for a in ACTIONS]
@@ -133,3 +149,18 @@ def contract_hash() -> str:
 
 def contract_hash_v2() -> str:
     return hashlib.sha256(json.dumps(manifest_v2(), sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+
+def manifest_v3() -> dict:
+    from .services import SUPPORTED_OPERATIONS, SERVICE_PERMISSIONS
+    return {"version": CONTRACT_VERSION_V3, "neural_contract": CONTRACT_VERSION_V2,
+            "neural_contract_sha256": contract_hash_v2(),
+            "extension": {"tool": SERVICE_QUERY_ACTION.tool(), "effect": "read",
+                          "routing": "explicit_service_deterministic",
+                          "services": {name: {"operations": sorted(ops),
+                                              "permission": SERVICE_PERMISSIONS[name]}
+                                       for name, ops in sorted(SUPPORTED_OPERATIONS.items())}}}
+
+
+def contract_hash_v3() -> str:
+    return hashlib.sha256(json.dumps(manifest_v3(), sort_keys=True, separators=(",", ":")).encode()).hexdigest()

@@ -1,5 +1,14 @@
 # Changelog
 
+## 1.2.0 — 2026-11-01
+
+- Add 29 native read workflows, including Bazarr subtitle status and explicit Sonarr/Radarr/Lidarr queue, library, missing, metadata and health queries.
+- Add native qBittorrent listing and confirmation-gated single-transfer pause/resume with API-version handling and verified postconditions.
+- Add optional llama.cpp/GGUF inference, CPU-only adapter export and Linux container packaging; retain optional MLX.
+- Bind confirmations to resolved service identities, enforce exact expiry and replay protection, and keep execution context server-owned.
+- Remove false live Armiger/Waypoint success substitutions and distinguish Seerr from request-portal discovery.
+- Add reproducible raw-model, system, HTTP and controlled-workflow comparisons. Correct generation-only latency and model provenance claims.
+
 ## 1.1.0 — 2026-11-01
 
 - Added `arrmes.tools.v2` 20-action contract across nine self-hosted service domains (`sonarr`, `radarr`, `lidarr`, `tautulli`, `qbittorrent`, `seer`, `requests`, `armiger`, `bitmagnet`, `dh-waypoint`) plus `clarify` and `unsupported`.

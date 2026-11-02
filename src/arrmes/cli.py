@@ -3,7 +3,7 @@ import json
 from pathlib import Path
 import tempfile
 
-from .catalog import manifest, manifest_v2
+from .catalog import manifest, manifest_v2, manifest_v3
 from .corpus import export_corpus_manifest
 from .planner import Principal, prepare
 from .protocol import Call, InvalidCall, decode
@@ -30,7 +30,9 @@ def main():
     sub = parser.add_subparsers(dest="command", required=True)
 
     cat_p = sub.add_parser("catalog")
-    cat_p.add_argument("--v2", action="store_true", help="Emit the 20-action v2 contract manifest")
+    versions = cat_p.add_mutually_exclusive_group()
+    versions.add_argument("--v2", action="store_true", help="Emit the unchanged 20-action v2 model contract")
+    versions.add_argument("--v3", action="store_true", help="Emit v3 including explicit-service read workflows")
 
     corp_p = sub.add_parser("corpus")
     corp_p.add_argument("--output", help="Optional path to write the executable API corpus JSON")
@@ -44,12 +46,23 @@ def main():
     demo_p.add_argument("--adapter", help="Optional LoRA adapter path")
     demo_p.add_argument("--output", help="Optional path to save the demo receipt JSON")
 
+    def backend_flags(p):
+        p.add_argument("--backend", choices=["auto", "mlx", "llama-server"], default="auto")
+        p.add_argument("--inference-url", help="Existing native llama-server HTTP(S) origin")
+        p.add_argument("--device", choices=["cpu", "cuda", "metal", "vulkan", "sycl"], default="cpu", help="Native llama-server device; MLX uses Metal")
+        p.add_argument("--llama-server", default="llama-server", help="Native executable path for managed GGUF inference")
+        p.add_argument("--context-size", type=int, default=4096)
+        p.add_argument("--threads", type=int, help="Native CPU threads (generation and prefill)")
+
+    backend_flags(demo_p)
+
     for name in ["route", "evaluate"]:
         p = sub.add_parser(name)
         p.add_argument("--model", required=True, help="Model directory path or 'deterministic'")
         p.add_argument("--family", choices=["functiongemma", "hermes"], default="functiongemma")
         p.add_argument("--adapter")
         p.add_argument("--contract-version", choices=["v1", "v2"], default="v1")
+        backend_flags(p)
         if name == "route":
             p.add_argument("query")
             p.add_argument("--context", help="JSON file containing application-selected media")
@@ -61,7 +74,7 @@ def main():
 
     args = parser.parse_args()
     if args.command == "catalog":
-        print(json.dumps(manifest_v2() if args.v2 else manifest(), indent=2))
+        print(json.dumps(manifest_v3() if args.v3 else manifest_v2() if args.v2 else manifest(), indent=2))
         return
     if args.command == "corpus":
         out_path = Path(args.output) if args.output else None
@@ -76,7 +89,13 @@ def main():
         print(json.dumps(prepare(Call(**value), principal), indent=2))
         return
 
-    from .model import DeterministicBaselineModel, LocalModel
+    from .model import DeterministicBaselineModel
+    from .backends import create_model
+
+    def load_model(contract_version):
+        return create_model(args.model, args.family, args.adapter, contract_version=contract_version,
+                            backend=args.backend, endpoint=args.inference_url, device=args.device,
+                            executable=args.llama_server, context_size=args.context_size, threads=args.threads)
 
     if args.command == "sandbox-demo":
         from .adapters import SandboxAdapter
@@ -86,7 +105,7 @@ def main():
         model = (
             DeterministicBaselineModel(family=args.family, contract_version="v2")
             if args.model == "deterministic"
-            else LocalModel(args.model, args.family, args.adapter, contract_version="v2")
+            else load_model("v2")
         )
         demo_queries = [
             ("sonarr_read_missing", "Which episodes of Severance are missing?", None),
@@ -149,7 +168,7 @@ def main():
     model = (
         DeterministicBaselineModel(family=args.family, contract_version=args.contract_version)
         if args.model == "deterministic"
-        else LocalModel(args.model, args.family, args.adapter, contract_version=args.contract_version)
+        else load_model(args.contract_version)
     )
     if args.command == "evaluate":
         from .evaluate import run

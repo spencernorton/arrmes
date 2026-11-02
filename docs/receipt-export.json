@@ -1,0 +1,20 @@
+{
+  "changes": "Source-checksum maps use path/digest records to distinguish checksums from credentials. Local operator paths are omitted. Raw model predictions, task labels and measured counts are preserved.",
+  "files": [
+    {
+      "path": "experiments/overnight-v1/torrent-transfer-smoke.json",
+      "original_sha256": "6be70c4ca8ad8ebf801d06e0adb863fe4ffa1afcadfd35e4329ee475b7e68967",
+      "public_sha256": "6be70c4ca8ad8ebf801d06e0adb863fe4ffa1afcadfd35e4329ee475b7e68967"
+    },
+    {
+      "path": "experiments/overnight-v1/native-transfer-neural-smoke.json",
+      "original_sha256": "05b5c6bcc9d539a2f38cfb307b1135a26f1d6dd4b9b5774bff4b05b761fe216a",
+      "public_sha256": "047fd2129b18c88b41d8526d8f42b35e9b1b84ee4ff5c28171ab44b0ba0d8fa1"
+    },
+    {
+      "path": "experiments/overnight-v1/native-transfer-execution-smoke.json",
+      "original_sha256": "03c15c3a5a1aba25ec3f2befca655b412fa321aac608bbb7ce229a6b31660d4e",
+      "public_sha256": "e23dfb92e5806a54a4ead0316f06a85fc025b234c72b14d1d977e0501f23a06a"
+    }
+  ]
+}

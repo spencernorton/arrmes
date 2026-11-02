@@ -5,9 +5,9 @@ from dataclasses import dataclass, field
 from typing import Any, Callable
 
 from arrmes.adapters import AdapterObservation, SandboxAdapter
-from arrmes.catalog import V2_BY_NAME, WRITE_EFFECT_ACTIONS
+from arrmes.catalog import V3_BY_NAME, WRITE_EFFECT_ACTIONS
 from arrmes.planner import Principal, prepare, verify_proposal
-from arrmes.protocol import Call, InvalidCall, decode, normalized
+from arrmes.protocol import Call, InvalidCall, decode, normalized, validate_call
 from arrmes.sandbox.isolation import SandboxIsolationViolation
 
 
@@ -211,7 +211,7 @@ class BoundedExecutor:
                 steps_executed=0,
             )
 
-        spec = V2_BY_NAME[call.name]
+        spec = V3_BY_NAME[call.name]
         if spec.effect != "read" and not self.allow_writes:
             return ExecutionTrace(
                 terminal_state="dry_run_planned",
@@ -232,7 +232,7 @@ class BoundedExecutor:
                 operation=call.name,
                 http_status=503,
                 verified_complete=False,
-                data={"error": "adapter_boundary_exception", "detail": str(exc)},
+                data={"error": "adapter_boundary_exception", "exception_type": type(exc).__name__},
                 audit_trail=[],
             )
 
@@ -336,9 +336,18 @@ class BoundedExecutor:
                 audit_records=obs.audit_trail,
             )
         state_fields = derive_adapter_plan_state(obs)
+        confirmed = obs.data.get("confirmed_call")
+        proposal = None
+        if isinstance(confirmed, dict) and set(confirmed) == {"name", "arguments"}:
+            try:
+                confirmed_call = validate_call(confirmed["name"], confirmed["arguments"])
+                if confirmed_call.name == obs.operation:
+                    proposal = normalized(confirmed_call)
+            except InvalidCall:
+                pass
         return ExecutionTrace(
             terminal_state=_terminal_state_for(obs),
-            proposal={"name": obs.operation, "arguments": {}},
+            proposal=proposal,
             plan=state_fields,
             observation=obs,
             steps_executed=1,

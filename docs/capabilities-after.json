@@ -1,0 +1,172 @@
+{
+  "schema_version": "arrmes.capability-audit.v1",
+  "baseline_source_commit": "ac3d90eca62500aacf945756ab666917a6793798",
+  "neural_contract_unchanged": "arrmes.tools.v2",
+  "extension_contract": "arrmes.tools.v3",
+  "native_service_operation_pairs": 29,
+  "new_native_services": [
+    {
+      "service": "sonarr",
+      "native_operations": [
+        "health",
+        "history",
+        "library",
+        "missing",
+        "queue",
+        "search"
+      ],
+      "permission": "media:read",
+      "effect": "read",
+      "route_layer": "explicit-service deterministic NL, not v6 trained neural prediction",
+      "execution": "ServiceQueryAdapter through BoundedExecutor",
+      "adapter_qualification": "Real loopback HTTP fixtures under NetworkIsolationGuard; actual upstream binaries and production not tested",
+      "test_reference": "tests/test_native_services.py:test_every_advertised_pair_routes_through_executor_to_native_http",
+      "unavailable_behavior": "Structured service_not_configured/service_unavailable error; no fallback to another service",
+      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial"
+    },
+    {
+      "service": "radarr",
+      "native_operations": [
+        "health",
+        "history",
+        "library",
+        "missing",
+        "queue",
+        "search"
+      ],
+      "permission": "media:read",
+      "effect": "read",
+      "route_layer": "explicit-service deterministic NL, not v6 trained neural prediction",
+      "execution": "ServiceQueryAdapter through BoundedExecutor",
+      "adapter_qualification": "Real loopback HTTP fixtures under NetworkIsolationGuard; actual upstream binaries and production not tested",
+      "test_reference": "tests/test_native_services.py:test_every_advertised_pair_routes_through_executor_to_native_http",
+      "unavailable_behavior": "Structured service_not_configured/service_unavailable error; no fallback to another service",
+      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial"
+    },
+    {
+      "service": "lidarr",
+      "native_operations": [
+        "health",
+        "history",
+        "library",
+        "missing",
+        "queue",
+        "search"
+      ],
+      "permission": "media:read",
+      "effect": "read",
+      "route_layer": "explicit-service deterministic NL, not v6 trained neural prediction",
+      "execution": "ServiceQueryAdapter through BoundedExecutor",
+      "adapter_qualification": "Real loopback HTTP fixtures under NetworkIsolationGuard; actual upstream binaries and production not tested",
+      "test_reference": "tests/test_native_services.py:test_every_advertised_pair_routes_through_executor_to_native_http",
+      "unavailable_behavior": "Structured service_not_configured/service_unavailable error; no fallback to another service",
+      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial"
+    },
+    {
+      "service": "bazarr",
+      "native_operations": [
+        "health",
+        "missing",
+        "subtitles"
+      ],
+      "permission": "media:read",
+      "effect": "read",
+      "route_layer": "explicit-service deterministic NL, not v6 trained neural prediction",
+      "execution": "ServiceQueryAdapter through BoundedExecutor",
+      "adapter_qualification": "Real loopback HTTP fixtures under NetworkIsolationGuard; actual upstream binaries and production not tested",
+      "test_reference": "tests/test_native_services.py:test_every_advertised_pair_routes_through_executor_to_native_http",
+      "unavailable_behavior": "Structured service_not_configured/service_unavailable error; no fallback to another service",
+      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial"
+    },
+    {
+      "service": "qbittorrent",
+      "native_operations": [
+        "activity",
+        "health",
+        "queue"
+      ],
+      "permission": "torrents:read",
+      "effect": "read",
+      "route_layer": "explicit-service deterministic NL, not v6 trained neural prediction",
+      "execution": "ServiceQueryAdapter through BoundedExecutor",
+      "adapter_qualification": "Real loopback HTTP fixtures under NetworkIsolationGuard; actual upstream binaries and production not tested",
+      "test_reference": "tests/test_native_services.py:test_every_advertised_pair_routes_through_executor_to_native_http",
+      "unavailable_behavior": "Structured service_not_configured/service_unavailable error; no fallback to another service",
+      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial"
+    },
+    {
+      "service": "tautulli",
+      "native_operations": [
+        "activity",
+        "health",
+        "history"
+      ],
+      "permission": "activity:read",
+      "effect": "read",
+      "route_layer": "explicit-service deterministic NL, not v6 trained neural prediction",
+      "execution": "ServiceQueryAdapter through BoundedExecutor",
+      "adapter_qualification": "Real loopback HTTP fixtures under NetworkIsolationGuard; actual upstream binaries and production not tested",
+      "test_reference": "tests/test_native_services.py:test_every_advertised_pair_routes_through_executor_to_native_http",
+      "unavailable_behavior": "Structured service_not_configured/service_unavailable error; no fallback to another service",
+      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial"
+    },
+    {
+      "service": "seerr",
+      "native_operations": [
+        "health",
+        "search"
+      ],
+      "permission": "media:read",
+      "effect": "read",
+      "route_layer": "explicit-service deterministic NL, not v6 trained neural prediction",
+      "execution": "ServiceQueryAdapter through BoundedExecutor",
+      "adapter_qualification": "Real loopback HTTP fixtures under NetworkIsolationGuard; actual upstream binaries and production not tested",
+      "test_reference": "tests/test_native_services.py:test_every_advertised_pair_routes_through_executor_to_native_http",
+      "unavailable_behavior": "Structured service_not_configured/service_unavailable error; no fallback to another service",
+      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial"
+    }
+  ],
+  "legacy_gaps_still_open": [
+    "Native Bitmagnet API and full pagination",
+    "Native request lifecycle and per-user identity mapping",
+    "Verified Armiger model execution",
+    "Verified DH-Waypoint health",
+    "Subtitle writes and additional transfer controls beyond single-torrent pause/resume",
+    "Broad unquoted paraphrase coverage for v3 reads",
+    "Conditional/entity-dependent composites and write workflows; independent native read clauses are bounded and supported"
+  ],
+  "bounded_native_composites": "Up to executor.max_steps independent service-explicit read clauses, default 4; full scope preflight; continue independent reads on unavailable services",
+  "distribution_note": "Internal source provenance; public synchronization must replace internal source commit references with the reviewed public source revision. No private URLs, credentials, host inventory or tracker identifiers are included.",
+  "native_existing_v2_actions": [
+    {
+      "service": "qbittorrent",
+      "name": "torrent_list",
+      "effect": "read",
+      "permission": "torrents:read",
+      "behavior": "Native state and title filters, finite offset pagination, paused4.x/stopped5.x mapping; partial inventory remains partial"
+    },
+    {
+      "service": "qbittorrent",
+      "name": "torrent_pause",
+      "effect": "write",
+      "permission": "torrents:manage",
+      "behavior": "Unique exact name -> bound single hash, explicit HMAC confirmation, one native POST, postcondition GET"
+    },
+    {
+      "service": "qbittorrent",
+      "name": "torrent_resume",
+      "effect": "write",
+      "permission": "torrents:manage",
+      "behavior": "Unique exact name -> bound single hash, explicit HMAC confirmation, one native POST, postcondition GET"
+    }
+  ],
+  "native_transfer_qualification": {
+    "actual_model_smoke": "4/4 exact pause/resume predictions by published NorviTech Qwen adapter8a9bcf (synthetic integration smoke; not heldout quality qualification)",
+    "recorded_model_output_replay": "8/8 runtime/confirmation/HTTP fixtures across qBittorrent4.x/5.x, zero writes before confirmation, one exact-hash POST, observed state and replay denial",
+    "actual_upstream_binary_tested": false,
+    "production_tested": false,
+    "raw_model_receipt": "experiments/overnight-v1/torrent-transfer-smoke.json",
+    "execution_receipt": "experiments/overnight-v1/native-transfer-execution-smoke.json",
+    "test_reference": "tests/test_native_transfers.py"
+  }
+}

@@ -61,6 +61,59 @@ def messages(query: str, context: dict | None = None, family: str = "functiongem
             {"role": "user", "content": content}]
 
 
+def finalize_output(raw_unverified: str, query: str, context: dict | None, family: str, contract_version: str) -> str:
+    """Apply the same deterministic verifier after any inference backend.
+
+    The unmodified native completion must always be retained separately in
+    receipts; repaired/verified output is not a raw model prediction.
+    """
+    raw_out = raw_unverified
+    decoded_call = None
+    try:
+        decoded_call = decode(raw_unverified, family)
+    except InvalidCall:
+        repaired_raw = raw_unverified
+        for tok in query.split():
+            tok_clean = tok.strip(".,?!:; ")
+            if "\"" in tok_clean and tok_clean in repaired_raw:
+                repaired_raw = repaired_raw.replace(tok_clean, tok_clean.replace("\"", "\\\""))
+        if "\"name\": \"now_playing\"" in repaired_raw and "\"title\":" in repaired_raw:
+            repaired_raw = repaired_raw.replace("\"name\": \"now_playing\"", "\"name\": \"watch_history\"")
+        if family == "hermes":
+            m_tc = re.fullmatch(r"\s*(?:<think>\s*</think>\s*)?<tool_call>\s*(\{.*\})\s*</tool_call>\s*", repaired_raw, re.S)
+            if m_tc:
+                try:
+                    from .catalog import V2_BY_NAME
+                    obj = json.loads(m_tc.group(1))
+                    if isinstance(obj, dict) and obj.get("name") in V2_BY_NAME and isinstance(obj.get("arguments"), dict):
+                        allowed = set(V2_BY_NAME[obj["name"]].properties)
+                        cleaned_args = {k: v for k, v in obj["arguments"].items() if k in allowed}
+                        if cleaned_args != obj["arguments"]:
+                            repaired_raw = "<tool_call>" + json.dumps({"name": obj["name"], "arguments": cleaned_args}, ensure_ascii=False) + "</tool_call>"
+                except Exception:
+                    pass
+        try:
+            decoded_call = decode(repaired_raw, family)
+        except InvalidCall:
+            fallback = verify_proposal(
+                Call("clarify", {"slot": "title"}),
+                query,
+                context,
+                contract_version=contract_version,
+            )
+            if fallback.name == "unsupported":
+                decoded_call = fallback
+    if decoded_call is not None:
+        verified_call = verify_proposal(
+            decoded_call,
+            query,
+            context,
+            contract_version=contract_version,
+        )
+        raw_out = encode(verified_call, family)
+    return raw_out
+
+
 class LocalModel:
     def __init__(self, path: str, family: str = "functiongemma", adapter: str | None = None, *, contract_version: str = "v1"):
         if family not in {"functiongemma", "hermes"}:
@@ -200,50 +253,7 @@ class LocalModel:
             elapsed = time.perf_counter() - start
             prompt_tokens = len(full_ids)
         raw_unverified = "".join(pieces)
-        raw_out = raw_unverified
-        decoded_call = None
-        try:
-            decoded_call = decode(raw_unverified, self.family)
-        except InvalidCall:
-            repaired_raw = raw_unverified
-            for tok in query.split():
-                tok_clean = tok.strip(".,?!:; ")
-                if "\"" in tok_clean and tok_clean in repaired_raw:
-                    repaired_raw = repaired_raw.replace(tok_clean, tok_clean.replace("\"", "\\\""))
-            if "\"name\": \"now_playing\"" in repaired_raw and "\"title\":" in repaired_raw:
-                repaired_raw = repaired_raw.replace("\"name\": \"now_playing\"", "\"name\": \"watch_history\"")
-            if self.family == "hermes":
-                m_tc = re.fullmatch(r"\s*(?:<think>\s*</think>\s*)?<tool_call>\s*(\{.*\})\s*</tool_call>\s*", repaired_raw, re.S)
-                if m_tc:
-                    try:
-                        from .catalog import V2_BY_NAME
-                        obj = json.loads(m_tc.group(1))
-                        if isinstance(obj, dict) and obj.get("name") in V2_BY_NAME and isinstance(obj.get("arguments"), dict):
-                            allowed = set(V2_BY_NAME[obj["name"]].properties)
-                            cleaned_args = {k: v for k, v in obj["arguments"].items() if k in allowed}
-                            if cleaned_args != obj["arguments"]:
-                                repaired_raw = "<tool_call>" + json.dumps({"name": obj["name"], "arguments": cleaned_args}, ensure_ascii=False) + "</tool_call>"
-                    except Exception:
-                        pass
-            try:
-                decoded_call = decode(repaired_raw, self.family)
-            except InvalidCall:
-                fallback = verify_proposal(
-                    Call("clarify", {"slot": "title"}),
-                    query,
-                    context,
-                    contract_version=self.contract_version,
-                )
-                if fallback.name == "unsupported":
-                    decoded_call = fallback
-        if decoded_call is not None:
-            verified_call = verify_proposal(
-                decoded_call,
-                query,
-                context,
-                contract_version=self.contract_version,
-            )
-            raw_out = encode(verified_call, self.family)
+        raw_out = finalize_output(raw_unverified, query, context, self.family, self.contract_version)
         return {"raw": raw_out, "raw_unverified": raw_unverified, "seconds": round(elapsed, 6),
                 "first_token_seconds": round(first, 6) if first is not None else None,
                 "prompt_tokens": prompt_tokens,

@@ -1,0 +1,11 @@
+# Optional legacy gateway integration. Native service reads do not require it.
+services:
+  arrmes:
+    environment:
+      ARRMES_GATEWAY_URL: ${ARRMES_GATEWAY_URL:?Set the explicit authenticated gateway origin}
+      GES_KEY_FILE: /run/secrets/gateway_key
+      ARRMES_REQUEST_OWNER_SUBJECT: ${ARRMES_REQUEST_OWNER_SUBJECT:-}
+    secrets: [gateway_key]
+secrets:
+  gateway_key:
+    file: ${ARRMES_GATEWAY_KEY_FILE:?Set the gateway key file; never bake keys into an image}

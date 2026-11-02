@@ -1,0 +1,150 @@
+{
+  "schema_version": "arrmes.api-audit.v1",
+  "sources": [
+    {
+      "service": "sonarr",
+      "source_url": "https://github.com/Sonarr/Sonarr/blob/bc54afbdd0e38bdb0fca4785fcf7d7a6af77bf9a/src/Sonarr.Api.V3/openapi.json",
+      "revision": "bc54afbdd0e38bdb0fca4785fcf7d7a6af77bf9a",
+      "sha256": "03108f7f6b20300b84af879392ac44947cd3d3c19c073184e5fbf94e127165f9",
+      "retrieved_at": "2026-11-02T03:11:54.025317+00:00",
+      "branch_at_audit": "main",
+      "openapi_info_version": "3.0.0",
+      "implemented_api_prefix": "api/v3"
+    },
+    {
+      "service": "radarr",
+      "source_url": "https://github.com/Radarr/Radarr/blob/a96bf7c3ecb23cb76993770727285dc17a613fbc/src/Radarr.Api.V3/openapi.json",
+      "revision": "a96bf7c3ecb23cb76993770727285dc17a613fbc",
+      "sha256": "95ea9062485118d6a8abed8250b9bfbf94e4de0f55e9c5611da6805864f9a26e",
+      "retrieved_at": "2026-11-02T03:11:54.625621+00:00",
+      "branch_at_audit": "master",
+      "openapi_info_version": "3.0.0",
+      "implemented_api_prefix": "api/v3"
+    },
+    {
+      "service": "lidarr",
+      "source_url": "https://github.com/Lidarr/Lidarr/blob/da7b4dfb1a9e7e1d6625c2dbc3fff96971ab26bd/src/Lidarr.Api.V1/openapi.json",
+      "revision": "da7b4dfb1a9e7e1d6625c2dbc3fff96971ab26bd",
+      "sha256": "4ae9e79e9662898ed4704ce80f091161587a9f0d664f9e518b11a038616e491f",
+      "retrieved_at": "2026-11-02T03:11:55.318963+00:00",
+      "branch_at_audit": "master",
+      "openapi_info_version": "1.0.0",
+      "implemented_api_prefix": "api/v1"
+    },
+    {
+      "service": "bazarr",
+      "source_url": "https://github.com/morpheus65535/bazarr/blob/bfe4593b04caa16eb4a09c2a233777b0bd7723b6/bazarr/api/system/health.py",
+      "revision": "bfe4593b04caa16eb4a09c2a233777b0bd7723b6",
+      "sha256": "f5ded8d7ce8dbdf97e231235784272d46fe8b1a3f1e9091b6871221949f6ae18",
+      "retrieved_at": "2026-11-02T03:11:55.859293+00:00",
+      "branch_at_audit": "master"
+    },
+    {
+      "service": "seerr",
+      "source_url": "https://github.com/seerr-team/seerr/blob/b185621e8e48743bb38adaa0d15b334626b7b100/seerr-api.yml",
+      "revision": "b185621e8e48743bb38adaa0d15b334626b7b100",
+      "sha256": "12a8cbd41d83be4a08a5d1c2fcc320899750daf6698d6aa4762e20e8c8d49b8f",
+      "retrieved_at": "2026-11-02T03:11:56.530363+00:00",
+      "branch_at_audit": "develop"
+    },
+    {
+      "service": "bazarr",
+      "revision": "bfe4593b04caa16eb4a09c2a233777b0bd7723b6",
+      "source_url": "https://github.com/morpheus65535/bazarr/blob/bfe4593b04caa16eb4a09c2a233777b0bd7723b6/bazarr/api/episodes/wanted.py",
+      "sha256": "73fa587f9d840fc0841833d3aebcda8d200ce5e8ae7cfed8276db3c3b3215060",
+      "retrieved_at": "2026-11-02T03:16:16.516714+00:00"
+    },
+    {
+      "service": "bazarr",
+      "revision": "bfe4593b04caa16eb4a09c2a233777b0bd7723b6",
+      "source_url": "https://github.com/morpheus65535/bazarr/blob/bfe4593b04caa16eb4a09c2a233777b0bd7723b6/bazarr/api/movies/wanted.py",
+      "sha256": "b90019e27018e3bac34fda1b9f9beb3ec47d1792d2d86a57eafb35da7eb82497",
+      "retrieved_at": "2026-11-02T03:16:16.516714+00:00"
+    },
+    {
+      "service": "bazarr",
+      "revision": "bfe4593b04caa16eb4a09c2a233777b0bd7723b6",
+      "source_url": "https://github.com/morpheus65535/bazarr/blob/bfe4593b04caa16eb4a09c2a233777b0bd7723b6/bazarr/api/series/series.py",
+      "sha256": "520c33c18cd053555c062d21ea8eb27993f23522243667749b140c99d81e7bba",
+      "retrieved_at": "2026-11-02T03:16:16.516714+00:00"
+    },
+    {
+      "service": "bazarr",
+      "revision": "bfe4593b04caa16eb4a09c2a233777b0bd7723b6",
+      "source_url": "https://github.com/morpheus65535/bazarr/blob/bfe4593b04caa16eb4a09c2a233777b0bd7723b6/bazarr/api/movies/movies.py",
+      "sha256": "2fb590c9b0c9068d06bf138b9764ed1e0e94aae4a9ae31578bd8d59fb44a8b68",
+      "retrieved_at": "2026-11-02T03:16:16.516714+00:00"
+    },
+    {
+      "service": "bazarr",
+      "revision": "bfe4593b04caa16eb4a09c2a233777b0bd7723b6",
+      "source_url": "https://github.com/morpheus65535/bazarr/blob/bfe4593b04caa16eb4a09c2a233777b0bd7723b6/bazarr/api/episodes/episodes.py",
+      "sha256": "aee6d85c418663597852be94f6d936b39638ca157100d08cf59574b9872bfbeb",
+      "retrieved_at": "2026-11-02T03:16:16.516714+00:00"
+    },
+    {
+      "service": "bazarr",
+      "revision": "bfe4593b04caa16eb4a09c2a233777b0bd7723b6",
+      "source_url": "https://github.com/morpheus65535/bazarr/blob/bfe4593b04caa16eb4a09c2a233777b0bd7723b6/bazarr/api/utils.py",
+      "sha256": "8b2e1f01b609586cf3bb209c05ca2faaecf0442fba66287b1bdd6481115ae13b",
+      "retrieved_at": "2026-11-02T03:16:16.516714+00:00"
+    },
+    {
+      "service": "tautulli",
+      "source_url": "https://github.com/Tautulli/Tautulli/wiki/Tautulli-API-Reference",
+      "revision": null,
+      "sha256": "ab4f135e2d4e3f249f1b2b72786295bb7605eb5329c43e8a8fe56b9da44e83b1",
+      "retrieved_at": "2026-11-02T03:16:16.516714+00:00",
+      "revision_note": "Mutable official wiki; content digest records exact audited document"
+    },
+    {
+      "service": "qbittorrent",
+      "source_url": "https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-%28qBittorrent-5.0%29",
+      "revision": null,
+      "sha256": "66c967e4f255a4602f7f018d517289ad7c58f2176f432b0ebef06d0cb30283b2",
+      "retrieved_at": "2026-11-02T03:16:16.516714+00:00",
+      "revision_note": "Mutable official wiki; content digest records exact audited document"
+    },
+    {
+      "service": "bitmagnet",
+      "source_url": "https://github.com/bitmagnet-io/bitmagnet/blob/e31b30d7351c269dc801876f92ebc59d31fee545/graphql/queries/TorrentContentSearch.graphql",
+      "revision": "e31b30d7351c269dc801876f92ebc59d31fee545",
+      "sha256": "add0c17618fb41fefd82572e5df82c21f58fc7c6caf8a1e47083cdfe03036785",
+      "retrieved_at": "2026-11-02T03:20:36.753723+00:00",
+      "support_note": "Identity/schema audit only; no newly qualified native adapter"
+    },
+    {
+      "service": "bitmagnet",
+      "source_url": "https://github.com/bitmagnet-io/bitmagnet/blob/e31b30d7351c269dc801876f92ebc59d31fee545/graphql/schema/query.graphqls",
+      "revision": "e31b30d7351c269dc801876f92ebc59d31fee545",
+      "sha256": "e23b958d69e49915537f1156d9b9f31fec9a219871637f8a0b63a8b751c7242f",
+      "retrieved_at": "2026-11-02T03:20:38.352915+00:00",
+      "support_note": "Identity/schema audit only; no newly qualified native adapter"
+    },
+    {
+      "service": "bitmagnet",
+      "source_url": "https://github.com/bitmagnet-io/bitmagnet/blob/e31b30d7351c269dc801876f92ebc59d31fee545/graphql/schema/torrent_content.graphqls",
+      "revision": "e31b30d7351c269dc801876f92ebc59d31fee545",
+      "sha256": "caba892f6f4ee1ec64cfffd53ad597f7633d09d273028b3f53294ec6aa24d61f",
+      "retrieved_at": "2026-11-02T03:20:38.858728+00:00",
+      "support_note": "Identity/schema audit only; no newly qualified native adapter"
+    },
+    {
+      "service": "qbittorrent",
+      "source_url": "https://github.com/qbittorrent/qBittorrent/wiki/API-Key-Authentication-%28%E2%89%A5v5.2.0%29",
+      "revision": null,
+      "sha256": "e1e83cf7954e84c89582bc8eabec80844c846920bdefc26b0d9acf7a1f219206",
+      "retrieved_at": "2026-11-02T03:20:39.267099+00:00",
+      "revision_note": "Mutable official wiki; content digest records exact audited document"
+    },
+    {
+      "service": "qbittorrent",
+      "source_url": "https://github.com/qbittorrent/qBittorrent/wiki/WebUI-API-%28qBittorrent-4.1%29",
+      "revision": null,
+      "sha256": "36be26e0e97fb2a4036cd2780df31b5db72edac16c279c69176419183943ad27",
+      "retrieved_at": "2026-11-02T03:35:39.695447+00:00",
+      "revision_note": "Mutable official wiki; content digest records exact audited document",
+      "support_note": "Pause/resume endpoints and paused filter for4.1-4.6 versus stop/start andstopped5.x"
+    }
+  ]
+}

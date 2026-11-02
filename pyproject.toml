@@ -4,8 +4,10 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "arrmes"
-version = "1.1.0"
-description = "Experimental local media intent and tool-call router"
+version = "1.2.0"
+description = "Local media routing with validated service operations and portable inference"
+license = "MIT"
+license-files = ["LICENSE", "NOTICE"]
 requires-python = ">=3.12"
 dependencies = ["jsonschema>=4.23,<5"]
 
