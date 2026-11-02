@@ -43,6 +43,13 @@ def original_analyzer(directory=EVIDENCE):
 
 def verify(directory=EVIDENCE):
     directory = Path(directory)
+    manifest = json.loads((directory / "manifest.json").read_text())
+    for row in manifest["files"]:
+        if Path(row["file"]).name != row["file"]:
+            raise ValueError("Evidence records must name direct child files")
+        payload = (directory / row["file"]).read_bytes()
+        if len(payload) != row["bytes"] or hashlib.sha256(payload).hexdigest() != row["sha256"]:
+            raise ValueError("Evidence payload differs from its recorded digest")
     receipt, raw = reconstruct_receipt(directory)
     retained = json.loads((directory / "analysis-original.json").read_text())
     result = original_analyzer(directory)(receipt, run_id=retained["run_id"],

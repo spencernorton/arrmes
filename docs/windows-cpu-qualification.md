@@ -31,6 +31,8 @@ Versioned inputs and results live under `experiments/windows-cpu-v1/`:
 
 - The original analyzer, product source manifest and independently retrieved
   GitHub run metadata bind the run, source, model and native executable.
+  The public API projection retains every analyzer field and omits unrelated
+  repository/commit metadata; the owner archive retains the full response.
 - The public receipt changes only the source-path/hash map into ordered digest
   records and uses LF line endings. Raw model output, fixture observations,
   timestamps, numeric values and every source hash remain unchanged.

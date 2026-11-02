@@ -7,5 +7,25 @@
   "public_bytes": 14396,
   "projection": "Replace the source_file_sha256 path-to-hash map with ordered file/sha256 records; encode public JSON with LF. Native outputs, numeric results, source values and all other fields unchanged. Original receipt is exactly reconstructible; no secret or model-output scrubbing.",
   "reconstruction_command": "python scripts/verify_windows_cpu_qualification.py --output work/windows-evidence-recheck.json",
-  "ci_run": "https://github.com/spencernorton/arrmes/actions/runs/41436216278"
+  "ci_run": "https://github.com/spencernorton/arrmes/actions/runs/41436216278",
+  "api_metadata_projection": {
+    "original_sha256": "8e1e8fd602c8a7b066eb359635d94823585cfc740b3fbda5f9aa4c242ba3d804",
+    "public_sha256": "1ed89f13997342f983c69e9da9672bffe39496f8d436b3255d62509324c4c51c",
+    "fields": [
+      "id",
+      "head_sha",
+      "head_branch",
+      "event",
+      "status",
+      "conclusion",
+      "path",
+      "html_url",
+      "created_at",
+      "run_started_at",
+      "updated_at",
+      "workflow_id",
+      "run_attempt"
+    ],
+    "note": "Retain every field used by the original analyzer plus run context. Omit unrelated repository/commit metadata, including a public GitHub system email. The original API response is preserved in the owner evidence; raw model and numeric results are unchanged."
+  }
 }

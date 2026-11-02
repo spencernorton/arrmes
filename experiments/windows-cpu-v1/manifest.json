@@ -18,8 +18,8 @@
     },
     {
       "file": "api-metadata.json",
-      "bytes": 12490,
-      "sha256": "8e1e8fd602c8a7b066eb359635d94823585cfc740b3fbda5f9aa4c242ba3d804"
+      "bytes": 502,
+      "sha256": "1ed89f13997342f983c69e9da9672bffe39496f8d436b3255d62509324c4c51c"
     },
     {
       "file": "model-publication.json",
@@ -33,8 +33,8 @@
     },
     {
       "file": "receipt-export.json",
-      "bytes": 836,
-      "sha256": "ddb1a053a786228f0f73f8e81aeb7492f05959b023ed40d939fbb3b9ecbbd533"
+      "bytes": 1585,
+      "sha256": "282d75c15e0955457cb9d3b64cba9f31da376c575c487542b8998c171218c8d5"
     },
     {
       "file": "windows-cpu-model-smoke-public.json",
