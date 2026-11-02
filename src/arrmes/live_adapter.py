@@ -21,7 +21,9 @@ import urllib.request
 
 from arrmes import __version__
 from arrmes.adapters import AdapterObservation, SandboxAdapter, _norm
-from arrmes.catalog import V2_BY_NAME, WRITE_EFFECT_ACTIONS, WRITE_EFFECT_ACTIONS_V3
+from arrmes.catalog import V2_BY_NAME, V3_BY_NAME, WRITE_EFFECT_ACTIONS, WRITE_EFFECT_ACTIONS_V3
+from arrmes.services.contract import SERVICE_PERMISSIONS, validate_service_query
+from arrmes.services.native import _public_row
 from arrmes.planner import Principal, ResolutionRequired, prepare, resolve_title
 from arrmes.protocol import Call, normalized, validate_call
 
@@ -370,6 +372,7 @@ class LiveGatewayAdapter(SandboxAdapter):
         qbittorrent_url: str | None = None,
         request_owner_subject: str | None = None,
         sandbox: bool = False,
+        enable_gateway_v3: bool | None = None,
     ) -> None:
         if write_mode not in {"confirm", "shadow", "direct"}:
             raise ValueError("write_mode must be 'confirm', 'shadow', or 'direct'")
@@ -398,6 +401,12 @@ class LiveGatewayAdapter(SandboxAdapter):
         if sandbox and parsed_url.hostname not in {"127.0.0.1", "localhost", "::1"}:
             raise ValueError("sandbox=True requires a loopback SandboxCluster URL")
         self._is_sandbox_backend = bool(sandbox)
+        self.enable_gateway_v3 = (
+            os.environ.get("ARRMES_GATEWAY_V3", "").strip() == "1"
+            if enable_gateway_v3 is None
+            else bool(enable_gateway_v3)
+        )
+        self.supports_service_queries = bool(self.enable_gateway_v3 and not self._is_sandbox_backend)
         self._catalog_cache: dict[str, tuple[float, int, Any]] = {}
 
     @staticmethod
@@ -426,7 +435,7 @@ class LiveGatewayAdapter(SandboxAdapter):
         expected = self._entity_binding(name, args, self._confirmed_entity)
         actual = self._entity_binding(name, args, entity)
         if expected != actual:
-            return AdapterObservation("denied", V2_BY_NAME[name].service, name, 409, False,
+            return AdapterObservation("denied", V3_BY_NAME[name].service if name in V3_BY_NAME else "control", name, 409, False,
                                       {"error": "confirmation_entity_changed", "requires_new_confirmation": True}, audit)
         return None
 
@@ -871,6 +880,93 @@ class LiveGatewayAdapter(SandboxAdapter):
             audit,
         )
 
+    def _mutate_live_torrent(
+        self,
+        action_name: str,
+        qui_action: str,
+        args: dict[str, Any],
+        principal: Principal,
+        audit: list[dict[str, Any]],
+    ) -> AdapterObservation:
+        prev_effect = self._active_effect
+        self._active_effect = "read"
+        try:
+            obs = self.execute_torrent_list({"state": "all"}, principal, idempotency_key=None, audit=audit)
+        finally:
+            self._active_effect = prev_effect
+        if obs.status != "verified_ok":
+            return AdapterObservation(obs.status, "qbittorrent", action_name, obs.http_status, False, obs.data, audit)
+        target_title = _norm(args["title"])
+        matches = [
+            x for x in obs.data.get("torrents", [])
+            if _norm(x.get("title_key", "")) == target_title or _norm(x.get("name", "")) == target_title
+        ]
+        if len(matches) != 1:
+            return AdapterObservation(
+                "clarify_required",
+                "qbittorrent",
+                action_name,
+                404,
+                False,
+                {"slot": "reference", "reason": "torrent_not_uniquely_resolved", "title": args["title"]},
+                audit,
+            )
+        changed = self._guard_confirmed_entity(action_name, args, matches[0], audit)
+        if changed is not None:
+            return changed
+        target_hash = str(matches[0]["hash"])
+        c2, m_resp = self._request_json(
+            "POST",
+            "/qui/api/instances/1/torrents/bulk-action",
+            body={"action": qui_action, "hashes": [target_hash]},
+            audit=audit,
+        )
+        if c2 not in {200, 202, 204}:
+            return AdapterObservation(
+                "error", "qbittorrent", action_name, c2, False,
+                m_resp if isinstance(m_resp, dict) else {"error": "qui_bulk_action_failed"}, audit,
+            )
+        prev_effect = self._active_effect
+        self._active_effect = "read"
+        try:
+            after_obs = self.execute_torrent_list({"state": "all"}, principal, idempotency_key=None, audit=audit)
+        finally:
+            self._active_effect = prev_effect
+        after_match = [
+            x for x in (after_obs.data.get("torrents", []) if after_obs.status == "verified_ok" else [])
+            if x.get("hash") == target_hash
+        ]
+        after_state = after_match[0].get("state", "unknown") if after_match else "unknown"
+        verified = (after_state == "paused") if qui_action == "pause" else (after_state not in {"paused", "unknown"})
+        return AdapterObservation(
+            "verified_ok" if verified else "dispatched",
+            "qbittorrent",
+            action_name,
+            200 if verified else 202,
+            verified,
+            {
+                "hash": target_hash,
+                "title": matches[0].get("title_key") or matches[0].get("name"),
+                "requested_action": qui_action,
+                "verified_state": after_state,
+            },
+            audit,
+        )
+
+    def execute_torrent_pause(self, args: dict[str, Any], principal: Principal, *, idempotency_key: str | None, audit: list[dict[str, Any]]) -> AdapterObservation:
+        if self._is_sandbox_backend:
+            return super().execute_torrent_pause(args, principal, idempotency_key=idempotency_key, audit=audit)
+        if not self.enable_gateway_v3:
+            return AdapterObservation("unsupported", "qbittorrent", "torrent_pause", 501, False, {"error": "live_action_not_implemented"}, audit)
+        return self._mutate_live_torrent("torrent_pause", "pause", args, principal, audit)
+
+    def execute_torrent_resume(self, args: dict[str, Any], principal: Principal, *, idempotency_key: str | None, audit: list[dict[str, Any]]) -> AdapterObservation:
+        if self._is_sandbox_backend:
+            return super().execute_torrent_resume(args, principal, idempotency_key=idempotency_key, audit=audit)
+        if not self.enable_gateway_v3:
+            return AdapterObservation("unsupported", "qbittorrent", "torrent_resume", 501, False, {"error": "live_action_not_implemented"}, audit)
+        return self._mutate_live_torrent("torrent_resume", "resume", args, principal, audit)
+
     def execute_request_status(self, args: dict[str, Any], principal: Principal, *, idempotency_key: str | None, audit: list[dict[str, Any]]) -> AdapterObservation:
         if self._is_sandbox_backend:
             return super().execute_request_status(args, principal, idempotency_key=idempotency_key, audit=audit)
@@ -1073,8 +1169,52 @@ class LiveGatewayAdapter(SandboxAdapter):
     def execute_armiger_parse(self, args: dict[str, Any], principal: Principal, *, idempotency_key: str | None, audit: list[dict[str, Any]]) -> AdapterObservation:
         if self._is_sandbox_backend:
             return super().execute_armiger_parse(args, principal, idempotency_key=idempotency_key, audit=audit)
-        return AdapterObservation("unsupported", "armiger", "armiger_parse", 501, False,
-                                  {"error": "native_armiger_integration_not_implemented"}, audit)
+        if not self.enable_gateway_v3:
+            return AdapterObservation("unsupported", "armiger", "armiger_parse", 501, False,
+                                      {"error": "native_armiger_integration_not_implemented"}, audit)
+        rel = args["release_name"]
+        parsed_meta = _parse_release_metadata(rel)
+        infer_body = {
+            "model": "armiger-ultra",
+            "inputs": [{"name": rel, "files": [{"path": rel, "size": 0}]}],
+        }
+        code, submit_resp = self._request_json("POST", "/image-gen/v1/infer", body=infer_body, audit=audit)
+        if code not in {200, 202} or not isinstance(submit_resp, dict):
+            return AdapterObservation("error", "armiger", "armiger_parse", code, False,
+                                      submit_resp if isinstance(submit_resp, dict) else {"error": "armiger_submit_failed"}, audit)
+        job_id = submit_resp.get("job_id")
+        if not isinstance(job_id, str) or not job_id.strip():
+            return AdapterObservation("error", "armiger", "armiger_parse", 502, False, {"error": "missing_armiger_job_id"}, audit)
+        c2, wait_resp = self._request_json("GET", f"/image-gen/v1/infer/{urllib.parse.quote(job_id.strip(), safe='')}/wait?timeout=10", audit=audit)
+        if c2 != 200 or not isinstance(wait_resp, dict) or wait_resp.get("status") != "completed":
+            return AdapterObservation("error", "armiger", "armiger_parse", c2, False,
+                                      wait_resp if isinstance(wait_resp, dict) else {"error": "armiger_wait_failed"}, audit)
+        result_obj = wait_resp.get("result") if isinstance(wait_resp.get("result"), dict) else wait_resp
+        preds = (
+            result_obj.get("results")
+            or result_obj.get("predictions")
+            or wait_resp.get("results")
+            or wait_resp.get("predictions")
+            or []
+        )
+        if not isinstance(preds, list):
+            preds = []
+        first_pred = preds[0] if preds and isinstance(preds[0], dict) else {}
+        return AdapterObservation(
+            "verified_ok",
+            "armiger",
+            "armiger_parse",
+            200,
+            True,
+            {
+                **parsed_meta,
+                "model": result_obj.get("model") or wait_resp.get("model") or "armiger-ultra",
+                "version": result_obj.get("version") or wait_resp.get("version"),
+                "artifact_digest": result_obj.get("artifact_digest") or wait_resp.get("artifact_digest"),
+                "classification": first_pred,
+            },
+            audit,
+        )
 
     def execute_bitmagnet_search(self, args: dict[str, Any], principal: Principal, *, idempotency_key: str | None, audit: list[dict[str, Any]]) -> AdapterObservation:
         if self._is_sandbox_backend:
@@ -1104,8 +1244,291 @@ class LiveGatewayAdapter(SandboxAdapter):
     def execute_waypoint_status(self, args: dict[str, Any], principal: Principal, *, idempotency_key: str | None, audit: list[dict[str, Any]]) -> AdapterObservation:
         if self._is_sandbox_backend:
             return super().execute_waypoint_status(args, principal, idempotency_key=idempotency_key, audit=audit)
-        return AdapterObservation("unsupported", "dh-waypoint", "waypoint_status", 501, False,
-                                  {"error": "native_waypoint_integration_not_implemented"}, audit)
+        if not self.enable_gateway_v3:
+            return AdapterObservation("unsupported", "dh-waypoint", "waypoint_status", 501, False,
+                                      {"error": "native_waypoint_integration_not_implemented"}, audit)
+        code, resp = self._request_json("GET", "/commskip/api/v1/batches?limit=5", audit=audit)
+        if code != 200 or not isinstance(resp, dict):
+            return AdapterObservation("error", "dh-waypoint", "waypoint_status", code, False,
+                                      resp if isinstance(resp, dict) else {"error": "waypoint_unavailable"}, audit)
+        batches = resp.get("batches") if isinstance(resp.get("batches"), list) else []
+        return AdapterObservation(
+            "verified_ok",
+            "dh-waypoint",
+            "waypoint_status",
+            200,
+            True,
+            {
+                "status": "online",
+                "recent_batch_count": len(batches),
+                "batches": batches[:5],
+            },
+            audit,
+        )
+
+    def _gateway_service_result(
+        self,
+        service: str,
+        args: dict[str, Any],
+        rows: list[dict[str, Any]],
+        total: int,
+        truncated: bool,
+        audit: list[dict[str, Any]],
+        **extra: Any,
+    ) -> AdapterObservation:
+        op = args["operation"]
+        query = args.get("query")
+        filtered = bool(query and op in {"library", "queue"})
+        scanned_count = len(rows)
+        if filtered:
+            needle = _norm(query)
+            rows = [r for r in rows if needle in _norm(str(r.get("title", r.get("artistName", r.get("name", "")))))]
+        max_items = 50
+        capped_rows = rows[:max_items]
+        if len(rows) > len(capped_rows):
+            truncated = True
+        data: dict[str, Any] = {
+            "source": "gateway_v3",
+            "operation": op,
+            "items": [_public_row(r) for r in capped_rows],
+            "returned_count": len(capped_rows),
+            "total_records": total,
+            "truncated": truncated,
+            "complete_listing": not truncated,
+            **extra,
+        }
+        if filtered:
+            data.update(
+                scanned_count=scanned_count,
+                upstream_total_records=total,
+                total_records=None if truncated else len(capped_rows),
+            )
+        if query:
+            data["query"] = query
+        return AdapterObservation(
+            "partial" if truncated else "verified_ok",
+            service,
+            "service_query",
+            200,
+            not truncated,
+            data,
+            audit,
+        )
+
+    def execute_service_query(
+        self,
+        args: dict[str, Any],
+        principal: Principal,
+        *,
+        idempotency_key: str | None,
+        audit: list[dict[str, Any]],
+    ) -> AdapterObservation:
+        if self._is_sandbox_backend or not self.enable_gateway_v3:
+            return AdapterObservation(
+                "unsupported", args.get("service", "native"), "service_query", 501, False,
+                {"error": "gateway_v3_service_query_disabled"}, audit,
+            )
+        args = validate_service_query(args)
+        service = args["service"]
+        op = args["operation"]
+        req_perm = SERVICE_PERMISSIONS[service]
+        if not principal.subject or req_perm not in principal.scopes:
+            return AdapterObservation("denied", service, "service_query", 403, False, {"error": "permission_required"}, audit)
+
+        if service in {"sonarr", "radarr", "lidarr"}:
+            version = "v1" if service == "lidarr" else "v3"
+            root = f"/{service}/api/{version}"
+            entity = {"sonarr": "series", "radarr": "movie", "lidarr": "artist"}[service]
+            headers = self._auth_headers_for(service, principal=principal)
+            if op == "health":
+                c1, status = self._request_json("GET", f"{root}/system/status", headers=headers, audit=audit)
+                if c1 != 200 or not isinstance(status, dict) or not str(status.get("version", "")).strip():
+                    return AdapterObservation("error", service, "service_query", c1 if c1 != 200 else 502, False,
+                                              {"error": "invalid_service_status"}, audit)
+                c2, issues = self._request_json("GET", f"{root}/health", headers=headers, audit=audit)
+                if c2 != 200 or not isinstance(issues, list):
+                    return AdapterObservation("error", service, "service_query", c2 if c2 != 200 else 502, False,
+                                              {"error": "invalid_service_health_issue"}, audit)
+                issue_list = [
+                    {k: r[k] for k in ("source", "type", "message") if k in r}
+                    for r in issues if isinstance(r, dict)
+                ]
+                return self._gateway_service_result(
+                    service, args, [], 0, False, audit,
+                    api_version=version, server_version=status["version"],
+                    healthy=not issue_list, issues=issue_list,
+                )
+            if op in {"queue", "history", "missing"}:
+                endpoint = "/wanted/missing" if op == "missing" else f"/{op}"
+                inc = {"includeSeries": "true"} if service == "sonarr" else {"includeMovie": "true"} if service == "radarr" else {"includeArtist": "true"}
+                q = urllib.parse.urlencode({"page": 1, "pageSize": 50, **inc})
+                code, payload = self._request_json("GET", f"{root}{endpoint}?{q}", headers=headers, audit=audit)
+                if code != 200 or not isinstance(payload, dict) or not isinstance(payload.get("records"), list):
+                    return AdapterObservation("error", service, "service_query", code if code != 200 else 502, False,
+                                              {"error": "invalid_upstream_page"}, audit)
+                rows = [r for r in payload["records"] if isinstance(r, dict)]
+                total = int(payload.get("totalRecords", len(rows)))
+                return self._gateway_service_result(service, args, rows, total, len(rows) < total, audit, api_version=version)
+            if op == "search":
+                q = urllib.parse.urlencode({"term": args["query"]})
+                code, rows_raw = self._request_json("GET", f"{root}/{entity}/lookup?{q}", headers=headers, audit=audit)
+                if code != 200 or not isinstance(rows_raw, list):
+                    return AdapterObservation("error", service, "service_query", code if code != 200 else 502, False,
+                                              {"error": "invalid_upstream_records"}, audit)
+                rows = [r for r in rows_raw if isinstance(r, dict)]
+                return self._gateway_service_result(service, args, rows, len(rows), len(rows) > 50, audit, api_version=version)
+            # op == "library"
+            code, rows_raw = self._request_json("GET", f"{root}/{entity}", headers=headers, audit=audit)
+            if code != 200 or not isinstance(rows_raw, list):
+                return AdapterObservation("error", service, "service_query", code if code != 200 else 502, False,
+                                          {"error": "invalid_upstream_records"}, audit)
+            rows = [r for r in rows_raw if isinstance(r, dict)]
+            return self._gateway_service_result(
+                service, args, rows, len(rows), False if args.get("query") else (len(rows) > 50),
+                audit, api_version=version,
+            )
+
+        if service == "tautulli":
+            if op == "health":
+                code, resp = self._request_json("GET", "/tautulli/api/v2?cmd=get_server_info", audit=audit)
+                if code != 200 or not isinstance(resp, dict):
+                    return AdapterObservation("error", "tautulli", "service_query", code if code != 200 else 502, False,
+                                              {"error": "tautulli_application_error"}, audit)
+                r_obj = resp.get("response") if isinstance(resp.get("response"), dict) else {}
+                data = r_obj.get("data") if isinstance(r_obj.get("data"), dict) else {}
+                if r_obj.get("result") != "success":
+                    return AdapterObservation("error", "tautulli", "service_query", 502, False,
+                                              {"error": "tautulli_application_error"}, audit)
+                ver = str(data.get("pms_version") or data.get("tautulli_version") or "online")
+                return self._gateway_service_result(
+                    "tautulli", args, [], 0, False, audit,
+                    api_version="v2", server_version=ver, pms_name=data.get("pms_name"), healthy=True,
+                )
+            if op == "activity":
+                code, resp = self._request_json("GET", "/tautulli/api/v2?cmd=get_activity", audit=audit)
+                if code != 200:
+                    return AdapterObservation("error", "tautulli", "service_query", code, False, {"error": "upstream_http_error"}, audit)
+                data, err = _extract_tautulli_data(resp, expected_list_key="sessions")
+                if data is None:
+                    return AdapterObservation("error", "tautulli", "service_query", 502, False, err, audit)
+                sessions = [r for r in data["sessions"] if isinstance(r, dict)]
+                return self._gateway_service_result(
+                    "tautulli", args, sessions, len(sessions), len(sessions) > 50, audit,
+                    api_version="v2", stream_count=data.get("stream_count", len(sessions)),
+                )
+            q = urllib.parse.urlencode({"cmd": "get_history", "length": 50, "order_column": "date", "order_dir": "desc"})
+            code, resp = self._request_json("GET", f"/tautulli/api/v2?{q}", audit=audit)
+            if code != 200:
+                return AdapterObservation("error", "tautulli", "service_query", code, False, {"error": "upstream_http_error"}, audit)
+            data, err = _extract_tautulli_data(resp, expected_list_key="data")
+            if data is None:
+                return AdapterObservation("error", "tautulli", "service_query", 502, False, err, audit)
+            rows = [r for r in data["data"] if isinstance(r, dict)]
+            total = int(data.get("recordsFiltered", len(rows)))
+            return self._gateway_service_result("tautulli", args, rows, total, len(rows) < total, audit, api_version="v2")
+
+        if service == "bitmagnet":
+            if op == "health":
+                gql_body = {"query": "{ version health { status checks { key status } } }"}
+                code, resp = self._request_json("POST", "/bitagent/graphql", body=gql_body, audit=audit)
+                if code != 200 or not isinstance(resp, dict) or "errors" in resp:
+                    return AdapterObservation("error", "bitmagnet", "service_query", code if code != 200 else 502, False,
+                                              {"error": "bitmagnet_health_failed"}, audit)
+                gdata = resp.get("data") if isinstance(resp.get("data"), dict) else {}
+                health = gdata.get("health") if isinstance(gdata.get("health"), dict) else {}
+                return self._gateway_service_result(
+                    "bitmagnet", args, [], 0, False, audit,
+                    api_version="graphql", server_version=gdata.get("version", "unknown"),
+                    status=health.get("status", "unknown"), healthy=(health.get("status") == "up"),
+                    checks=health.get("checks", []),
+                )
+            obs = self.execute_bitmagnet_search({"query": args["query"]}, principal, idempotency_key=idempotency_key, audit=audit)
+            if obs.status != "verified_ok":
+                return AdapterObservation(obs.status, "bitmagnet", "service_query", obs.http_status, False, obs.data, audit)
+            items = obs.data.get("items", [])
+            return AdapterObservation(
+                "verified_ok", "bitmagnet", "service_query", 200, True,
+                {
+                    "source": "gateway_v3",
+                    "operation": "search",
+                    "query": args["query"],
+                    "items": items,
+                    "returned_count": len(items),
+                    "total_records": len(items),
+                    "truncated": False,
+                    "complete_listing": True,
+                },
+                audit,
+            )
+
+        if service == "qbittorrent":
+            params: dict[str, Any] = {"limit": 1 if op == "health" else 100}
+            if args.get("query"):
+                params["search"] = args["query"]
+            q = urllib.parse.urlencode(params)
+            code, payload = self._request_json("GET", f"/qui/api/instances/1/torrents?{q}", audit=audit)
+            if code != 200 or not isinstance(payload, dict):
+                return AdapterObservation("error", "qbittorrent", "service_query", code if code != 200 else 502, False,
+                                          {"error": "invalid_qui_response"}, audit)
+            raw_items = [t for t in (payload.get("torrents") or []) if isinstance(t, dict)]
+            total = int(payload.get("total", len(raw_items)))
+            if op == "health":
+                return self._gateway_service_result(
+                    "qbittorrent", args, [], 0, False, audit,
+                    api_version="qui-v1", server_version="qui-gateway", healthy=True, total_torrents=total,
+                )
+            if op == "activity":
+                dl_speed = sum(int(t.get("dlspeed", 0) or 0) for t in raw_items)
+                up_speed = sum(int(t.get("upspeed", 0) or 0) for t in raw_items)
+                return self._gateway_service_result(
+                    "qbittorrent", args, [], 0, False, audit,
+                    api_version="qui-v1",
+                    transfer={"dl_info_speed": dl_speed, "up_info_speed": up_speed, "active_torrents": len(raw_items)},
+                )
+            rows = [
+                {
+                    "hash": t.get("hash", ""),
+                    "name": str(t.get("name", "")),
+                    "state": _map_qui_state(str(t.get("state", ""))),
+                    "progress": t.get("progress", 0.0),
+                    "dlspeed": t.get("dlspeed", 0),
+                    "upspeed": t.get("upspeed", 0),
+                    "size": t.get("size", 0),
+                    "category": t.get("category", ""),
+                }
+                for t in raw_items
+            ]
+            return self._gateway_service_result("qbittorrent", args, rows, total, len(rows) < total, audit, api_version="qui-v1")
+
+        if service == "seerr":
+            if op == "health":
+                code, resp = self._request_json("GET", "/request/api/discover/trending", audit=audit)
+                if code != 200 or not isinstance(resp, dict):
+                    return AdapterObservation("error", "seerr", "service_query", code if code != 200 else 502, False,
+                                              {"error": "invalid_service_status"}, audit)
+                return self._gateway_service_result(
+                    "seerr", args, [], 0, False, audit,
+                    api_version="request-portal-v1", server_version="request-portal", healthy=True,
+                )
+            q = urllib.parse.urlencode({"q": args["query"]})
+            code, resp = self._request_json("GET", f"/request/api/search?{q}", audit=audit)
+            if code != 200 or not isinstance(resp, dict) or not isinstance(resp.get("results"), list):
+                return AdapterObservation("error", "seerr", "service_query", code if code != 200 else 502, False,
+                                          {"error": "invalid_upstream_page"}, audit)
+            rows = [
+                {
+                    "id": r.get("id"),
+                    "title": r.get("title"),
+                    "name": r.get("title") or r.get("name"),
+                    "mediaType": r.get("type") or r.get("mediaType"),
+                    "year": r.get("year"),
+                    "status": r.get("status"),
+                }
+                for r in resp["results"] if isinstance(r, dict)
+            ]
+            return self._gateway_service_result("seerr", args, rows, len(rows), False, audit, api_version="request-portal-v1")
+
+        return AdapterObservation("error", service, "service_query", 503, False, {"error": "service_not_configured"}, audit)
 
     def _preflight_write_resolution(
         self,
@@ -1214,12 +1637,12 @@ class LiveGatewayAdapter(SandboxAdapter):
         norm = normalized(call)
         name = norm["name"]
         args = norm["arguments"]
-        spec = V2_BY_NAME.get(name)
+        spec = V3_BY_NAME.get(name)
         service = spec.service if spec else "unknown"
         effect = spec.effect if spec else "read"
         self._active_effect = effect
 
-        if name in LIVE_UNSUPPORTED_WRITES and not self._is_sandbox_backend:
+        if name in LIVE_UNSUPPORTED_WRITES and not self._is_sandbox_backend and not self.enable_gateway_v3:
             return AdapterObservation(
                 status="unsupported",
                 service=service,
@@ -1309,7 +1732,7 @@ class LiveGatewayAdapter(SandboxAdapter):
         if prepare(call, principal)["status"] == "denied":
             return AdapterObservation(
                 status="denied",
-                service=V2_BY_NAME[call.name].service if call.name in V2_BY_NAME else "control",
+                service=V3_BY_NAME[call.name].service if call.name in V3_BY_NAME else "control",
                 operation=call.name,
                 http_status=403,
                 verified_complete=False,

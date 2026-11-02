@@ -245,7 +245,7 @@ def _extract_unquoted_entity(query: str) -> str | None:
     m_tor = re.search(r"\b([A-Za-z0-9_.-]+(?:\.S\d{1,2}(?:E\d{1,2})?|\.\d{4}\.)[A-Za-z0-9_().-]+)\b", query)
     if m_tor:
         return m_tor.group(1).strip(".,?!:;\"'")
-    stop = r"(?:\s+(?:in|on|from|through|via|by|using|within|inside|rather|instead|without|before|after|and|or|if|unless|leaving|including|excluding|season|episodes?|movies?|series|show|film|status|already|right\s+now|please|today|this\s+week)\b|[?.!,;:]|\s+\((?:18|19|20|21)\d{2}\)|$)"
+    stop = r"(?:\s+(?:in|on|from|through|via|by|using|within|inside|rather|instead|without|before|after|and|or|if|unless|leaving|including|excluding|season|episodes?|movies?|series|show|film|status|already|right\s+now|please|today|this\s+week|is\s+(?:missing|in|on|available|monitored|already|currently|held|present|downloaded|complete)|are\s+(?:missing|in|on|available|monitored|already|currently|held|present|downloaded|complete)|missing|monitored|available|downloaded)\b|[?.!,;:]|\s+\((?:18|19|20|21)\d{2}\)|$)"
     for pat in (
         rf"\b(?:for|of|about|called|titled|named|series|movie|film|show|torrent|transfer|pause|resume|request|unmonitor|monitor)\s+([A-Z0-9][A-Za-z0-9:'&.-]*(?:\s+[A-Za-z0-9:'&.-]+){{0,6}}?){stop}",
         rf"^\s*(?:is|are|does|do|has|have)\s+([A-Z0-9][A-Za-z0-9:'&.-]*(?:\s+[A-Za-z0-9:'&.-]+){{0,5}}?)\s+(?:in|monitored|complete|missing|available|downloaded|stalled|paused|seeding|playing)\b",
