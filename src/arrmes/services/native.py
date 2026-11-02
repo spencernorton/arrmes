@@ -7,6 +7,7 @@ import math
 from pathlib import Path
 import re
 import time
+from types import MappingProxyType
 from typing import Any, Mapping
 import unicodedata
 import urllib.error
@@ -25,6 +26,7 @@ class ServiceConfig:
     base_url: str
     api_key: str = field(default="", repr=False)
     session_id: str = field(default="", repr=False)
+    user_ids: Mapping[str, int] = field(default_factory=dict, repr=False)
 
     def __post_init__(self) -> None:
         p = urllib.parse.urlsplit(self.base_url)
@@ -39,10 +41,17 @@ class ServiceConfig:
             raise ValueError("Invalid API key encoding")
         if not isinstance(self.session_id, str) or (self.session_id and not re.fullmatch(r"[A-Za-z0-9._-]+", self.session_id)):
             raise ValueError("Invalid session cookie encoding")
+        if (not isinstance(self.user_ids, Mapping) or len(self.user_ids) > 256
+                or any(not isinstance(subject, str) or not 1 <= len(subject) <= 200
+                       or subject != subject.strip() or any(ord(c) < 32 or ord(c) == 127 for c in subject)
+                       or type(user_id) is not int or not 1 <= user_id <= 2_147_483_647
+                       for subject, user_id in self.user_ids.items())):
+            raise ValueError("Invalid native service user mapping")
+        object.__setattr__(self, "user_ids", MappingProxyType(dict(self.user_ids)))
 
 
 def load_service_configs(path: str | Path) -> dict[str, ServiceConfig]:
-    """Read {"services": {name: {base_url, api_key?, session_id?}}}. Never log secrets."""
+    """Read operator service roots/credentials and optional trusted Seerr user IDs."""
     p = Path(path).expanduser()
     if p.stat().st_size > 1_048_576:
         raise ValueError("Service registry is too large")
@@ -61,8 +70,10 @@ def load_service_configs(path: str | Path) -> dict[str, ServiceConfig]:
         raise ValueError("Service registry must contain only a services object")
     out: dict[str, ServiceConfig] = {}
     for name, value in raw["services"].items():
-        if name not in SUPPORTED_OPERATIONS or not isinstance(value, dict) or set(value) - {"base_url", "api_key", "session_id"}:
+        if name not in SUPPORTED_OPERATIONS or not isinstance(value, dict) or set(value) - {"base_url", "api_key", "session_id", "user_ids"}:
             raise ValueError("Invalid service registry entry")
+        if name != "seerr" and "user_ids" in value:
+            raise ValueError("Native user mappings are supported only for Seerr")
         if not isinstance(value.get("base_url"), str):
             raise ValueError("Service registry entry requires base_url")
         out[name] = ServiceConfig(**value)
