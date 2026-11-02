@@ -2,8 +2,9 @@
 
 Manual provider search can refresh Bazarr's index and consume provider resources.
 It is a confirmed action, separate from the read-only service_query adapter.
-Download returns 204 after queuing a job; only observed metadata is completion
-evidence. Opaque provider cache keys remain server-held and are never user args.
+Download returns 204 after queuing a job. Matching metadata is a separate state
+observation, not completion evidence for that candidate's job. Opaque provider
+cache keys remain server-held and are never user args.
 """
 from __future__ import annotations
 
@@ -421,17 +422,21 @@ class NativeBazarrSubtitleAdapter:
                 return _obs("denied", call.name, 409, {**confirmed, "error": "subtitle_candidate_already_used"}, audit)
             code, outcome = self._post_once(args, target, candidate, audit)
             data = {**confirmed, "source": "native_api", "candidate_id": candidate.candidate_id,
-                    "outcome": outcome, "replayed": False, "postcondition_verified": False}
+                    "outcome": outcome, "replayed": False, "postcondition_verified": False,
+                    "metadata_postcondition_observed": False, "job_completion_correlated": False}
             if outcome != "accepted":
                 return _obs("error", call.name, code, {**data, "error": "subtitle_download_rejected" if outcome == "rejected" else "subtitle_download_outcome_unknown"}, audit)
             try:
                 after_target, after_row = self._resolve(args, audit)
-                complete = after_target == target and bool(self._existing_subtitles(after_row, args, require_size=True))
+                metadata_observed = after_target == target and bool(self._existing_subtitles(after_row, args, require_size=True))
             except _UpstreamError:
-                complete = False
-            data.update(outcome="postcondition_observed" if complete else "dispatched", postcondition_verified=complete,
-                        verification_basis="new_external_subtitle_metadata" if complete else "queued_job_not_completed",
-                        job_completion_correlated=False)
-            return _obs("verified_ok" if complete else "dispatched", call.name, code, data, audit, complete=complete)
+                metadata_observed = False
+            # This API exposes a cache UUID before dispatch and provider-native
+            # subtitle IDs in history, without a job ID linking the two. Another
+            # actor can create matching metadata while this candidate is queued.
+            # Preserve the observation without crediting candidate completion.
+            data.update(outcome="dispatched", metadata_postcondition_observed=metadata_observed,
+                        verification_basis="matching_external_subtitle_metadata_only" if metadata_observed else "queue_acceptance_only")
+            return _obs("dispatched", call.name, code, data, audit)
         except _UpstreamError as exc:
             return self._failure(call.name, exc, audit)

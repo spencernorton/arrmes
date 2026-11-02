@@ -150,7 +150,7 @@ def pending_download(adapter, args=None):
 
 
 @pytest.mark.parametrize("arguments", [MOVIE_ARGS, EPISODE_ARGS])
-def test_two_confirmations_exact_entity_and_form_then_business_postcondition(arguments):
+def test_two_confirmations_exact_entity_and_form_then_observed_metadata_stays_dispatched(arguments):
     with bazarr_fixture() as (native, state):
         adapter = NativeBazarrSubtitleAdapter(native)
         query = ('Find English non-forced non-HI subtitles for movie "Fixture movie" (2020) in Bazarr'
@@ -170,8 +170,9 @@ def test_two_confirmations_exact_entity_and_form_then_business_postcondition(arg
         pending = adapter.execute(download_call, OWNER)
         assert pending.status == "confirmation_required" and not posts(state)
         done = adapter.confirm_write(pending.data["confirm_id"], OWNER)
-        assert done.status == "verified_ok" and done.verified_complete
-        assert done.data["verification_basis"] == "new_external_subtitle_metadata"
+        assert done.status == "dispatched" and not done.verified_complete
+        assert done.data["metadata_postcondition_observed"] is True and done.data["postcondition_verified"] is False
+        assert done.data["verification_basis"] == "matching_external_subtitle_metadata_only"
         assert done.data["job_completion_correlated"] is False
         assert len(posts(state)) == 1
         sent = posts(state)[0]["body"]
@@ -196,7 +197,8 @@ def test_language_and_flags_filter_candidates_and_bind_exact_download(forced, hi
         adapter = NativeBazarrSubtitleAdapter(native)
         pending, _ = pending_download(adapter, args)
         done = adapter.confirm_write(pending.data["confirm_id"], OWNER)
-        assert done.verified_complete and len(posts(state)) == 1
+        assert done.status == "dispatched" and not done.verified_complete and len(posts(state)) == 1
+        assert done.data["metadata_postcondition_observed"] is True
         assert posts(state)[0]["body"]["hi"] == [str(hi)] and posts(state)[0]["body"]["forced"] == [str(forced)]
 
 
@@ -312,6 +314,39 @@ def test_concurrent_confirmations_claim_one_candidate_atomically():
             results = list(pool.map(lambda p: adapter.confirm_write(p.data["confirm_id"], OWNER), [first, second]))
         assert sorted(r.status for r in results) == ["denied", "dispatched"]
         assert len(posts(state)) == 1
+
+
+def test_unrelated_concurrent_matching_subtitle_does_not_complete_selected_candidate_job():
+    # The selected provider job remains pending. Another actor creates a matching
+    # subtitle between POST acceptance and the next metadata GET.
+    with bazarr_fixture(BazarrFixture(post_behavior="pending")) as (native, state):
+        adapter = NativeBazarrSubtitleAdapter(native)
+        pending, _ = pending_download(adapter)
+        dispatched = threading.Event()
+        unrelated_finished = threading.Event()
+        def other_automation():
+            assert dispatched.wait(timeout=3)
+            state.movies[0]["subtitles"].append({"id": 99, "code2": "en", "forced": False, "hi": False,
+                "path": "/fixture/private/different-provider.en.srt", "file_size": 456, "embedded_track_id": None})
+            unrelated_finished.set()
+        other = threading.Thread(target=other_automation)
+        other.start()
+        original = adapter._post_once
+        def dispatch_and_wait(*args):
+            result = original(*args)
+            dispatched.set()
+            assert unrelated_finished.wait(timeout=3)
+            return result
+        adapter._post_once = dispatch_and_wait
+        try:
+            result = adapter.confirm_write(pending.data["confirm_id"], OWNER)
+        finally:
+            dispatched.set();other.join(timeout=3)
+        assert len(posts(state)) == 1 and posts(state)[0]["body"]["subtitle"] == [SUBTITLE_UUID]
+        assert result.data["metadata_postcondition_observed"] is True
+        assert result.data["job_completion_correlated"] is False
+        assert result.data["postcondition_verified"] is False
+        assert result.status == "dispatched" and not result.verified_complete
 
 
 @pytest.mark.parametrize("field,value", [("sonarrEpisodeId", 99), ("season", 2), ("episode", 3), ("path", "/fixture/private/changed.mkv")])

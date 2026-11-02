@@ -87,16 +87,25 @@ performed before its confirmation, and no POST occurs before download confirmati
 
 ## Completion and tradeoffs
 
-Bazarr's POST returns 204 after queueing asynchronous work. That response alone
-produces `dispatched`, not a completed download. A bounded fresh metadata check can
-verify that a new external subtitle with the requested language/forced/HI identity
-and positive file size is now reported for the same media target. Otherwise the
-operation remains dispatched. A timeout, redirect or upstream 5xx is an unknown
-outcome, and the POST is not retried.
+Bazarr's POST returns 204 after queueing asynchronous work. Accepted downloads
+remain `dispatched` with `verified_complete=false`. A bounded fresh metadata check
+can separately observe a new external subtitle with the requested language/
+forced/HI identity and positive file size for the same media target. That sets
+`metadata_postcondition_observed=true`; it does not complete the selected candidate
+job. A timeout, redirect or upstream 5xx is an unknown outcome, and the POST is not
+retried.
 
-Metadata verification is not an independent filesystem check or correlation with
-the queued provider job. The observation says `job_completion_correlated=false`
-and records its verification basis. Concurrent upstream administration cannot be
+The pinned API exposes a random cache UUID for a search candidate, while history
+records the provider-native subtitle ID. The candidate response omits that native
+ID, and the download response supplies no correlated job ID. Provider/language/
+timestamp matching cannot distinguish another candidate downloaded concurrently,
+even by the same provider. No additional provider search or heuristic history
+match is used to claim completion.
+
+Metadata observation is not an independent filesystem check or correlation with
+the queued provider job. `job_completion_correlated` and `postcondition_verified`
+remain false, and the response records its observation basis. Concurrent upstream
+administration cannot be
 locked by this HTTP API; fresh signed-snapshot checks reduce the client-side
 recheck window without providing a cross-service transaction.
 
@@ -123,5 +132,6 @@ vendored; this controller implements its HTTP protocol.
 - [Episode provider endpoints](https://github.com/morpheus65535/bazarr/blob/8c68f16a1e12f8e7985baeb73fb4199b5149108a/bazarr/api/providers/providers_episodes.py): GET `episodeid`; POST `seriesid`, `episodeid` and the same candidate/flag fields.
 - [Manual search/download implementation](https://github.com/morpheus65535/bazarr/blob/8c68f16a1e12f8e7985baeb73fb4199b5149108a/bazarr/subtitles/manual.py): per-media profiles, candidate flags and asynchronous jobs.
 - [Subtitle cache](https://github.com/morpheus65535/bazarr/blob/8c68f16a1e12f8e7985baeb73fb4199b5149108a/bazarr/subtitles/cache.py): opaque UUID references with upstream expiry; Arrmes uses a shorter caller-bound lifetime.
+- [Download processing](https://github.com/morpheus65535/bazarr/blob/8c68f16a1e12f8e7985baeb73fb4199b5149108a/bazarr/subtitles/processing.py) and [history response](https://github.com/morpheus65535/bazarr/blob/8c68f16a1e12f8e7985baeb73fb4199b5149108a/bazarr/api/movies/history.py): provider-native subtitle IDs do not expose the candidate-cache UUID or a correlated download job ID.
 - [Languages](https://github.com/morpheus65535/bazarr/blob/8c68f16a1e12f8e7985baeb73fb4199b5149108a/bazarr/api/system/languages.py), [profiles](https://github.com/morpheus65535/bazarr/blob/8c68f16a1e12f8e7985baeb73fb4199b5149108a/bazarr/api/system/languages_profiles.py), and [subtitle metadata fields](https://github.com/morpheus65535/bazarr/blob/8c68f16a1e12f8e7985baeb73fb4199b5149108a/bazarr/api/swaggerui.py).
 - [Episode metadata](https://github.com/morpheus65535/bazarr/blob/8c68f16a1e12f8e7985baeb73fb4199b5149108a/bazarr/api/episodes/episodes.py): its marshalled response omits profile ID, so the resolved series profile is authoritative.
