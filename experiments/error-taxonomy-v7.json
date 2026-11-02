@@ -1,0 +1,87 @@
+{
+  "dataset": "acceptance-v4",
+  "total_cases": 1000,
+  "models": {
+    "released_arrmes_v131": {
+      "raw_exact": 770,
+      "verified_exact": 981,
+      "repaired_by_verifier": 211,
+      "damaged_by_verifier": 0,
+      "unexpected_verified_writes": 0,
+      "raw_error_breakdown": {
+        "entity_truncation_or_missing_typed_arg": 40,
+        "incorrect_intent_or_service": 43,
+        "malformed_format": 86,
+        "wrong_abstention_slot_or_reason": 21,
+        "unsafe_or_premature_write_proposal": 28,
+        "multi_turn_reference_failure": 8,
+        "compound_request_missed": 4
+      },
+      "component_attribution": {
+        "argument_entity_resolver": 40,
+        "model_intent_head": 96,
+        "representation_or_decoder": 86,
+        "context_entity_resolver": 8
+      }
+    },
+    "untuned_qwen3_06b": {
+      "raw_exact": 396,
+      "verified_exact": 628,
+      "repaired_by_verifier": 232,
+      "damaged_by_verifier": 0,
+      "unexpected_verified_writes": 0,
+      "raw_error_breakdown": {
+        "malformed_format": 356,
+        "entity_truncation_or_missing_typed_arg": 79,
+        "incorrect_intent_or_service": 92,
+        "unsafe_or_premature_write_proposal": 45,
+        "unsupported_scope_or_ambiguity": 16,
+        "compound_request_missed": 16
+      },
+      "component_attribution": {
+        "representation_or_decoder": 356,
+        "argument_entity_resolver": 79,
+        "model_intent_head": 169
+      }
+    },
+    "qwen3_4b_reference": {
+      "raw_exact": 782,
+      "verified_exact": 903,
+      "repaired_by_verifier": 121,
+      "damaged_by_verifier": 0,
+      "unexpected_verified_writes": 0,
+      "raw_error_breakdown": {
+        "malformed_format": 114,
+        "incorrect_intent_or_service": 31,
+        "entity_truncation_or_missing_typed_arg": 20,
+        "wrong_abstention_slot_or_reason": 31,
+        "unsupported_scope_or_ambiguity": 14,
+        "unsafe_or_premature_write_proposal": 8
+      },
+      "component_attribution": {
+        "representation_or_decoder": 114,
+        "model_intent_head": 84,
+        "argument_entity_resolver": 20
+      }
+    },
+    "deterministic_baseline": {
+      "raw_exact": 89,
+      "verified_exact": 193,
+      "repaired_by_verifier": 104,
+      "damaged_by_verifier": 0,
+      "unexpected_verified_writes": 0,
+      "raw_error_breakdown": {
+        "incorrect_intent_or_service": 663,
+        "wrong_abstention_slot_or_reason": 96,
+        "entity_truncation_or_missing_typed_arg": 96,
+        "multi_turn_reference_failure": 40,
+        "compound_request_missed": 16
+      },
+      "component_attribution": {
+        "model_intent_head": 775,
+        "argument_entity_resolver": 96,
+        "context_entity_resolver": 40
+      }
+    }
+  }
+}

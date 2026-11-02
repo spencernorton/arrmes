@@ -129,14 +129,14 @@ class _GemmaArguments:
         return _unique(pairs)
 
 
-def decode(raw: str, family: str = "functiongemma") -> Call:
+def decode(raw: str, family: str = "functiongemma", *, allow_v3: bool = False) -> Call:
     if not isinstance(raw, str) or len(raw) > 16384:
         raise InvalidCall("Invalid output size")
     if family == "functiongemma":
         match = re.fullmatch(r"\s*<start_function_call>call:([A-Za-z_][A-Za-z_0-9]*)(\{.*\})<end_function_call>\s*", raw, re.S)
         if not match:
             raise InvalidCall("Expected exactly one complete native tool call")
-        return validate_call(match[1], _GemmaArguments(match[2]).parse(), allow_v3=False)
+        return validate_call(match[1], _GemmaArguments(match[2]).parse(), allow_v3=allow_v3)
     if family == "hermes":
         match = re.fullmatch(r"\s*(?:<think>\s*</think>\s*)?<tool_call>\s*(\{.*\})\s*</tool_call>\s*", raw, re.S)
         if not match:
@@ -147,7 +147,7 @@ def decode(raw: str, family: str = "functiongemma") -> Call:
             raise InvalidCall("Malformed tool JSON") from exc
         if not isinstance(value, dict) or set(value) != {"name", "arguments"} or not isinstance(value["name"], str):
             raise InvalidCall("Invalid call envelope")
-        return validate_call(value["name"], value["arguments"], allow_v3=False)
+        return validate_call(value["name"], value["arguments"], allow_v3=allow_v3)
     raise InvalidCall("Unknown protocol family")
 
 

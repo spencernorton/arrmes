@@ -22,7 +22,7 @@ from urllib.error import HTTPError, URLError
 from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
-from .catalog import tools, tools_v2
+from .catalog import tools, tools_v2, tools_v3
 from .model import LocalModel, finalize_output, messages
 
 
@@ -74,7 +74,7 @@ class LlamaServerModel:
     ):
         if family not in {"functiongemma", "hermes"}:
             raise ValueError("Unknown model family")
-        if contract_version not in {"v1", "v2"}:
+        if contract_version not in {"v1", "v2", "v3", "arrmes.tools.v3"}:
             raise ValueError("Unknown contract version")
         if adapter is not None:
             raise InferenceError("GGUF inference requires a fused adapter; convert and qualify the fused checkpoint first")
@@ -184,7 +184,7 @@ class LlamaServerModel:
 
     def render_prompt(self, query: str, context: dict | None = None) -> str:
         payload = {"messages": messages(query, context, self.family, contract_version=self.contract_version),
-                   "tools": tools_v2() if self.contract_version == "v2" else tools(),
+                   "tools": tools_v3() if self.contract_version in {"v3", "arrmes.tools.v3"} else (tools_v2() if self.contract_version == "v2" else tools()),
                    "parallel_tool_calls": False, "chat_template_kwargs": {"enable_thinking": False},
                    "reasoning_format": "none"}
         rendered = self._json("POST", "/apply-template", payload).get("prompt")
@@ -245,7 +245,14 @@ def create_model(path: str, family: str = "functiongemma", adapter: str | None =
                  threads: int | None = None) -> RouterModel:
     """Choose a backend explicitly, or detect a local GGUF versus MLX directory."""
     if backend == "auto":
-        backend = "llama-server" if endpoint or Path(path).suffix.lower() == ".gguf" else "mlx"
+        p_obj = Path(path)
+        if p_obj.suffix.lower() == ".npz" or (p_obj.is_dir() and (p_obj / "router_weights.npz").is_file()):
+            backend = "neural-router"
+        else:
+            backend = "llama-server" if endpoint or p_obj.suffix.lower() == ".gguf" else "mlx"
+    if backend == "neural-router":
+        from .neural_router import ArrmesNeuralRouterV3
+        return ArrmesNeuralRouterV3(path, family, adapter, contract_version=contract_version)
     if backend == "mlx":
         if endpoint is not None:
             raise ValueError("The MLX backend does not use an inference endpoint")

@@ -13,9 +13,10 @@ _COMPOUND = re.compile(r"\b(and\s+then|then|and\s+also|after\s+that|followed\s+b
 _UNSAFE = re.compile(r"\b(ignore|bypass|override|credentials?|passwords?|tokens?|api\s*keys?|instructions?|system\s*prompt|sudo|shell)\b", re.I)
 _READ_WORDS = frozenset("""service entity please show list get tell me what which is are the a an my our in on for of
     whether currently check checks display inspect give report look up lookup catalog metadata search health healthy
-    online reachable running queue history recent events library inventory missing wanted activity streams playing
+    online reachable running queue history recent events library inventory missing wanted activity streams stream playing
     transfer stats statistics speed speeds bandwidth torrents torrent subtitles subtitle subs movie movies film films
-    tv series episodes episode shows do does have has how many if matching""".split())
+    tv series episodes episode shows show do does have has how many if matching status verify items active across all
+    artists artist albums album entries records right present overview summary""".split())
 
 
 def route_service_query(query: str) -> Call | None:
@@ -57,7 +58,7 @@ def route_service_query(query: str) -> Call | None:
         operations.add("library")
     if re.search(r"\b(missing|wanted)\b", plain, re.I):
         operations.add("missing")
-    if re.search(r"\b(activity|streams|playing|transfer\s+(?:stats|speeds?)|bandwidth)\b", plain, re.I):
+    if re.search(r"\b(activity|streams|playing|transfer\s+(?:stats|statistics|speeds?)|bandwidth)\b", plain, re.I):
         operations.add("activity")
     if re.search(r"\b(look\s*up|lookup|metadata\s+search|catalog\s+search|search\s+(?:the\s+)?(?:catalog|metadata))\b", plain, re.I):
         operations.discard("library")
@@ -83,11 +84,17 @@ def route_service_query(query: str) -> Call | None:
         # deliberately clarifies here; quoted native routes remain stricter.
         return None
     # Existing entity-specific missing queries belong to the frozen v2 route.
-    if operation == "missing" and service != "bazarr" and quoted:
+    if operation == "missing" and service != "bazarr" and (quoted or re.search(r"\b(?:for|of)\s+(?:the|a|an|this|that)\s+(?:tv\s+)?(?:show|series|movie|film|artist|album)\b", plain, re.I)):
         return None
     if operation == "queue" and service == "qbittorrent" and re.search(r"\b(paused|stopped|downloading|seeding|completed|stalled)\b", plain, re.I):
         return None
     args = {"service": service, "operation": operation}
+    if service == "bazarr" and operation in {"missing", "subtitles"}:
+        movie = bool(re.search(r"\b(movies?|films?)\b", plain, re.I))
+        tv = bool(re.search(r"\b(tv|series|episodes?|shows)\b|\bshow\s+subtitles?\b", plain, re.I))
+        if movie == tv:
+            return Call("clarify", {"slot": "media_type"})
+        args["media_type"] = "movie" if movie else "tv"
     if operation in {"search", "subtitles"} or (quoted and (operation == "library" or (operation == "queue" and service == "qbittorrent"))):
         if len(quoted) != 1:
             return Call("clarify", {"slot": "title" if not quoted else "reference"})
@@ -95,15 +102,10 @@ def route_service_query(query: str) -> Call | None:
     elif quoted:
         # A title-filtered health/history query is not silently broadened.
         return None if service == "tautulli" and operation == "history" else Call("clarify", {"slot": "scope"})
-    if service == "bazarr" and operation in {"missing", "subtitles"}:
-        movie = bool(re.search(r"\b(movies?|films?)\b", plain, re.I))
-        tv = bool(re.search(r"\b(tv|series|episodes?|shows)\b", plain, re.I))
-        if movie == tv:
-            return Call("clarify", {"slot": "media_type"})
-        args["media_type"] = "movie" if movie else "tv"
     # Unimplemented filters (language, date range, transfer state, exclusions,
     # ordering, etc.) must not silently turn into a broader inventory query.
-    words = set(re.findall(r"[A-Za-z0-9_]+", _SERVICES.sub(" SERVICE ", plain).lower()))
+    plain_clean = re.sub(r"\bonline\s+and\s+healthy\b", "online healthy", plain, flags=re.I)
+    words = set(re.findall(r"[A-Za-z0-9_]+", _SERVICES.sub(" SERVICE ", plain_clean).lower()))
     if words - _READ_WORDS:
         filler = {"current", "now", "using", "via", "from"}
         if service == "tautulli":

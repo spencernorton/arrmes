@@ -155,6 +155,10 @@ def tools_v2() -> list[dict]:
     return [a.tool() for a in V2_ACTIONS]
 
 
+def tools_v3() -> list[dict]:
+    return [a.tool() for a in V3_ACTIONS]
+
+
 def manifest() -> dict:
     return {"version": CONTRACT_VERSION, "actions": [
         {"tool": a.tool(), "service": a.service, "effect": a.effect,

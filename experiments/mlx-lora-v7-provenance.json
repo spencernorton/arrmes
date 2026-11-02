@@ -1,0 +1,86 @@
+{
+  "generated_at": "2026-11-02",
+  "checkpoints": {
+    "functiongemma_270m_arrmes_v7": {
+      "name": "functiongemma-270m-arrmes-v7",
+      "family": "functiongemma",
+      "base_model": "../arrmes-baseline/models/functiongemma",
+      "resume_adapter_sha256": "b2af9abc1883d515647be2539cb9192b53016701e1c7b4a71e6c7a9b3d432eac",
+      "new_adapter_sha256": "79307451d747b1b13fcf1caba1ed7d1828599cb503e59a7ea474565cae1a6394",
+      "fused_4bit_dir": "models/functiongemma-270m-arrmes-v7-4bit",
+      "fused_4bit_bytes": 184369263,
+      "fused_4bit_mb": 175.83,
+      "iters": 80,
+      "learning_rate": 2e-05,
+      "batch_size": 2,
+      "seed": 20261102,
+      "delta_verification": {
+        "num_tensors": 252,
+        "all_finite": true,
+        "max_abs_delta": 0.00423265,
+        "mean_abs_delta": 0.00067144,
+        "non_zero_update": true
+      }
+    },
+    "qwen3_06b_arrmes_v7": {
+      "name": "qwen3-06b-arrmes-v7",
+      "family": "hermes",
+      "base_model": "../arrmes-baseline/models/qwen3-06b",
+      "resume_adapter_sha256": "c88305f0e0cf465e906d153151ff7e34d3533fb251bb8fad8979c15fc9f39a45",
+      "new_adapter_sha256": "bd65e5d8469cbcc4332234f4ed5f2ddad9506950ea34e953ae77bc89ba85c256",
+      "fused_4bit_dir": "models/qwen3-06b-arrmes-v7-4bit",
+      "fused_4bit_bytes": 346928831,
+      "fused_4bit_mb": 330.86,
+      "iters": 80,
+      "learning_rate": 1.5e-05,
+      "batch_size": 1,
+      "num_layers": 14,
+      "seed": 20261102,
+      "delta_verification": {
+        "num_tensors": 196,
+        "all_finite": true,
+        "max_abs_delta": 0.00442476,
+        "mean_abs_delta": 0.0004712,
+        "non_zero_update": true
+      }
+    }
+  },
+  "overnight_v1_diagnostic": {
+    "functiongemma_v5_public": {
+      "total": 80,
+      "raw_exact": 63,
+      "raw_accuracy": 0.7875,
+      "verified_exact": 72,
+      "verified_accuracy": 0.9,
+      "warm_p50_ms": 125.57,
+      "warm_p95_ms": 218.95
+    },
+    "functiongemma_v7_trained_4bit": {
+      "total": 80,
+      "raw_exact": 53,
+      "raw_accuracy": 0.6625,
+      "verified_exact": 63,
+      "verified_accuracy": 0.7875,
+      "warm_p50_ms": 45.71,
+      "warm_p95_ms": 65.73
+    },
+    "qwen3_06b_v6_released": {
+      "total": 80,
+      "raw_exact": 64,
+      "raw_accuracy": 0.8,
+      "verified_exact": 67,
+      "verified_accuracy": 0.8375,
+      "warm_p50_ms": 189.36,
+      "warm_p95_ms": 306.83
+    },
+    "qwen3_06b_v7_trained_4bit": {
+      "total": 80,
+      "raw_exact": 34,
+      "raw_accuracy": 0.425,
+      "verified_exact": 52,
+      "verified_accuracy": 0.65,
+      "warm_p50_ms": 130.49,
+      "warm_p95_ms": 203.96
+    }
+  }
+}
