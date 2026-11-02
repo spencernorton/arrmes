@@ -29,6 +29,8 @@ Arrmes turns media-stack requests into validated tool calls. A small local model
 - **A preserved neural contract:** `arrmes.tools.v2` has 18 service actions plus `clarify` and `unsupported`. New native reads use `arrmes.tools.v3` and report `routing_source=explicit_service_deterministic`; they are not newly trained v6 model capabilities.
 - **Portable inference:** optional native llama.cpp/GGUF on CPU, with explicit accelerator selection; optional MLX on Apple Silicon. CPU inference installs neither CUDA nor MLX. [Runtime setup, conversion and tested platforms](docs/portable-runtime.md).
 
+The separately licensed [experimental Q4 GGUF](https://github.com/spencernorton/arrmes/releases/tag/v1.2.0) is available with its exact checksums and notices. Windows CPU generation now passes a [hosted CI operational test](docs/windows-cpu-qualification.md); Windows NVIDIA remains untested. The Windows test uses pinned v1.2.0 product source and does not qualify every newer workflow or model accuracy.
+
 Every dispatch validates the tool, arguments, entity and caller scopes. The HTTP service requires bearer authentication and explicit confirmation for consequential writes. Execution references come from a verified per-caller ledger. Credentials are kept out of model prompts, image layers and audit responses.
 
 ## Measurements and scope

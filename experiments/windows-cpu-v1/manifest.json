@@ -1,0 +1,45 @@
+{
+  "schema_version": 1,
+  "workflow_ref": "v1.2.1",
+  "workflow_sha": "b937d5c855a584fb5fb5bef642dfd5282e59f443",
+  "product_source_commit": "e76bfcfa2fd9d9e2397cae9b89ae91a5fc84243a",
+  "product_version": "1.2.0",
+  "qualification": "Hosted Windows x86_64 CPU inference and controlled operational smoke; not owned hardware, all-service coverage, model accuracy acceptance, RAM or NVIDIA measurement",
+  "files": [
+    {
+      "file": "analysis-original.json",
+      "bytes": 1981,
+      "sha256": "139c4e9428be82ab28a1557aec1406fdaa50d7c9950306904b5030d786e62a94"
+    },
+    {
+      "file": "analyze_receipt_original.py",
+      "bytes": 6142,
+      "sha256": "6b5ed341cfeb848a50accd0f7bc132b1b2c9a9af1c9c922b578f0f6588fda0b8"
+    },
+    {
+      "file": "api-metadata.json",
+      "bytes": 12490,
+      "sha256": "8e1e8fd602c8a7b066eb359635d94823585cfc740b3fbda5f9aa4c242ba3d804"
+    },
+    {
+      "file": "model-publication.json",
+      "bytes": 1943,
+      "sha256": "8ca033621bfba69a62aa2d7ab088aadd320705938af042a50fa238333b10bb57"
+    },
+    {
+      "file": "product-source-manifest.json",
+      "bytes": 4090,
+      "sha256": "ec486064d071b8a3e17b9e6bf7b724e4a4c742357bbc149ad833ad417cb2ee69"
+    },
+    {
+      "file": "receipt-export.json",
+      "bytes": 836,
+      "sha256": "ddb1a053a786228f0f73f8e81aeb7492f05959b023ed40d939fbb3b9ecbbd533"
+    },
+    {
+      "file": "windows-cpu-model-smoke-public.json",
+      "bytes": 14396,
+      "sha256": "2caa7dc65192baa26753fcdc7c78c42083e162a45dc76e64be32bf72fc2546e3"
+    }
+  ]
+}

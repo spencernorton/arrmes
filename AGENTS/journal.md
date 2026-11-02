@@ -1,3 +1,9 @@
+## 2026-11-02 — retain actual hosted Windows CPU qualification
+
+- The exact published experimental C7 model passed the single hosted Windows Server2025 AMD64 workflow41436216278: four actual model calls, eight operational checks and13 independent identity/environment/source checks. Product source is pinned v1.2.0/e76, helper/workflow v1.2.1/b937. No broad model accuracy, newer-workflow inference, owned Windows hardware, NVIDIA or memory result is claimed.
+- Version the original analysis/source manifest/API metadata and a lossless source-hash-record export. The offline verifier reconstructs the original CRLF receipt SHA and reproduces all13 checks; six artifact/run/source/device/dependency/cleanup mutants fail qualification. Seven new evidence tests pass.
+- Add exact model download/checksum/license instructions and keep Windows CPU CI versus other hardware/accelerator classes explicit. Core runtime behavior and the neural contract are unchanged; this is a1.3.1 qualification/documentation increment.
+
 ## 2026-11-02 — isolate body deadlines from CI scheduling
 
 - Public macOS CI at65b8e80 passed958 tests but one80ms slow-body assertion hit the separate finite socket timeout before its expected body-deadline branch. The failure is retained; no CI rerun or accepted two-error assertion hides it.

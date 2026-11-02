@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.1 — 2026-11-02
+
+- Publish practical download/checksum/license instructions for the separately distributed experimental GGUF.
+- Retain actual hosted Windows CPU generation and fixture evidence, with exact run/source/artifact binding, original receipt reconstruction and offline verification.
+- Keep Windows CUDA, physical Windows hardware, RAM profiling and broad model accuracy explicitly unqualified.
+
 ## 1.3.0 — 2026-11-02
 
 - Dispatch existing Sonarr/Radarr/Lidarr search actions through confirmed exact-ID native commands, with search-job evidence separate from downloaded files.
