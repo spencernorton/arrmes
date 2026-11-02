@@ -44,7 +44,7 @@ runs with two CPU threads, one slot and a 4,096-token context, then uploads only
 its JSON evidence for 30 days. Model and runtime downloads are temporary runner
 files, not source-controlled assets.
 
-Run it only after the owner approves and publishes the exact model artifact
+Run it only after artifact-specific release review accepts and publishes the exact model artifact
 with its Apache-2.0 license, modification notice and manifest. At preparation,
 this workflow has not run and there is no new Windows generation result.
 A future green execution qualifies its recorded hosted runner environment;
