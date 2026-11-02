@@ -1,3 +1,20 @@
+## 2026-11-02 Pre-inference direct-tool evaluation harness
+
+Added a reproducible Track A direct-model and Track B proposal-boundary harness
+for the frozen 1,000-input corpus-audited diagnostic candidate. Native syntax,
+tool/argument/entity scores, full-JSON format translation, verifier correction
+and decoder rejection are separate; no service execution or confirmation
+qualification is claimed. A pre-output blind control review is preserved as
+separate sensitivity metadata while all original gold labels remain unchanged.
+
+The prespecified five-model/runtime comparisons share fixed order, tools,
+policy, two development warmups, greedy 64-token generation and one pass.
+Timing excludes gold-dependent grading; RSS and MLX allocator accounting are
+separate. Source, model, input and harness checksums bind receipts. The harness
+and frozen-input checks pass 38 tests, including the previously inspected
+80-case native-score replay. No fresh acceptance output existed at this freeze;
+model runs and results are subsequent evidence, without runtime tuning.
+
 ## 2026-11-02 — preserve frozen diagnostics and repair proposal scope checks
 
 - The frozen 1,000-case comparison at runtime e5e76b8 reports 770 raw exact calls, 678 after verification versus released verification 717, and two remaining unexpected write proposals. Preserve all original inputs, raw outputs, scores and sources; post-output repairs and cached replays are development evidence, not fresh acceptance.
