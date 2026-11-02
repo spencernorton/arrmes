@@ -112,6 +112,25 @@ def test_artist_only_music_write_requires_explicit_broad_scope(query, expected):
     assert verify_proposal(call, query).name == expected
 
 
+@pytest.mark.parametrize("call, query", [
+    (Call("tv_search_missing", {"title": "Fixture series", "season": 1}),
+     'Download only episode 2 of season 1 of "Fixture series" in Sonarr'),
+    (Call("music_search", {"artist": "Fixture artist"}),
+     'Download all tracks from the album "Fixture album" by "Fixture artist" in Lidarr'),
+])
+def test_narrow_scope_loss_is_blocked_before_any_native_preflight(call, query):
+    from test_native_arr_writes import arr_fixture, OWNER
+    from arrmes.protocol import encode
+    class Scripted:
+        family = "hermes"
+        def infer(self, *_args, **_kwargs):
+            return {"raw": encode(call, "hermes")}
+    with arr_fixture() as (native, state):
+        service = ArrmesRuntimeService(model=Scripted(), executor=BoundedExecutor(ConfiguredAdapterRouter(native)))
+        result = service.execute(query, OWNER)
+        assert result["terminal_state"] == "clarify" and not state.calls
+
+
 def test_explicit_unknown_write_outcome_overrides_http_500_and_read_posts_are_not_mutations():
     obs = AdapterObservation("error", "bazarr", "bazarr_subtitle_download", 500, False,
                              {"outcome": "unknown"}, [{"method": "POST", "status": 500}])

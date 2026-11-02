@@ -1,3 +1,25 @@
+## 2026-11-02 Independent native-write safety review
+
+Independent adversarial review found scope loss despite green fixture tests:
+single episodes could widen to seasons, omitted albums to artist sets, and
+movie/TV context could ground another entity role. The verifier now clarifies
+selectors absent from the typed schema, checks compatible context roles before
+and after tool corrections, normalizes typographic negation and conserves one
+quoted entity per slot. Quoted literal It stays a literal instead of becoming
+a different selected movie. 139 focused boundary/runtime/instrument tests pass.
+
+Bazarr now rejects duplicate episode IDs and mixed-series pages before provider
+effects, including fresh confirmation. Native Arr job evidence requires matching
+resource and body names; unknown-release empty artist scopes clarify. Owned
+adapter suites pass 99 Bazarr and 84 Arr checks. These fixes were reviewed and
+tested with isolated fixtures; no production request was sent.
+
+The actual-model native Arr integration smoke passed 4/4 system workflows:
+3/4 raw exact and 4/4 verifier exact, across four unique prompts. All commands
+were exact-ID, confirmed once, dispatched rather than credited as file completion,
+and replay was denied. The earlier 5/8 smoke and separate 7/8 cached regression
+remain preserved; no model-result replacement or fresh-acceptance claim.
+
 ## 2026-11-02 Exact native indexer searches and quoted entity conservation
 
 Integrated the three trained Arr search actions through native explicit-ID

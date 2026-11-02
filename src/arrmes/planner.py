@@ -270,6 +270,63 @@ def _strip_quoted_and_releases(query: str) -> str:
     return s
 
 
+def _quoted_spans(query: str) -> list[str]:
+    return [match[1] or match[2] for match in re.finditer(r'''"([^"\n]+)"|(?<!\w)'([^'\n]+)'(?!\w)''', query)]
+
+
+def _context_role_matches(name: str, slot: str, selected: Any, outside: str) -> bool:
+    if not isinstance(selected, dict) or slot in {"artist", "album", "release_name"}:
+        return False
+    kind = selected.get("media_type")
+    if name.startswith("tv_"):
+        return kind == "tv"
+    if name.startswith("movie_"):
+        return kind == "movie"
+    if name in {"torrent_pause", "torrent_resume"}:
+        return kind == "torrent"
+    if name == "request_media":
+        movie, tv = bool(_MOVIE_WORD_RE.search(outside)), bool(_TV_WORD_RE.search(outside))
+        if movie and not tv:
+            return kind == "movie"
+        if tv and not movie:
+            return kind == "tv"
+    return kind in {"movie", "tv"}
+
+
+def _write_scope_fits_schema(name: str, args: dict[str, Any], query: str) -> bool:
+    """Reject narrower selectors absent from the preserved write representation."""
+    if name not in {"tv_search_missing", "movie_search", "music_search", "request_media"}:
+        return True
+    text = unicodedata.normalize("NFKC", _strip_quoted_and_releases(query)).casefold()
+    for field in ("title", "artist", "album"):
+        value = args.get(field)
+        if isinstance(value, str) and value:
+            literal = unicodedata.normalize("NFKC", value).casefold()
+            text = re.sub(r"(?<!\w)" + re.escape(literal) + r"(?!\w)", " ENTITY ", text)
+    if re.search(r"\b(4k|uhd|2160p|1080p|720p|480p|hdr|hdr10|hevc|h264|h265|x264|x265|remux|bluray|web[- ]dl|web[- ]rip|lossless|flac|mp3|aac|bitrate|quality|profiles?)\b", text):
+        return False
+    if name == "tv_search_missing":
+        if re.search(r"\bepisode\b|\bs\d{1,4}\s*e\d{1,5}\b|\bepisodes\s*(?:#\s*)?\d+\b", text):
+            return False
+        if re.search(r"\b(latest|newest|oldest|first|last|next|previous|selected|random|few|some)\b", text):
+            return False
+        if re.search(r"\b(?:18|19|20|21)\d{2}\b", text) or any(_TRAILING_PAREN_YEAR_RE.match(span) for span in _quoted_spans(query)):
+            return False
+    if name == "music_search":
+        if re.search(r"\b(tracks?|discs?|disks?|cds?|latest|newest|oldest|first|last|next|previous|selected)\b|\b(?:18|19|20|21)\d{2}\b", text):
+            return False
+        if "album" not in args:
+            # Every album is a representable artist-wide set. A named album,
+            # record or single is a different target and cannot be discarded.
+            remainder = re.sub(r"\bevery\s+album\b", " ", text)
+            if re.search(r"\b(album|record|ep|single)\b", remainder):
+                return False
+            artist = _norm_alnum(str(args.get("artist", "")))
+            if any(_norm_alnum(span) != artist for span in _quoted_spans(query)):
+                return False
+    return True
+
+
 def _infer_clarify_slot(query: str, selected: dict[str, Any] | None = None) -> str:
     if selected is None and _DEICTIC_RE.search(query):
         return "reference"
@@ -371,7 +428,8 @@ def verify_proposal(
     name = call.name
     args = dict(call.arguments)
     selected = (context or {}).get("selected_media") if isinstance(context, dict) else None
-    q_unquoted = _strip_quoted_and_releases(query)
+    q_unquoted = unicodedata.normalize("NFKC", _strip_quoted_and_releases(query)).translate(
+        {0x2018: "'", 0x2019: "'", 0x02BC: "'"})
 
     # 0. Compound multi-action, unsafe instruction, and vague-scope guard (ignoring quoted titles and .mkv filenames)
     if _COMPLEX_RE.search(q_unquoted):
@@ -392,6 +450,8 @@ def verify_proposal(
         if re.search(r"\b(4k|uhd|2160p|1080p|720p|seasons?|episodes?|quality|profile|quota|on\s+behalf)\b|\bas\s+(?!movie\b|tv\b)\w+", scope_text):
             return validate_call("clarify", {"slot": "scope"})
         if name == "request_status" and re.search(r"\b(?:18\d{2}|19\d{2}|20\d{2}|21\d{2}|2200|movies?|films?|tv|series)\b", scope_text):
+            return validate_call("clarify", {"slot": "scope"})
+        if name == "request_status" and any(_TRAILING_PAREN_YEAR_RE.match(span) for span in _quoted_spans(query)):
             return validate_call("clarify", {"slot": "scope"})
         if name == "request_status" and isinstance(selected, dict) and _DEICTIC_RE.search(q_unquoted):
             if any(selected.get(key) is not None for key in ("year", "media_type", "season")):
@@ -460,8 +520,15 @@ def verify_proposal(
     # span is not a different requested title. Recover only one uniquely quoted
     # non-generic entity; multiple quoted spans require clarification rather
     # than guessing which slot or target the model shortened.
-    quoted = [match[1] or match[2] for match in re.finditer(r'''"([^"\n]+)"|(?<!\w)'([^'\n]+)'(?!\w)''', query)]
-    for slot in {_MANDATORY_ENTITY_SLOTS.get(name), _OPTIONAL_ENTITY_SLOTS.get(name)} - {None}:
+    quoted = _quoted_spans(query)
+    entity_slots = {_MANDATORY_ENTITY_SLOTS.get(name), _OPTIONAL_ENTITY_SLOTS.get(name)} - {None}
+    quote_only = [{i for i, span in enumerate(quoted) if _is_grounded_in_text(args[slot], span)}
+                  for slot in entity_slots if isinstance(args.get(slot), str)
+                  and not _is_grounded_in_text(args[slot], q_unquoted)
+                  and any(_is_grounded_in_text(args[slot], span) for span in quoted)]
+    if len(quote_only) > 1 and len(set.union(*quote_only)) < len(quote_only):
+        return validate_call("clarify", {"slot": "scope"})
+    for slot in entity_slots:
         value = args.get(slot)
         if not isinstance(value, str):
             continue
@@ -470,6 +537,13 @@ def verify_proposal(
             if len(quoted) != 1 or _norm_alnum(value) in _GENERIC_DOMAIN_PLACEHOLDERS | _DEICTIC_PLACEHOLDERS:
                 return validate_call("clarify", {"slot": "title"})
             args[slot] = quoted[0]
+    if name in {"movie_status", "movie_search", "request_media"} and isinstance(args.get("title"), str):
+        quoted_year = _TRAILING_PAREN_YEAR_RE.match(args["title"])
+        if quoted_year:
+            year = int(quoted_year[2])
+            if "year" in args and args["year"] != year:
+                return validate_call("clarify", {"slot": "scope"})
+            args.update(title=quoted_year[1].strip(), year=year)
 
     # 2. Check optional entity slots first (strip if ungrounded/placeholder)
     ungrounded_album_dropped = False
@@ -479,14 +553,15 @@ def verify_proposal(
             val = args[opt_slot].strip()
             val_norm = _norm_alnum(val)
             in_query = _is_grounded_in_text(val, query)
+            literal_quoted = any(_norm_alnum(span) == val_norm for span in quoted)
             in_selected = bool(
-                selected
+                _context_role_matches(name, opt_slot, selected, q_unquoted)
                 and isinstance(selected.get("title"), str)
-                and _is_grounded_in_text(val, selected["title"])
+                and _norm_alnum(val) == _norm_alnum(selected["title"])
             )
             if (
-                val_norm in _DEICTIC_PLACEHOLDERS
-                or (val_norm in _GENERIC_DOMAIN_PLACEHOLDERS and not in_selected)
+                (val_norm in _DEICTIC_PLACEHOLDERS and not literal_quoted)
+                or (val_norm in _GENERIC_DOMAIN_PLACEHOLDERS and not in_selected and not literal_quoted)
                 or (not in_query and not in_selected)
             ):
                 snapped = None if val_norm in _DEICTIC_PLACEHOLDERS else _snap_entity_to_query(val, query)
@@ -507,8 +582,9 @@ def verify_proposal(
         val = str(args.get(slot, "")).strip()
         val_norm = _norm_alnum(val)
         in_query = _is_grounded_in_text(val, query)
+        literal_quoted = any(_norm_alnum(span) == val_norm for span in quoted)
         in_selected = bool(
-            selected
+            _context_role_matches(name, slot, selected, q_unquoted)
             and isinstance(selected.get("title"), str)
             and _norm_alnum(val) == _norm_alnum(selected["title"])
         )
@@ -548,8 +624,8 @@ def verify_proposal(
                 ):
                     name = "movie_status"
 
-        if val_norm in _DEICTIC_PLACEHOLDERS:
-            if selected and isinstance(selected.get("title"), str) and slot == "title":
+        if val_norm in _DEICTIC_PLACEHOLDERS and not literal_quoted:
+            if _context_role_matches(name, slot, selected, q_unquoted) and isinstance(selected.get("title"), str) and slot == "title":
                 if re.search(r"\b(other\s+version|second\s+one|first\s+one|latest\s+one)\b", query, re.IGNORECASE):
                     return validate_call("clarify", {"slot": "reference"})
                 args["title"] = selected["title"]
@@ -557,7 +633,7 @@ def verify_proposal(
                 in_query = False
             else:
                 return validate_call("clarify", {"slot": "reference"})
-        elif (val_norm in _GENERIC_DOMAIN_PLACEHOLDERS and not in_selected) or (not in_query and not in_selected):
+        elif (val_norm in _GENERIC_DOMAIN_PLACEHOLDERS and not in_selected and not literal_quoted) or (not in_query and not in_selected):
             name = "clarify"
             args = {"slot": _infer_clarify_slot(query, selected)}
 
@@ -644,7 +720,7 @@ def verify_proposal(
         artist = str(args.get("artist", ""))
         if artist:
             scope_text = re.sub(r"(?<!\w)" + re.escape(artist) + r"(?!\w)", " ENTITY ", scope_text, flags=re.I)
-        if not re.search(r"\b(?:all|every|entire\s+(?:artist|catalog(?:ue)?|discography)|discography|missing\s+(?:albums?|music)|artist[- ]wide)\b", scope_text, re.I):
+        if not re.search(r"\b(?:all\s+(?:(?:the|of|missing|monitored|released)\s+)*(?:albums|music)|every\s+album|(?:entire|whole)\s+(?:artist\s+)?(?:catalog(?:ue)?|discography)|discography|missing\s+(?:albums|music)|artist[- ]wide)\b", scope_text, re.I):
             return validate_call("clarify", {"slot": "scope"})
     elif name == "tv_search_missing" and not has_search_trigger:
         name = "tv_missing" if re.search(r"\b(missing|absent|gaps|holes)\b", q_unquoted, re.IGNORECASE) else "tv_status"
@@ -760,6 +836,12 @@ def verify_proposal(
         return validate_call("unsupported", {"reason": "out_of_scope"})
     if name in WRITE_EFFECT_ACTIONS_V3 and re.search(r"\b(if|unless|except|until|only\s+when|provided\s+that|as\s+long\s+as)\b", q_unquoted, re.I):
         return validate_call("unsupported", {"reason": "complex"})
+    if not _write_scope_fits_schema(name, args, query):
+        return validate_call("clarify", {"slot": "scope"})
+    entity_slot = _MANDATORY_ENTITY_SLOTS.get(name)
+    if entity_slot and selected and isinstance(args.get(entity_slot), str):
+        if not _is_grounded_in_text(args[entity_slot], query) and not _context_role_matches(name, entity_slot, selected, q_unquoted):
+            return validate_call("clarify", {"slot": "reference"})
 
     return validate_call(name, args)
 
