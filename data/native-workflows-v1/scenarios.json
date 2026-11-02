@@ -1,0 +1,15 @@
+{
+  "schema_version": 1,
+  "purpose": "Authored integration scenarios derived from controlled service fixtures; not held-out language acceptance or training data",
+  "training_use": "forbidden",
+  "cases": [
+    {"id": "NW1-01", "fixture": "bitmagnet", "route": "neural_v2", "query": "Search Bitmagnet for Fixture title", "expected": {"name": "bitmagnet_search", "arguments": {"query": "Fixture title"}}, "terminal": "completed"},
+    {"id": "NW1-02", "fixture": "seerr", "route": "neural_v2", "query": "Request the movie \"Fixture movie\" (2020)", "expected": {"name": "request_media", "arguments": {"title": "Fixture movie", "media_type": "movie", "year": 2020}}, "terminal": "completed", "confirm": true},
+    {"id": "NW1-03", "fixture": "seerr", "route": "neural_v2", "query": "Show my request status for \"Fixture movie\"", "expected": {"name": "request_status", "arguments": {"title": "Fixture movie"}}, "terminal": "completed"},
+    {"id": "NW1-04", "fixture": "seerr", "route": "neural_v2", "fault": "ambiguous", "query": "Request the movie \"Fixture movie\" (2020)", "expected": {"name": "request_media", "arguments": {"title": "Fixture movie", "media_type": "movie", "year": 2020}}, "terminal": "clarify"},
+    {"id": "NW1-05", "fixture": "seerr", "route": "neural_v2", "fault": "unavailable", "query": "Show my request status for \"Fixture movie\"", "expected": {"name": "request_status", "arguments": {"title": "Fixture movie"}}, "terminal": "error"},
+    {"id": "NW1-06", "fixture": "seerr", "route": "explicit_seerr_deterministic", "query": "Request movie \"Fixture movie\" (2020) in Seerr", "expected": {"name": "request_media", "arguments": {"title": "Fixture movie", "media_type": "movie", "year": 2020}}, "terminal": "completed", "confirm": true},
+    {"id": "NW1-07", "fixture": "bazarr", "route": "explicit_bazarr_deterministic", "query": "Find English non-forced non-HI subtitles for movie \"Fixture movie\" (2020) in Bazarr", "expected": {"name": "bazarr_subtitle_search", "arguments": {"media_type": "movie", "title": "Fixture movie", "year": 2020, "language": "en", "forced": false, "hearing_impaired": false}}, "terminal": "dispatched", "confirm": true, "download_candidate": true},
+    {"id": "NW1-08", "fixture": "bazarr", "route": "explicit_bazarr_deterministic", "query": "Find English non-forced non-HI subtitles for S01E02 of \"Fixture series\" (2020) in Bazarr", "expected": {"name": "bazarr_subtitle_search", "arguments": {"media_type": "episode", "title": "Fixture series", "year": 2020, "season": 1, "episode": 2, "language": "en", "forced": false, "hearing_impaired": false}}, "terminal": "dispatched", "confirm": true, "download_candidate": true}
+  ]
+}

@@ -10,7 +10,7 @@ _QUOTED = re.compile(r'"[^"\n]*"|\'[^\'\n]*\'')
 _LANGUAGES = {"english": "en", "french": "fr", "spanish": "es", "german": "de", "italian": "it",
               "japanese": "ja", "korean": "ko", "portuguese": "pt", "chinese": "zh", "arabic": "ar",
               "hindi": "hi", "russian": "ru", "dutch": "nl", "polish": "pl", "swedish": "sv"}
-_TARGET = r'(?:(?:the\s+)?movie\s+"(?P<movie>[^"\n]+)"(?:\s*\((?P<movie_year>\d{4})\))?|(?:the\s+)?episode\s+S(?P<season>\d{1,4})E(?P<episode>\d{1,5})\s+of\s+"(?P<series>[^"\n]+)"(?:\s*\((?P<series_year>\d{4})\))?)'
+_TARGET = r'(?:(?:the\s+)?movie\s+"(?P<movie>[^"\n]+)"(?:\s*\((?P<movie_year>\d{4})\))?|(?:the\s+)?(?:episode\s+)?S(?P<season>\d{1,4})E(?P<episode>\d{1,5})\s+of\s+"(?P<series>[^"\n]+)"(?:\s*\((?P<series_year>\d{4})\))?)'
 _NATURAL = re.compile(r'^(?:please\s+)?(?P<verb>find|search\s+for|download)\s+(?P<language>[A-Za-z]+)\s+'
     r'(?P<forced>forced|non-forced)\s+(?P<hi>HI|non-HI)\s+subtitles?'
     r'(?:\s+candidate\s+(?P<candidate>[a-f0-9]{24}))?\s+for\s+' + _TARGET + r'\s+in\s+Bazarr[.!?]?$', re.I)
