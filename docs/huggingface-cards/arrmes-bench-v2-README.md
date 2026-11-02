@@ -58,3 +58,10 @@ See the [v1.2 source change set, artifact hashes and comparative evidence](https
 For zero-leakage evaluation with `0` exact query overlaps and `0` entity overlaps (`1,260` positive scenarios across `252` clusters + `1,200` hard-negative/ambiguity/safety scenarios across `240` clusters and `35` families), use [`NorviTech/arrmes-bench-v5`](https://huggingface.co/datasets/NorviTech/arrmes-bench-v5) and see [`docs/benchmark-acceptance-v5.md`](https://github.com/spencernorton/arrmes/blob/v1.4.0/docs/benchmark-acceptance-v5.md).
 
 ![Frozen Acceptance-v4 Error Taxonomy and Verifier Repair Progression](arrmes_v7_error_taxonomy_and_verifier_repair.png)
+
+
+## Visual Benchmark & Efficiency Comparisons (`v1.4.2`)
+
+![Arrmes v1.4 vs. Similar Open Models Accuracy Comparison](figures/arrmes_v7_acceptance_v5_accuracy_bounds.png)
+
+![With vs. Without Arrmes: Claude Sonnet Task Completion Time, Token Usage, & Local RAM / VRAM Footprint](figures/arrmes_v7_runtime_latency_memory_footprint.png)
