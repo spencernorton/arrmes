@@ -12,6 +12,7 @@ spec = importlib.util.spec_from_file_location("native_write_smoke", ROOT / "scri
 smoke = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(smoke)
 CASES = json.loads((ROOT / "data/native-workflows-v1/scenarios.json").read_text(encoding="utf-8"))["cases"]
+CASES += json.loads((ROOT / "data/native-arr-workflows-v1/scenarios.json").read_text(encoding="utf-8"))["cases"]
 
 
 @pytest.mark.parametrize("case", CASES, ids=lambda case: case["id"])

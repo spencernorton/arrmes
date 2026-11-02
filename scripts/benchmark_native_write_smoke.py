@@ -60,6 +60,10 @@ def fixture(case):
         from test_bazarr_subtitles import bazarr_fixture, OWNER
         with bazarr_fixture() as (native, state):
             yield native, state, OWNER
+    elif case["fixture"] == "arr":
+        from test_native_arr_writes import arr_fixture, OWNER
+        with arr_fixture() as (native, state):
+            yield native, state, OWNER
     else:
         raise ValueError("Unknown integration fixture")
 
@@ -136,6 +140,11 @@ def run_case(case, model):
             business = len(data.get("items", [])) == 2
         if case["fixture"] == "seerr" and case.get("confirm") and business:
             business = state.posted and writes[0].get("body") == {"mediaType": "movie", "mediaId": 101}
+        if case["fixture"] == "arr" and business:
+            data = result["observation"]["data"]
+            business = (len(writes) == 1 and writes[0].get("body") == case["expected_mutation"]
+                        and data.get("media_download_completion_verified") is False
+                        and result["observation"]["verified_complete"] is False)
         if case.get("download_candidate") and business:
             data = result["observation"]["data"]
             business = data.get("job_completion_correlated") is False and result["observation"]["verified_complete"] is False
@@ -175,7 +184,7 @@ def main():
         raise SystemExit("Refusing to overwrite integration inputs/results/source")
     output.mkdir(parents=True)
     paths = list((ROOT / "src/arrmes").rglob("*.py"))
-    paths += [ROOT / "tests" / name for name in ("test_native_bitmagnet.py", "test_native_requests.py", "test_bazarr_subtitles.py")]
+    paths += [ROOT / "tests" / name for name in ("test_native_bitmagnet.py", "test_native_requests.py", "test_bazarr_subtitles.py", "test_native_arr_writes.py")]
     paths += [Path(__file__).resolve(), args.inputs.resolve()]
     files = {path.relative_to(ROOT).as_posix(): sha(path) for path in sorted(paths)}
     for path in paths:
@@ -217,6 +226,7 @@ def main():
             "temperature": 0, "warmup": "none; scenario order recorded", "context": "empty server-owned ledger per scenario"},
         "summary": {"cases": len(results), "system_expected": sum(row["system_expected"] for row in results),
             "neural_cases": len(neural), "neural_raw_exact": sum(row.get("raw_exact") is True for row in neural),
+            "neural_unique_queries": len({row["query"] for row in neural}),
             "neural_verifier_exact": sum(row.get("verifier_exact") is True for row in neural),
             "explicit_cases": len(results) - len(neural)}, "rows": results}
     (output / "results.json").write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
