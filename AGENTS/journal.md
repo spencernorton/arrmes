@@ -1,3 +1,9 @@
+## 2026-11-02 — extend independent scope regressions before release
+
+- Independent review caught residual universal-episode subranges, negated resume inflections and quoted identity clauses. Check numeric/ordinal scope before removing universal wording, retain all resume prohibitions, and reject any remaining AS/UNDER identity introducer after recognized caller-self phrases.
+- Fifty-nine new regression checks cover positive commands and these fail-closed boundaries; the initial 46-check pass and subsequent eight/four failures are preserved as development history. All final targeted checks pass. No benchmark input, original raw prediction or frozen score changes.
+- Frozen sources and raw receipts are integrated separately; a source-only reproduction snapshot will preserve e5 after the new candidate differs. A final full suite and exact-head public CI are required on the complete release candidate.
+
 ## 2026-11-02 Frozen five-comparison diagnostic results
 
 Completed one prespecified pass over all 1,000 inputs for each comparison,

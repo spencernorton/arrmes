@@ -81,8 +81,8 @@ _PASSIVE_PAUSE_QUERY_RE = re.compile(
 )
 _AFFIRMATIVE_RESUME_RE = re.compile(r"\b(resume|unpause|resuming|unpausing)\b", re.IGNORECASE)
 _NEGATED_RESUME_RE = re.compile(
-    r"\b(?:don't|do\s+not|never|without|avoid|not|refrain\s+from)\s+"
-    r"(?:(?:ever|actually|automatically|be|keep|start|try|to)\s+)*"
+    r"\b(?:don't|do\s+not|never|without|avoid|not|no|stop|cease|quit|refrain\s+from)\s+"
+    r"(?:(?:ever|actually|automatically|currently|longer|be|keep|on|start|try|to)\s+)*"
     r"(?:resum(?:e|ing)|unpaus(?:e|ing))\b",
     re.IGNORECASE,
 )
@@ -341,7 +341,16 @@ def _write_scope_fits_schema(name: str, args: dict[str, Any], query: str) -> boo
     ):
         return False
     if name == "tv_search_missing":
-        episode_scope = re.sub(r"\b(?:every|each)\s+(?:(?:aired|monitored)\s+)*missing\s+episode\b", " ", text)
+        # Season is the only numeric selector this schema can retain. Check
+        # all other numbers/ordinals before removing a universal episode noun:
+        # "every missing episode numbered 6" is still an episode restriction.
+        selectors = _SEASON_NUM_RE.sub(" ", text)
+        selector_words = "|".join((*_SEASON_WORDS, *_SEASON_ORDINALS))
+        if re.search(r"\b\d+\b|\b(?:" + selector_words + r"|numbered|number)\b", selectors):
+            return False
+        episode_scope = re.sub(
+            r"\b(?:every|each)\s+(?:(?:aired|monitored)\s+)*missing\s+episode\b"
+            r"(?=\s*(?:$|[.;!?]|of\b|for\b|in\b|using\b|via\b))", " ", text)
         if re.search(r"\bepisode(?:\b|\d)|\bs\d{1,4}\s*e\d{1,5}\b|\b\d{1,4}x\d{1,5}\b|\bepisodes\s*(?:#\s*)?\d+\b", episode_scope):
             return False
         number_words = "|".join(_SEASON_WORDS)
@@ -383,7 +392,9 @@ def _request_identity_scope_fits_schema(text: str) -> bool:
     )
     text = re.sub(r"\bas\s+(?:a\s+)?(?:movie|film|tv(?:[- ]series)?|series)\b(?=\s*(?:$|[.;!?]|for\b|in\b|through\b))",
                   " MEDIA ", text, flags=re.I)
-    return not re.search(r"\bon\s+behalf\b|\bas\s+\w+|\b(?:user(?:_?id)?|accounts?|admin(?:istrator)?|impersonat\w*)\b", text, re.I)
+    # Unknown identity may be quoted (now a <QUOTED> placeholder) or missing.
+    # Reject the leftover introducer itself, not only an ASCII word after it.
+    return not re.search(r"\bon\s+behalf\b|\b(?:as|under|user(?:_?id)?|accounts?|admin(?:istrator)?|impersonat\w*)\b", text, re.I)
 
 
 def _infer_clarify_slot(query: str, selected: dict[str, Any] | None = None) -> str:
