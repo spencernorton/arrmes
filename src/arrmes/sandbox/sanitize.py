@@ -9,6 +9,7 @@ from pathlib import Path
 import re
 import shutil
 import sqlite3
+from contextlib import closing
 from typing import Any
 import xml.etree.ElementTree as ET
 import zipfile
@@ -97,7 +98,7 @@ def _create_arr_xml(service: str) -> str:
 
 
 def _build_sonarr_db(db_path: Path) -> None:
-    with sqlite3.connect(db_path) as conn:
+    with closing(sqlite3.connect(db_path)) as conn, conn:
         conn.executescript(
             """
             PRAGMA foreign_keys = ON;
@@ -224,7 +225,7 @@ def _build_sonarr_db(db_path: Path) -> None:
 
 
 def _build_radarr_db(db_path: Path) -> None:
-    with sqlite3.connect(db_path) as conn:
+    with closing(sqlite3.connect(db_path)) as conn, conn:
         conn.executescript(
             """
             PRAGMA foreign_keys = ON;
@@ -327,7 +328,7 @@ def _build_radarr_db(db_path: Path) -> None:
 
 
 def _build_lidarr_db(db_path: Path) -> None:
-    with sqlite3.connect(db_path) as conn:
+    with closing(sqlite3.connect(db_path)) as conn, conn:
         conn.executescript(
             """
             PRAGMA foreign_keys = ON;
@@ -442,7 +443,7 @@ def _build_tautulli_db(db_path: Path, ini_path: Path) -> None:
         "monitoring_interval = 60\n",
         encoding="utf-8",
     )
-    with sqlite3.connect(db_path) as conn:
+    with closing(sqlite3.connect(db_path)) as conn, conn:
         conn.executescript(
             """
             PRAGMA foreign_keys = ON;
@@ -502,7 +503,7 @@ def _build_qbittorrent_state(conf_path: Path, db_path: Path) -> None:
         "WebUI\\Port=8080\n",
         encoding="utf-8",
     )
-    with sqlite3.connect(db_path) as conn:
+    with closing(sqlite3.connect(db_path)) as conn, conn:
         conn.executescript(
             """
             PRAGMA foreign_keys = ON;
@@ -549,7 +550,7 @@ def _build_qbittorrent_state(conf_path: Path, db_path: Path) -> None:
 
 
 def _build_requests_db(db_path: Path) -> None:
-    with sqlite3.connect(db_path) as conn:
+    with closing(sqlite3.connect(db_path)) as conn, conn:
         conn.executescript(
             """
             PRAGMA foreign_keys = ON;
@@ -620,7 +621,7 @@ def _build_requests_db(db_path: Path) -> None:
 
 
 def _build_extensible_db(db_path: Path) -> None:
-    with sqlite3.connect(db_path) as conn:
+    with closing(sqlite3.connect(db_path)) as conn, conn:
         conn.executescript(
             """
             PRAGMA foreign_keys = ON;
@@ -714,7 +715,7 @@ def _sanitize_arr_bundle(zip_path: Path, out_dir: Path, service: str, db_filenam
     tree.write(xml_path, encoding="utf-8", xml_declaration=False)
 
     db_path = out_dir / db_filename
-    with sqlite3.connect(db_path) as conn:
+    with closing(sqlite3.connect(db_path)) as conn, conn:
         conn.execute("PRAGMA foreign_keys = ON")
         stripped_indexers = conn.execute("DELETE FROM Indexers").rowcount
         stripped_clients = conn.execute("DELETE FROM DownloadClients").rowcount
@@ -793,7 +794,7 @@ def sanitize_and_restore(raw_dir: Path, sanitized_dir: Path) -> dict[str, Any]:
     cp["General"]["monitoring_interval"] = "0"
     with (taut_dir / "config.ini").open("w", encoding="utf-8") as fh:
         cp.write(fh)
-    with sqlite3.connect(taut_dir / "tautulli.db") as conn:
+    with closing(sqlite3.connect(taut_dir / "tautulli.db")) as conn, conn:
         stripped_notifiers = conn.execute("DELETE FROM notifiers").rowcount
         conn.execute("UPDATE active_sessions SET ip_address = '127.0.0.1', user = REPLACE(user, '_ext_', '_sandbox_')")
         conn.execute("UPDATE session_history SET ip_address = '127.0.0.1', user = REPLACE(user, '_ext_', '_sandbox_')")
@@ -824,7 +825,7 @@ def sanitize_and_restore(raw_dir: Path, sanitized_dir: Path) -> dict[str, Any]:
         "WebUI\\Port=0\n",
         encoding="utf-8",
     )
-    with sqlite3.connect(qbit_dir / "qbittorrent.db") as conn:
+    with closing(sqlite3.connect(qbit_dir / "qbittorrent.db")) as conn, conn:
         stripped_trackers = conn.execute(
             "UPDATE torrents SET tracker_url = '', save_path = REPLACE(save_path, '/legacy_storage/downloads', '/sandbox/downloads')"
         ).rowcount
@@ -842,7 +843,7 @@ def sanitize_and_restore(raw_dir: Path, sanitized_dir: Path) -> dict[str, Any]:
     req_dir = sanitized_dir / "requests"
     req_dir.mkdir(parents=True, exist_ok=True)
     shutil.copy2(raw_dir / "requests.db", req_dir / "requests.db")
-    with sqlite3.connect(req_dir / "requests.db") as conn:
+    with closing(sqlite3.connect(req_dir / "requests.db")) as conn, conn:
         conn.execute("UPDATE schema_meta SET upstream_marker = ''")
         req_ver = conn.execute("SELECT MAX(version) FROM schema_meta").fetchone()[0]
     receipts["requests"] = {
@@ -865,7 +866,7 @@ def sanitize_and_restore(raw_dir: Path, sanitized_dir: Path) -> dict[str, Any]:
     for path in sorted(sanitized_dir.rglob("*")):
         if path.is_file():
             if path.suffix == ".db":
-                with sqlite3.connect(path) as conn:
+                with closing(sqlite3.connect(path)) as conn, conn:
                     conn.execute("VACUUM")
             raw_bytes = path.read_bytes()
             if forbidden_pattern.search(raw_bytes):

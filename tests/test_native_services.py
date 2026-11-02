@@ -28,18 +28,28 @@ def _fixture_response(path, query):
         return {"data": []}
     if path.endswith("/health"):
         return []
-    if path.endswith("/wanted/missing") or path in {"/api/v3/queue", "/api/v3/history", "/api/v1/queue", "/api/v1/history"}:
-        return {"records": [{"id": 77, "title": "Fixture title", "status": "queued"}], "totalRecords": 1}
-    if path.endswith(("/episodes/wanted", "/movies/wanted")):
-        return {"data": [{"title": "Fixture title", "seriesTitle": "Fixture title", "missing_subtitles": [{"code2": "en"}]}], "total": 1}
+    if path.endswith("/wanted/missing"):
+        return {"records": [{"id": 77, "title": "Fixture title", "seriesId": 8, "artistId": 9,
+                             "seasonNumber": 1, "episodeNumber": 2}], "totalRecords": 1}
+    if path in {"/api/v3/queue", "/api/v3/history", "/api/v1/queue", "/api/v1/history"}:
+        row = {"id": 77, "sourceTitle": "Fixture title", "date": "2026-01-01T00:00:00Z"} if path.endswith("/history") else {"id": 77, "title": "Fixture title", "status": "queued"}
+        return {"records": [row], "totalRecords": 1}
+    if path.endswith("/episodes/wanted"):
+        return {"data": [{"sonarrSeriesId": 8, "sonarrEpisodeId": 40, "seriesTitle": "Fixture title",
+                          "episodeTitle": "Pilot", "missing_subtitles": [{"code2": "en"}]}], "total": 1}
+    if path.endswith("/movies/wanted"):
+        return {"data": [{"radarrId": 4, "title": "Fixture title", "missing_subtitles": [{"code2": "en"}]}], "total": 1}
     if path == "/api/movies":
         return {"data": [{"radarrId": 4, "title": "Sintel", "subtitles": [{"code2": "en", "path": "/private/video.en.srt"}], "missing_subtitles": []}], "total": 1}
     if path == "/api/series":
         return {"data": [{"sonarrSeriesId": 8, "title": "Fixture title"}], "total": 1}
     if path == "/api/episodes":
         assert query["seriesid[]"] == ["8"]
-        return {"data": [{"sonarrEpisodeId": 40, "title": "Pilot", "subtitles": [{"code2": "en"}], "path": "/private/pilot.mkv"}]}
-    if path.endswith(("/series", "/movie", "/artist", "/series/lookup", "/movie/lookup", "/artist/lookup")):
+        return {"data": [{"sonarrEpisodeId": 40, "sonarrSeriesId": 8, "title": "Pilot", "subtitles": [{"code2": "en"}], "missing_subtitles": [], "path": "/private/pilot.mkv"}]}
+    if path.endswith("/lookup"):
+        return [{"id": 0, "title": "Fixture title", "artistName": "Fixture title", "tvdbId": 88, "tmdbId": 99,
+                 "foreignArtistId": "00000000-0000-0000-0000-000000000001"}]
+    if path.endswith(("/series", "/movie", "/artist")):
         return [{"id": 1, "title": "Fixture title", "artistName": "Fixture title", "path": "/private/media", "statistics": {"episodeCount": 5, "api_key": "DO-NOT-EXPOSE"}}]
     if path == "/api/v2/app/version":
         return "v5.1.2"
@@ -52,8 +62,8 @@ def _fixture_response(path, query):
     if path == "/api/v2":
         cmd = query["cmd"][0]
         data = {"get_tautulli_info": {"tautulli_version": "v2.18.0"},
-                "get_activity": {"sessions": [{"title": "Fixture movie", "user": "Fixture user", "ip_address": "192.0.2.1"}]},
-                "get_history": {"data": [{"full_title": "Fixture movie", "user": "Fixture user"}], "recordsFiltered": 1}}[cmd]
+                "get_activity": {"sessions": [{"session_key": "0", "title": "Fixture movie", "user": "Fixture user", "ip_address": "192.0.2.1"}]},
+                "get_history": {"data": [{"row_id": 1, "full_title": "Fixture movie", "user": "Fixture user"}], "recordsFiltered": 1}}[cmd]
         return {"response": {"result": "success", "data": data}}
     if path == "/api/v1/status":
         return {"version": "3.5.0"}
@@ -168,7 +178,7 @@ def test_pagination_repeated_page_and_changing_totals_cannot_claim_completion():
     for mode in ("repeated", "changed"):
         def responder(path, query):
             page = int(query["page"][0])
-            return {"records": [{"id": 1 if mode == "repeated" else page}], "totalRecords": 2 if page == 1 or mode == "repeated" else 1}
+            return {"records": [{"id": 1 if mode == "repeated" else page, "title": "Fixture queue title"}], "totalRecords": 2 if page == 1 or mode == "repeated" else 1}
         with native_fixture(responder) as (url, calls):
             obs = ServiceQueryAdapter({"sonarr": ServiceConfig(url)}, page_size=1).execute(Call("service_query", {"service": "sonarr", "operation": "queue"}), OWNER)
             assert obs.status == "partial" and len(calls) == 2
@@ -177,7 +187,7 @@ def test_pagination_repeated_page_and_changing_totals_cannot_claim_completion():
 def test_overlapping_pages_are_not_counted_as_successful_complete_inventory():
     def responder(path, query):
         page = int(query["page"][0])
-        return {"records": [{"id": 1}, {"id": 2}] if page == 1 else [{"id": 2}, {"id": 3}], "totalRecords": 3}
+        return {"records": [{"id": n, "title": "Fixture " + str(n)} for n in ([1, 2] if page == 1 else [2, 3])], "totalRecords": 3}
     with native_fixture(responder) as (url, calls):
         obs = ServiceQueryAdapter({"sonarr": ServiceConfig(url)}, page_size=2).execute(Call("service_query", {"service": "sonarr", "operation": "queue"}), OWNER)
         assert obs.status == "partial" and not obs.verified_complete
@@ -359,3 +369,200 @@ def test_runtime_unconfigured_native_service_never_falls_back_to_gateway():
         result = service.execute("Show Radarr queue", OWNER)
     assert result["terminal_state"] == "error"
     assert result["observation"]["data"]["error"] == "service_not_configured"
+
+
+def _record_adapter(service, operation, row, *, media_type="movie"):
+    """Supply one malformed or representative API record without any sockets."""
+    adapter = ServiceQueryAdapter({service: ServiceConfig("https://fixture.test")})
+    args = args_for(service, operation)
+    if service == "bazarr" and operation in {"subtitles", "missing"}:
+        args["media_type"] = media_type
+        if media_type == "tv" and operation == "subtitles":
+            args["query"] = "Fixture title"
+    def response(_service, path, _audit, **_kwargs):
+        if service in {"sonarr", "radarr", "lidarr"}:
+            return [row] if operation in {"library", "search"} else {"records": [row], "totalRecords": 1}
+        if service == "bazarr":
+            if operation == "subtitles" and media_type == "tv" and path.startswith("/api/series?"):
+                return {"data": [{"sonarrSeriesId": 8, "title": "Fixture title"}], "total": 1}
+            return {"data": [row], "total": 1}
+        if service == "qbittorrent":
+            return [row]
+        if service == "tautulli":
+            data = {"sessions": [row]} if operation == "activity" else {"data": [row], "recordsFiltered": 1}
+            return {"response": {"result": "success", "data": data}}
+        return {"results": [row], "totalResults": 1}
+    adapter._get = response
+    return adapter, Call("service_query", args)
+
+
+_ROW_PAIRS = [(service, operation) for service, operations in SUPPORTED_OPERATIONS.items()
+              for operation in sorted(operations) if operation not in {"health"} and not (service == "qbittorrent" and operation == "activity")]
+
+
+@pytest.mark.parametrize("service,operation", _ROW_PAIRS)
+def test_empty_native_records_never_become_verified_inventory(service, operation):
+    adapter, call = _record_adapter(service, operation, {})
+    with NetworkIsolationGuard():
+        obs = adapter.execute(call, OWNER)
+    assert obs.status == "error" and not obs.verified_complete
+    assert obs.http_status == 502
+
+
+@pytest.mark.parametrize("service,field", [("sonarr", "title"), ("radarr", "title"), ("lidarr", "artistName")])
+@pytest.mark.parametrize("bad_id", [True, -1, 0, "1", None])
+def test_library_internal_identity_requires_positive_integer(service, field, bad_id):
+    adapter, call = _record_adapter(service, "library", {"id": bad_id, field: "Fixture title"})
+    with NetworkIsolationGuard():
+        obs = adapter.execute(call, OWNER)
+    assert obs.status == "error" and not obs.verified_complete
+
+
+@pytest.mark.parametrize("service,field", [("sonarr", "title"), ("radarr", "title"), ("lidarr", "artistName")])
+@pytest.mark.parametrize("bad_title", [None, 7, True, "", "   "])
+def test_library_requires_the_correct_service_display_field(service, field, bad_title):
+    adapter, call = _record_adapter(service, "library", {"id": 1, field: bad_title})
+    with NetworkIsolationGuard():
+        assert adapter.execute(call, OWNER).status == "error"
+
+
+@pytest.mark.parametrize("service,display,provider,value", [
+    ("sonarr", "title", "tvdbId", 88), ("radarr", "title", "tmdbId", 99),
+    ("lidarr", "artistName", "foreignArtistId", "00000000-0000-0000-0000-000000000001"),
+])
+@pytest.mark.parametrize("internal", [0, None])
+def test_metadata_lookup_accepts_not_yet_added_entities_with_provider_identity(service, display, provider, value, internal):
+    adapter, call = _record_adapter(service, "search", {"id": internal, display: "Fixture title", provider: value, "images": None})
+    with NetworkIsolationGuard():
+        obs = adapter.execute(call, OWNER)
+    assert obs.verified_complete and obs.data["returned_count"] == 1
+    assert obs.data["items"][0][provider] == value
+
+
+@pytest.mark.parametrize("service,display,provider", [("sonarr", "title", "tvdbId"), ("radarr", "title", "tmdbId"), ("lidarr", "artistName", "foreignArtistId")])
+@pytest.mark.parametrize("bad_provider", [True, -1, "", None])
+def test_lookup_id_zero_without_valid_provider_identity_is_not_verified(service, display, provider, bad_provider):
+    adapter, call = _record_adapter(service, "search", {"id": 0, display: "Fixture title", provider: bad_provider})
+    with NetworkIsolationGuard():
+        assert adapter.execute(call, OWNER).status == "error"
+
+
+def test_unknown_media_queue_item_and_nullable_metadata_remain_valid():
+    adapter, call = _record_adapter("sonarr", "queue", {"id": 0, "title": "Unknown release", "seriesId": None, "episodeId": None, "series": None})
+    with NetworkIsolationGuard():
+        obs = adapter.execute(call, OWNER)
+    assert obs.verified_complete and obs.data["items"][0]["seriesId"] is None
+    adapter, call = _record_adapter("radarr", "history", {"id": 1, "sourceTitle": None, "movie": {"id": 7, "title": "Known movie"}})
+    with NetworkIsolationGuard():
+        assert adapter.execute(call, OWNER).verified_complete
+
+
+@pytest.mark.parametrize("operation", ["queue", "history"])
+@pytest.mark.parametrize("row", [{"id": True, "title": "Fixture"}, {"id": -1, "title": "Fixture"}, {"id": 1, "title": None}, {"id": 1, "sourceTitle": 5}])
+def test_queue_and_history_need_a_stable_identity_and_some_display_name(operation, row):
+    adapter, call = _record_adapter("sonarr", operation, row)
+    with NetworkIsolationGuard():
+        assert adapter.execute(call, OWNER).status == "error"
+
+
+@pytest.mark.parametrize("bad_id", [True, -1, "40", None])
+def test_bazarr_wanted_requires_real_entity_identifiers(bad_id):
+    adapter, call = _record_adapter("bazarr", "missing", {"radarrId": bad_id, "title": "Sintel", "missing_subtitles": []})
+    with NetworkIsolationGuard():
+        assert adapter.execute(call, OWNER).status == "error"
+    adapter, call = _record_adapter("bazarr", "missing", {"sonarrSeriesId": 8, "sonarrEpisodeId": bad_id,
+                                      "seriesTitle": "Fixture title", "missing_subtitles": []}, media_type="tv")
+    with NetworkIsolationGuard():
+        assert adapter.execute(call, OWNER).status == "error"
+
+
+def test_bazarr_subtitle_state_fields_cannot_silently_disappear():
+    adapter, call = _record_adapter("bazarr", "subtitles", {"radarrId": 4, "title": "Sintel"})
+    with NetworkIsolationGuard():
+        assert adapter.execute(call, OWNER).status == "error"
+    adapter, call = _record_adapter("bazarr", "subtitles", {"sonarrSeriesId": 8, "sonarrEpisodeId": 40,
+                                    "title": None, "season": 1, "episode": 2,
+                                    "subtitles": None, "missing_subtitles": None}, media_type="tv")
+    with NetworkIsolationGuard():
+        assert adapter.execute(call, OWNER).verified_complete
+
+
+@pytest.mark.parametrize("session", [{"session_key": 0}, {"session_key": "0"}, {"session_key": None, "session_id": "opaque-stream-session"}])
+def test_tautulli_activity_accepts_documented_session_identity_variants(session):
+    adapter, call = _record_adapter("tautulli", "activity", {**session, "title": "Fixture movie", "parent_rating_key": None})
+    with NetworkIsolationGuard():
+        assert adapter.execute(call, OWNER).verified_complete
+
+
+@pytest.mark.parametrize("row", [{"row_id": True, "full_title": "Fixture movie"}, {"row_id": -1, "full_title": "Fixture movie"}, {"row_id": 1, "full_title": None}])
+def test_tautulli_history_cannot_verify_unidentified_or_unnamed_rows(row):
+    adapter, call = _record_adapter("tautulli", "history", row)
+    with NetworkIsolationGuard():
+        assert adapter.execute(call, OWNER).status == "error"
+
+
+@pytest.mark.parametrize("row", [{"id": 1, "mediaType": "movie", "originalTitle": "Fixture movie"},
+                                   {"id": 2, "mediaType": "tv", "name": "Fixture series"},
+                                   {"id": 3, "mediaType": "person", "name": "Fixture actor"}])
+def test_seerr_search_checks_native_result_type_specific_title_without_requiring_optional_metadata(row):
+    adapter, call = _record_adapter("seerr", "search", {**row, "mediaInfo": None})
+    with NetworkIsolationGuard():
+        assert adapter.execute(call, OWNER).verified_complete
+
+
+@pytest.mark.parametrize("row", [{"id": True, "mediaType": "movie", "title": "Fixture"},
+                                   {"id": -1, "mediaType": "movie", "title": "Fixture"},
+                                   {"id": 1, "mediaType": "tv", "title": "Wrong display field"},
+                                   {"id": 1, "mediaType": "other", "name": "Fixture"}])
+def test_seerr_search_never_verifies_unknown_type_or_invalid_identity(row):
+    adapter, call = _record_adapter("seerr", "search", row)
+    with NetworkIsolationGuard():
+        assert adapter.execute(call, OWNER).status == "error"
+
+
+@pytest.mark.parametrize("row", [{"hash": H40}, {"hash": H40, "name": True}, {"hash": H40, "name": ""},
+                                   {"hash": H40, "name": "Fixture torrent", "state": True}])
+def test_qbittorrent_queue_needs_name_and_well_typed_optional_state(row):
+    adapter, call = _record_adapter("qbittorrent", "queue", row)
+    with NetworkIsolationGuard():
+        assert adapter.execute(call, OWNER).status == "error"
+
+
+def test_missing_episode_core_identity_does_not_require_nullable_metadata_title():
+    adapter, call = _record_adapter("sonarr", "missing", {"id": 7, "seriesId": 8, "seasonNumber": 0,
+                                                         "episodeNumber": 1, "title": None})
+    with NetworkIsolationGuard():
+        assert adapter.execute(call, OWNER).verified_complete
+    adapter, call = _record_adapter("sonarr", "missing", {"id": 7, "seriesId": True, "seasonNumber": 0,
+                                                         "episodeNumber": 1, "title": None})
+    with NetworkIsolationGuard():
+        assert adapter.execute(call, OWNER).status == "error"
+
+
+def test_qbittorrent_read_preserves_unknown_upstream_state_without_inventing_a_known_state():
+    adapter, call = _record_adapter("qbittorrent", "queue", {"hash": H40, "name": "Fixture torrent", "state": "new-upstream-state"})
+    with NetworkIsolationGuard():
+        obs = adapter.execute(call, OWNER)
+    assert obs.verified_complete and obs.data["items"][0]["state"] == "new-upstream-state"
+
+
+@pytest.mark.parametrize("service", ["sonarr", "radarr", "lidarr", "bazarr"])
+def test_health_issue_objects_must_contain_the_actual_issue_fields(service):
+    adapter = ServiceQueryAdapter({service: ServiceConfig("https://fixture.test")})
+    def get(_service, path, _audit, **_kwargs):
+        if path.endswith("/system/status"):
+            return {"version": "4.0.20", "appName": service.capitalize()}
+        return {"data": [{}]} if service == "bazarr" else [{}]
+    adapter._get = get
+    with NetworkIsolationGuard():
+        obs = adapter.execute(Call("service_query", {"service": service, "operation": "health"}), OWNER)
+    assert obs.status == "error" and obs.data["error"] == "invalid_service_health_issue"
+
+
+@pytest.mark.parametrize("service", ["tautulli", "seerr"])
+def test_empty_version_is_not_a_verified_health_identity(service):
+    adapter = ServiceQueryAdapter({service: ServiceConfig("https://fixture.test")})
+    adapter._get = lambda *_args, **_kwargs: ({"response": {"result": "success", "data": {"tautulli_version": ""}}}
+                                             if service == "tautulli" else {"version": ""})
+    with NetworkIsolationGuard():
+        assert adapter.execute(Call("service_query", {"service": service, "operation": "health"}), OWNER).status == "error"

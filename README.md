@@ -19,6 +19,7 @@ Arrmes turns media-stack requests into validated tool calls. A small local model
 ## What it does
 
 - **Native read workflows:** 29 service/operation pairs across Sonarr, Radarr, Lidarr, Bazarr, qBittorrent, Tautulli and Seerr. Inspect libraries, missing media or subtitles, metadata search, queues, history, activity and health where each service supports them. [Capabilities and exact limits](docs/capabilities.md).
+- **Direct execution of existing media intents:** the trained `tv_status`, `tv_missing`, `movie_status`, `music_status`, `now_playing` and `watch_history` actions now use native service adapters when configured. They do not require the legacy gateway.
 - **Confirmed transfer control:** list torrents and pause/resume one exact, uniquely resolved transfer through native qBittorrent 4.1+ or 5.x APIs. Confirmation binds the caller, arguments, torrent hash, service version and expiry. Mutations are never automatically retried.
 - **Bounded independent reads:** “Show Sonarr queue and Radarr history” validates every clause and scope before execution. An unavailable service produces a partial result while other independent reads continue. Compound writes remain unsupported.
 - **A preserved neural contract:** `arrmes.tools.v2` has 18 service actions plus `clarify` and `unsupported`. New native reads use `arrmes.tools.v3` and report `routing_source=explicit_service_deterministic`; they are not newly trained v6 model capabilities.
@@ -55,6 +56,7 @@ For Apple Silicon MLX, install `.[mlx]` and provide the pinned base and adapter 
 - `ARRMES_SERVICES_FILE` — operator file containing native API roots and credentials. Native-only installations do not require a gateway.
 - `ARRMES_GATEWAY_URL` — optional legacy gateway. Existing gateway operations remain a separate integration with their documented restrictions.
 - `ARRMES_BACKEND` — `auto`, `mlx` or `llama-server`.
+- `ARRMES_BACKEND=native-only` — an optional model-free, read-only mode for the explicit service grammar. It loads no weights or inference runtime and clarifies requests outside that grammar.
 - `ARRMES_MODEL_PATH` — MLX directory or fused GGUF file; `ARRMES_ADAPTER_PATH` applies to MLX. An unfused adapter is rejected on the GGUF path.
 - `ARRMES_INFERENCE_URL` — optional explicitly configured native llama-server origin; otherwise the selected GGUF starts a managed local process.
 - `ARRMES_DEVICE` — portable backend device selection; `cpu` is the default. See the runtime guide for supported accelerator names and platform qualification.
@@ -67,6 +69,8 @@ After configuring a model, client registry and service registry:
 ```sh
 .venv/bin/python -m arrmes.server
 ```
+
+For explicit native reads alone, set `ARRMES_BACKEND=native-only` with the two registries and run the same command. No model path is needed. This mode supports requests such as “Show Sonarr queue”; it does not offer neural entity inference or transfer writes. Restart the service after changing either registry.
 
 ## Where data lives
 

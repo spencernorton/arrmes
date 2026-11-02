@@ -283,11 +283,12 @@ class DeterministicBaselineModel:
     """Non-neural deterministic keyword/regex baseline router for benchmark comparison."""
 
     def __init__(self, family: str = "functiongemma", contract_version: str = "v2") -> None:
+        started = time.perf_counter()
         self.family = family
         self.path = "deterministic-rule-router-v2"
         self.adapter = None
         self.contract_version = contract_version
-        self.load_seconds = 0.0001
+        self.load_seconds = time.perf_counter() - started
 
     def infer(self, query: str, context: dict | None = None, max_tokens: int = 160) -> dict[str, Any]:
         start = time.perf_counter()
@@ -301,11 +302,11 @@ class DeterministicBaselineModel:
         return {
             "raw": raw,
             "seconds": round(elapsed, 6),
-            "first_token_seconds": round(elapsed, 6),
-            "prompt_tokens": len(q.split()),
-            "generation_tokens": 12,
-            "generation_tps": round(12 / max(elapsed, 1e-6), 2),
-            "peak_memory_gb": 0.01,
+            "first_token_seconds": None,
+            "prompt_tokens": None,
+            "generation_tokens": None,
+            "generation_tps": None,
+            "peak_memory_gb": None,
             "max_tokens": max_tokens,
         }
 

@@ -15,6 +15,15 @@ request through `BoundedExecutor` to a loopback HTTP service fixture under
 Sonarr, Radarr, Lidarr, Bazarr, qBittorrent, Tautulli or Seerr binaries. No
 production service was used for training, evaluation or mutation.
 
+Six existing neural v2 reads also execute directly against configured native
+services: `tv_status`, `tv_missing`, `movie_status`, `music_status`,
+`now_playing` and `watch_history`. This bridge preserves the trained tool names
+and separately validates the model-selected entity. A bounded library must be
+complete before uniqueness is claimed; remakes and duplicate artists clarify.
+Sonarr missing episodes include aired, monitored inventory and report unknown
+air dates without calling them aired. A small actual-model HTTP fixture smoke
+test is recorded separately from the 29 explicit grammar checks.
+
 ## What changed by service
 
 - **Sonarr:** v2 had series status, title-specific missing episodes and an
@@ -101,7 +110,8 @@ They do not guess an entity from arbitrary prose. Service names in the quoted
 title do not select an adapter. Unsupported pairs, multiple candidate targets
 and conflicting movie/TV scope abstain. Existing v2 entity-specific missing,
 filtered-torrent and confirmation-gated write intents remain on the legacy
-route. Unqualified paraphrases and context references are explicit gaps for
+neural v2 route, with native execution where implemented. Unqualified
+paraphrases and context references are explicit gaps for
 these new reads.
 
 The runtime supports at most four independent native read clauses (or the
@@ -187,7 +197,10 @@ Example file (replace placeholders locally and keep the file out of Git):
 Protect this file with local filesystem permissions, for example
 `chmod 600 services.json`. The client bearer-token registry is still required;
 these upstream credentials do not define Arrmes caller identity. Native-only
-mode does not require a legacy gateway. Runtime and model setup are documented
+installations do not require a legacy gateway. `ARRMES_BACKEND=native-only` also
+removes the model/runtime requirement for explicit reads and forces writes off;
+it clarifies outside the explicit grammar. Restart after changing registries.
+Runtime and model setup are documented
 in [portable-runtime.md](portable-runtime.md).
 
 Native reads default to five pages, 50 records per page, 250 returned records

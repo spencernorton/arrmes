@@ -24,6 +24,7 @@ from arrmes.protocol import Call, InvalidCall, decode, normalized
 from arrmes.service_router import ConfiguredAdapterRouter
 from arrmes.services import ServiceQueryAdapter, load_service_configs, route_service_query
 from arrmes.workflows import native_read_workflow
+from arrmes.explicit import NativeOnlyModel
 
 WRITE_MODES = frozenset({"confirm", "shadow", "direct", "disabled"})
 DEFAULT_CONNECTION_TIMEOUT_SECONDS = 10.0
@@ -190,6 +191,7 @@ class ArrmesRuntimeService:
             "counters": c_copy,
             "active_ledgers": len(self._ledgers),
             "latency_ms": {"count": len(lats), "p50": p50, "p95": p95},
+            "latency_scope": "Mixed in-process route/execute/confirm durations; execute starts after principal serialization. Excludes HTTP ingress and human confirmation delay.",
         }
 
     def route(self, query: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
@@ -217,7 +219,8 @@ class ArrmesRuntimeService:
                 call = verify_proposal(Call("clarify", {"slot": "title"}), query, context, contract_version="v2")
             else:
                 call = verify_proposal(call, query, context, contract_version="v2")
-            source = "deterministic_v2" if isinstance(self.model, DeterministicBaselineModel) else "neural_v2"
+            source = ("native_only_abstention" if isinstance(self.model, NativeOnlyModel) else
+                      "deterministic_v2" if isinstance(self.model, DeterministicBaselineModel) else "neural_v2")
         elapsed_ms = (time.perf_counter() - t0) * 1000.0
         self._record_metric("route_requests", elapsed_ms)
         return {
@@ -294,7 +297,8 @@ class ArrmesRuntimeService:
                 inf["raw"], principal, family=family, query=query, context=effective_ctx,
                 ledger=ledger, idempotency_key=idempotency_key,
             )
-            source = "deterministic_v2" if isinstance(self.model, DeterministicBaselineModel) else "neural_v2"
+            source = ("native_only_abstention" if isinstance(self.model, NativeOnlyModel) else
+                      "deterministic_v2" if isinstance(self.model, DeterministicBaselineModel) else "neural_v2")
         elapsed_ms = (time.perf_counter() - t0) * 1000.0
         with self._lock:
             self._counters["execute_requests"] += 1
@@ -532,13 +536,20 @@ def main() -> None:
         raise SystemExit("ARRMES_CLIENTS_FILE is required: the service refuses to start without caller authentication")
     authenticator = BearerTokenAuthenticator.from_file(clients_file)
 
-    model_path, adapter_path = _autodiscover_model_and_adapter()
-    family = os.environ.get("ARRMES_MODEL_FAMILY", "hermes")
     backend = os.environ.get("ARRMES_BACKEND", "auto")
+    if backend not in {"auto", "mlx", "llama-server", "native-only"}:
+        raise SystemExit("ARRMES_BACKEND must be auto, mlx, llama-server, or native-only")
+    model_path, adapter_path = ("", None) if backend == "native-only" else _autodiscover_model_and_adapter()
+    family = os.environ.get("ARRMES_MODEL_FAMILY", "hermes")
     endpoint = os.environ.get("ARRMES_INFERENCE_URL", "").strip() or None
     portable = backend == "llama-server" or (backend == "auto" and (endpoint or model_path.lower().endswith(".gguf")))
     selected_adapter = (os.environ.get("ARRMES_ADAPTER_PATH", "").strip() or None) if portable else adapter_path
-    if model_path or os.environ.get("ARRMES_INFERENCE_URL", "").strip():
+    if backend == "native-only":
+        if not os.environ.get("ARRMES_SERVICES_FILE", "").strip():
+            raise SystemExit("ARRMES_SERVICES_FILE is required for native-only mode")
+        write_mode = "disabled"
+        mdl: Any = NativeOnlyModel()
+    elif model_path or os.environ.get("ARRMES_INFERENCE_URL", "").strip():
         mdl: Any = create_model(
             model_path or "remote-gguf", family=family,
             adapter=selected_adapter,

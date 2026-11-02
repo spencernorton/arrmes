@@ -95,5 +95,9 @@ def route_service_query(query: str) -> Call | None:
     # ordering, etc.) must not silently turn into a broader inventory query.
     words = set(re.findall(r"[A-Za-z0-9_]+", _SERVICES.sub(" SERVICE ", plain).lower()))
     if words - _READ_WORDS:
-        return Call("clarify", {"slot": "scope"})
+        filler = {"current", "now", "using", "via", "from"}
+        if service == "tautulli":
+            filler |= {"plex"}
+        if words - _READ_WORDS - filler:
+            return Call("clarify", {"slot": "scope"})
     return Call("service_query", validate_service_query(args))

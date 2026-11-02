@@ -97,6 +97,83 @@ def _rows(value: Any) -> list[dict[str, Any]]:
     return value
 
 
+def _id(value: Any, *, zero: bool = False) -> bool:
+    return type(value) is int and value >= (0 if zero else 1)
+
+
+def _text(value: Any) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def _display(row: dict[str, Any]) -> bool:
+    if any(_text(row.get(key)) for key in ("title", "sourceTitle", "artistName", "full_title", "grandparent_title")):
+        return True
+    return any(isinstance(row.get(key), dict) and any(_text(row[key].get(field)) for field in ("title", "artistName"))
+               for key in ("series", "movie", "artist", "album", "episode"))
+
+
+def _validated_rows(service: str, operation: str, rows: list[dict[str, Any]], *, media_type: str | None = None) -> list[dict[str, Any]]:
+    """Check stable identity/display fields, leaving optional upstream metadata alone.
+
+    Lookup resources can have internal id=0 before addition to a library. Queue
+    entries can have null media IDs; their own nonnegative hash-derived ID and
+    download title remain meaningful. Neither case is an empty library record.
+    """
+    for row in rows:
+        valid = False
+        if service in {"sonarr", "radarr", "lidarr"}:
+            title = "artistName" if service == "lidarr" else "title"
+            if operation == "search":
+                internal = row.get("id")
+                valid_internal = internal is None or _id(internal, zero=True)
+                provider = row.get({"sonarr": "tvdbId", "radarr": "tmdbId", "lidarr": "foreignArtistId"}[service])
+                valid_provider = _text(provider) if service == "lidarr" else _id(provider)
+                provider_shape = provider is None or (isinstance(provider, str) if service == "lidarr" else _id(provider, zero=True))
+                valid = valid_internal and provider_shape and (_id(internal) or valid_provider) and _text(row.get(title))
+            elif operation == "queue":
+                # Upstream GetHashInt31 can produce zero; null series/album IDs
+                # are valid for downloads not yet identified as library media.
+                valid = _id(row.get("id"), zero=True) and _display(row)
+            elif operation == "history":
+                valid = _id(row.get("id")) and _display(row)
+            elif operation == "missing" and service == "sonarr":
+                valid = (_id(row.get("id")) and _id(row.get("seriesId"))
+                         and _id(row.get("seasonNumber"), zero=True) and _id(row.get("episodeNumber"), zero=True)
+                         and (row.get("title") is None or isinstance(row.get("title"), str)))
+            else:
+                valid = _id(row.get("id")) and _text(row.get("title" if operation == "missing" else title))
+                if operation == "missing" and service == "lidarr":
+                    valid = valid and _id(row.get("artistId"))
+        elif service == "bazarr":
+            if operation == "series_library":
+                valid = _id(row.get("sonarrSeriesId")) and _text(row.get("title"))
+            elif operation == "movie_library" or media_type == "movie":
+                valid = _id(row.get("radarrId")) and _text(row.get("title"))
+            elif operation == "missing":
+                valid = (_id(row.get("sonarrSeriesId")) and _id(row.get("sonarrEpisodeId"))
+                         and _text(row.get("seriesTitle")))
+            else:
+                valid = (_id(row.get("sonarrSeriesId")) and _id(row.get("sonarrEpisodeId"))
+                         and (_text(row.get("title")) or (_id(row.get("season"), zero=True) and _id(row.get("episode"), zero=True))))
+            if operation in {"missing", "subtitles"}:
+                fields = ("missing_subtitles", "subtitles") if operation == "subtitles" else ("missing_subtitles",)
+                valid = valid and all(key in row and (row[key] is None or isinstance(row[key], (list, dict))) for key in fields)
+        elif service == "tautulli":
+            if operation == "history":
+                valid = _id(row.get("row_id")) and _display(row)
+            else:
+                key = row.get("session_key")
+                session = _id(key, zero=True) or (isinstance(key, str) and key.isdecimal()) or _text(row.get("session_id"))
+                valid = session and _display(row)
+        elif service == "seerr":
+            kind = row.get("mediaType")
+            titles = ("title", "originalTitle") if kind == "movie" else ("name", "originalName")
+            valid = _id(row.get("id")) and kind in {"movie", "tv", "person"} and any(_text(row.get(key)) for key in titles)
+        if not valid:
+            raise _UpstreamError(f"invalid_{service}_{operation}_record")
+    return rows
+
+
 _SAFE_FIELDS = frozenset({
     "id", "title", "name", "artistName", "artistId", "seriesId", "movieId", "albumId",
     "year", "monitored", "hasFile", "statistics", "seasonNumber", "episodeNumber",
@@ -113,6 +190,7 @@ _SAFE_FIELDS = frozenset({
     "language", "code2", "code3", "forced", "hi", "hearing_impaired", "source", "resolution",
     "modifier", "episodeFileCount", "episodeCount", "trackFileCount", "trackCount", "albumCount",
     "series", "movie", "artist", "album",
+    "tvdbId", "tmdbId", "foreignArtistId", "row_id", "rating_key", "session_key", "session_id",
 })
 
 
@@ -288,8 +366,10 @@ class ServiceQueryAdapter:
         if op == "health":
             status = self._get(service, root + "/system/status", audit)
             issues = _rows(self._get(service, root + "/health", audit))
-            if not isinstance(status, dict) or not isinstance(status.get("version"), str):
+            if not isinstance(status, dict) or not _text(status.get("version")):
                 raise _UpstreamError("invalid_service_status")
+            if any(not _text(row.get("message")) or not _text(row.get("type")) for row in issues):
+                raise _UpstreamError("invalid_service_health_issue")
             if "appName" in status and str(status["appName"]).casefold() != service:
                 raise _UpstreamError("service_identity_mismatch")
             return self._result(service, args, [], 0, False, audit, api_version=version,
@@ -306,6 +386,7 @@ class ServiceQueryAdapter:
             all_rows = _rows(self._get(service, root + "/" + entity + suffix, audit))
             rows, total = all_rows[:self.max_records], len(all_rows)
             truncated = total > len(rows)
+        _validated_rows(service, op, rows)
         return self._result(service, args, rows, total, truncated, audit, api_version=version)
 
     def _bazarr(self, args: dict[str, Any], audit: list[dict[str, Any]]) -> AdapterObservation:
@@ -314,6 +395,8 @@ class ServiceQueryAdapter:
             if not isinstance(payload, dict):
                 raise _UpstreamError("invalid_service_status")
             issues = _rows(payload.get("data"))
+            if any(not _text(row.get("object")) or not _text(row.get("issue")) for row in issues):
+                raise _UpstreamError("invalid_service_health_issue")
             return self._result("bazarr", args, [], 0, False, audit, api_version="unversioned /api",
                                 healthy=not issues, issues=[{k: r[k] for k in ("object", "issue") if k in r} for r in issues])
         movie = args["media_type"] == "movie"
@@ -325,6 +408,7 @@ class ServiceQueryAdapter:
             library = "movies" if movie else "series"
             entities, _, incomplete = self._paged(lambda page: self._get("bazarr", "/api/" + library + "?" + urllib.parse.urlencode({
                 "start": page * self.page_size, "length": self.page_size}), audit), records_key="data", total_key="total")
+            _validated_rows("bazarr", "movie_library" if movie else "series_library", entities)
             exact = [r for r in entities if _norm(str(r.get("title", ""))) == _norm(args["query"])]
             if incomplete:
                 return self._result("bazarr", args, [], 0, True, audit, reason="entity_lookup_incomplete")
@@ -343,6 +427,7 @@ class ServiceQueryAdapter:
                 rows = _rows(payload.get("data"))
             total, truncated = len(rows), len(rows) > self.max_records
             rows = rows[:self.max_records]
+        _validated_rows("bazarr", args["operation"], rows, media_type=args["media_type"])
         return self._result("bazarr", args, rows, total, truncated, audit, api_version="unversioned /api", media_type=args["media_type"])
 
     def _qbittorrent(self, args: dict[str, Any], audit: list[dict[str, Any]]) -> AdapterObservation:
@@ -369,6 +454,8 @@ class ServiceQueryAdapter:
             hashes = [r.get("hash") for r in incoming]
             if any(not isinstance(h, str) or not re.fullmatch(r"[a-fA-F0-9]{40}|[a-fA-F0-9]{64}", h) for h in hashes):
                 raise _UpstreamError("invalid_torrent_identity")
+            if any(not _text(row.get("name")) or ("state" in row and not _text(row["state"])) for row in incoming):
+                raise _UpstreamError("invalid_qbittorrent_queue_record")
             if any(h in seen for h in hashes):
                 break
             seen.update(hashes)
@@ -397,24 +484,27 @@ class ServiceQueryAdapter:
         if op == "health":
             payload = self._tautulli_data(root + "cmd=get_tautulli_info", audit)
             version = payload.get("tautulli_version")
-            if not isinstance(version, str):
+            if not _text(version):
                 raise _UpstreamError("invalid_service_status")
             return self._result("tautulli", args, [], 0, False, audit, api_version="v2", server_version=version)
         if op == "activity":
             payload = self._tautulli_data(root + "cmd=get_activity", audit)
             rows = _rows(payload.get("sessions"))
+            _validated_rows("tautulli", "activity", rows)
             return self._result("tautulli", args, rows[:self.max_records], len(rows), len(rows) > self.max_records, audit, api_version="v2")
         rows, total, truncated = self._paged(lambda page: self._tautulli_data(root + urllib.parse.urlencode({
             "cmd": "get_history", "start": page * self.page_size, "length": self.page_size,
             "order_column": "date", "order_dir": "desc"}), audit), records_key="data", total_key="recordsFiltered")
+        _validated_rows("tautulli", "history", rows)
         return self._result("tautulli", args, rows, total, truncated, audit, api_version="v2")
 
     def _seerr(self, args: dict[str, Any], audit: list[dict[str, Any]]) -> AdapterObservation:
         if args["operation"] == "health":
             payload = self._get("seerr", "/api/v1/status", audit)
-            if not isinstance(payload, dict) or not isinstance(payload.get("version"), str):
+            if not isinstance(payload, dict) or not _text(payload.get("version")):
                 raise _UpstreamError("invalid_service_status")
             return self._result("seerr", args, [], 0, False, audit, api_version="v1", server_version=payload["version"])
         rows, total, truncated = self._paged(lambda page: self._get("seerr", "/api/v1/search?" + urllib.parse.urlencode({
             "query": args["query"], "page": page + 1}), audit), records_key="results", total_key="totalResults")
+        _validated_rows("seerr", "search", rows)
         return self._result("seerr", args, rows, total, truncated, audit, api_version="v1")

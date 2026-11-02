@@ -17,7 +17,7 @@ WRITER = Principal("fixture:writer", frozenset({"media:read", "media:manage", "r
 def _changing_gateway():
     adapter = LiveGatewayAdapter("https://gateway.test", gateway_api_key="fixture-key", write_mode="confirm",
                                  request_owner_subject=WRITER.subject)
-    state = {"id": 7, "posts": [], "reads": 0}
+    state = {"id": 7, "year": 2010, "posts": [], "reads": 0}
 
     def request(method, path, *, audit, headers=None, body=None, **kwargs):
         if method == "POST":
@@ -25,7 +25,7 @@ def _changing_gateway():
             return 201, {"id": 99, "status": "queued"}
         state["reads"] += 1
         if path.endswith("/series"):
-            return 200, [{"id": state["id"], "title": "Sintel", "year": 2010}]
+            return 200, [{"id": state["id"], "title": "Sintel", "year": state["year"]}]
         if path.startswith("/request/api/search?"):
             return 200, {"results": [{"id": state["id"], "title": "Sintel", "year": 2010, "type": "movie"}]}
         if path.endswith("/command/99"):
@@ -63,6 +63,18 @@ def test_confirmation_signature_binds_arguments_and_service_identity(field):
     getattr(token, field)["title" if field == "arguments" else "series_id"] = "Other" if field == "arguments" else 8
     redeemed, error = store.redeem(token.confirm_id, WRITER)
     assert redeemed is None and error == "confirmation_signature_invalid"
+
+
+def test_confirmation_rejects_reused_internal_id_for_a_different_year():
+    adapter, state = _changing_gateway()
+    executor = BoundedExecutor(adapter)
+    pending = executor.execute_call(Call("tv_search_missing", {"title": "Sintel"}), WRITER,
+                                    query="Download missing episodes of Sintel")
+    state["year"] = 2025  # A different incarnation after a library database restore.
+    result = executor.confirm_write(pending.plan["confirm_id"], WRITER)
+    assert result.terminal_state == "denied"
+    assert result.observation.data["error"] == "confirmation_entity_changed"
+    assert state["posts"] == []
 
 
 def test_confirmation_expires_at_exact_deadline_and_detaches_input():

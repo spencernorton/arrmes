@@ -3,6 +3,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from copy import deepcopy
+from datetime import datetime, timezone
 import hashlib
 import hmac
 import json
@@ -400,11 +401,13 @@ class LiveGatewayAdapter(SandboxAdapter):
     @staticmethod
     def _entity_binding(name: str, args: dict[str, Any], entity: dict[str, Any]) -> dict[str, Any]:
         if name == "tv_search_missing":
-            return {"series_id": entity.get("series_id")}
+            return {"series_id": entity.get("series_id"), "title": _norm(str(entity.get("title", ""))),
+                    "year": entity.get("year")}
         if name == "movie_search":
-            return {"movie_id": entity.get("movie_id")}
+            return {"movie_id": entity.get("movie_id"), "title": _norm(str(entity.get("title", ""))),
+                    "year": entity.get("year")}
         if name == "music_search":
-            binding = {"artist_id": entity.get("artist_id")}
+            binding = {"artist_id": entity.get("artist_id"), "artist": _norm(str(entity.get("artist", "")))}
             if "album" in args:
                 binding["album_ids"] = sorted(a["id"] for a in entity.get("albums", []) if isinstance(a, dict) and type(a.get("id")) is int)
             return binding
@@ -568,13 +571,28 @@ class LiveGatewayAdapter(SandboxAdapter):
                 c_ep, ep_list = self._request_json("GET", f"/sonarr/api/v3/episode?seriesId={resolved['id']}", headers=headers, audit=audit)
                 if c_ep == 200 and isinstance(ep_list, list):
                     inc_bool = bool(args.get("include_specials", False))
-                    all_records = [
-                        e for e in ep_list
-                        if isinstance(e, dict)
-                        and not e.get("hasFile", False)
-                        and e.get("monitored", True)
-                        and (inc_bool or int(e.get("seasonNumber", 0) or 0) > 0)
-                    ]
+                    all_records = []
+                    now_utc = datetime.now(timezone.utc)
+                    for episode in ep_list:
+                        if (not isinstance(episode, dict)
+                                or type(episode.get("seriesId")) is not int or episode["seriesId"] != resolved["id"]
+                                or type(episode.get("seasonNumber")) is not int or episode["seasonNumber"] < 0
+                                or type(episode.get("hasFile")) is not bool
+                                or type(episode.get("monitored")) is not bool):
+                            return AdapterObservation("error", "sonarr", "tv_missing", 502, False,
+                                                      {"error": "malformed_series_episode_response"}, audit)
+                        if episode["hasFile"] or not episode["monitored"] or (not inc_bool and episode["seasonNumber"] == 0):
+                            continue
+                        air_date = episode.get("airDateUtc")
+                        try:
+                            aired_at = datetime.fromisoformat(air_date.replace("Z", "+00:00")) if isinstance(air_date, str) else None
+                        except ValueError:
+                            aired_at = None
+                        if aired_at is None or aired_at.tzinfo is None:
+                            return AdapterObservation("error", "sonarr", "tv_missing", 502, False,
+                                                      {"error": "episode_air_date_unavailable"}, audit)
+                        if aired_at <= now_utc:
+                            all_records.append(episode)
                     total_records = len(all_records)
                     break
                 return AdapterObservation("error", "sonarr", "tv_missing", c_ep if c_ep != 200 else 502, False,
@@ -623,7 +641,8 @@ class LiveGatewayAdapter(SandboxAdapter):
                 {"slot": "reference", "reason": "series_not_uniquely_resolved", "title": args["title"]},
                 audit,
             )
-        changed = self._guard_confirmed_entity("tv_search_missing", args, {"series_id": resolved["id"]}, audit)
+        changed = self._guard_confirmed_entity("tv_search_missing", args,
+                                               {"series_id": resolved["id"], "title": resolved["title"], "year": resolved.get("year")}, audit)
         if changed is not None:
             return changed
         cmd_body: dict[str, Any] = {"seriesId": resolved["id"]}
@@ -689,7 +708,8 @@ class LiveGatewayAdapter(SandboxAdapter):
                 },
                 audit,
             )
-        changed = self._guard_confirmed_entity("movie_search", args, {"movie_id": resolved["id"]}, audit)
+        changed = self._guard_confirmed_entity("movie_search", args,
+                                               {"movie_id": resolved["id"], "title": resolved["title"], "year": resolved.get("year")}, audit)
         if changed is not None:
             return changed
         body = {"name": "MoviesSearch", "movieIds": [resolved["id"]]}

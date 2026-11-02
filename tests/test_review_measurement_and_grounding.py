@@ -76,3 +76,41 @@ def test_other_series_missing_records_never_survive_failed_fallback(fallback):
     obs = adapter.execute(Call("tv_missing", {"title": "Sintel"}), Principal("fixture:r", frozenset({"media:read"})))
     assert obs.status == "error" and not obs.verified_complete
     assert obs.data == {"error": "series_episode_fallback_failed"}
+
+
+def _fallback_adapter(episodes):
+    adapter = LiveGatewayAdapter("https://gateway.test", gateway_api_key="fixture-key", write_mode="confirm")
+
+    def request(method, path, **kwargs):
+        if path.endswith("/series"):
+            return 200, [{"id": 7, "title": "Sintel"}]
+        if "/wanted/missing" in path:
+            return 200, {"records": [{"id": 9, "seriesId": 88}], "totalRecords": 1}
+        if "/episode?" in path:
+            return 200, episodes
+        raise AssertionError("Unexpected fixture path")
+
+    adapter._request_json = request
+    return adapter
+
+
+def test_sonarr_fallback_only_counts_aired_monitored_missing_episodes():
+    base = {"seriesId": 7, "seasonNumber": 1, "hasFile": False, "monitored": True, "airDateUtc": "2000-01-01T00:00:00Z"}
+    episodes = [{**base, "id": 1}, {**base, "id": 2, "airDateUtc": "2099-01-01T00:00:00Z"},
+                {**base, "id": 3, "monitored": False}, {**base, "id": 4, "hasFile": True},
+                {**base, "id": 5, "seasonNumber": 0}]
+    adapter = _fallback_adapter(episodes)
+    principal = Principal("fixture:r", frozenset({"media:read"}))
+    obs = adapter.execute(Call("tv_missing", {"title": "Sintel"}), principal)
+    assert obs.status == "verified_ok" and obs.data["missing_count"] == 1
+    assert [row["id"] for row in obs.data["missing_episodes"]] == [1]
+    specials = adapter.execute(Call("tv_missing", {"title": "Sintel", "include_specials": True}), principal)
+    assert [row["id"] for row in specials.data["missing_episodes"]] == [1, 5]
+
+
+@pytest.mark.parametrize("air_date", [None, "not-a-date", "2000-01-01T00:00:00"])
+def test_sonarr_fallback_never_guesses_an_unknown_air_date(air_date):
+    episodes = [{"seriesId": 7, "seasonNumber": 1, "hasFile": False, "monitored": True, "airDateUtc": air_date}]
+    obs = _fallback_adapter(episodes).execute(Call("tv_missing", {"title": "Sintel"}), Principal("fixture:r", frozenset({"media:read"})))
+    assert obs.status == "error" and not obs.verified_complete
+    assert obs.data["error"] == "episode_air_date_unavailable"

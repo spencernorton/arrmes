@@ -33,9 +33,10 @@ the current internal checkpoint labelled v6. Keep those variants separate.
   All test containers were removed and the lease released. This does not prove
   a native host CUDA build or Windows CUDA behavior.
 - Windows x86_64 CPU and NVIDIA: backend, explicit device selection and
-  installation paths are implemented; no native Windows hardware test was
-  performed here. Upstream binaries exist. Their availability alone is not an
-  Arrmes test pass; Windows CI evidence must be identified separately.
+  installation paths are implemented. The pinned CPU llama-server compiles and
+  runs `--version` on Windows CI. No native Windows GGUF inference or NVIDIA
+  hardware test was performed here. Python fixture checks are separate from
+  that compiler check and from actual model execution.
 - Other ARM64 CPUs, Vulkan and SYCL: implemented native-runtime selection where
   available; not hardware-tested. Unsupported builds fail with a device error.
 
@@ -57,7 +58,9 @@ every service/platform. The comparison report retains all raw predictions.
 
 On Linux NVIDIA, the same CPU-exported Q4 artifact gets 64/80 raw and 72/80
 verified exact calls, with 32/35 executable fixture workflows. Across 240 warm
-samples, routing p50/p95 is 61.9/87.7 ms and fixture end-to-end is 63.7/89.1 ms.
+samples, routing p50/p95 is 61.9/87.7 ms. The retained 63.7/89.1 ms fixture-wall
+measurement includes two grading passes as well as execution; it is a
+benchmark-instrumented duration, not production request latency.
 Model load plus the first route is 1.769 seconds. This uses two CPU threads,
 one CUDA device, context 4,096, batch 256 and microbatch 128. It is a separate
 backend experiment; the CPU run uses its recorded native defaults. Raw
@@ -118,7 +121,8 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m arrmes route --backend llama-server --family hermes --contract-version v2 --model C:\Arrmes\model-q4_k_m.gguf --llama-server C:\Arrmes\llama\llama-server.exe --device cpu --threads 4 "Which episodes of Sintel are missing?"
 ```
 
-This setup path has not been executed on a Windows machine here. For NVIDIA,
+The CPU runtime has been compiled in Windows CI; this model setup path has not
+been executed on Windows hardware here. For NVIDIA,
 use the official `llama-b11429-bin-win-cuda-12.4-x64.zip` and its matching
 `cudart-llama-bin-win-cuda-12.4-x64.zip`, then select `--device cuda`.
 The installed driver must support that runtime. Arrmes never installs or alters
@@ -156,6 +160,13 @@ in [capabilities.md](capabilities.md), or the explicit legacy
 `python -m arrmes.server`. Writes default to explicit confirmation; setting
 `ARRMES_WRITE_MODE=disabled` refuses them. No inference backend changes caller
 permissions or confirmation policy.
+
+For a model-free installation, set `ARRMES_BACKEND=native-only` and configure
+both registries. No model file, MLX, CUDA or llama-server is needed. This mode
+only runs the documented explicit-service read grammar and forces writes off.
+Requests outside that grammar clarify. The default neural backend and its
+trained media actions remain separate. Registries are read at startup; restart
+after editing them.
 
 To attach an already managed native runtime, set `ARRMES_INFERENCE_URL` to its
 HTTP(S) origin instead of launching a model child. It must implement native
