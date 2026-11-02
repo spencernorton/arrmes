@@ -1,5 +1,10 @@
 # Changelog
 
+## Unreleased
+
+- Add direct native Bitmagnet metadata search and health with bounded GraphQL read queries, estimated-count handling and scoped explicit natural-language routing.
+- Execute the existing trained `bitmagnet_search` action through the native adapter when configured; preserve released v2 schemas, weights and benchmark inputs.
+
 ## 1.2.0 — 2026-11-01
 
 - Add 29 native read workflows, including Bazarr subtitle status and explicit Sonarr/Radarr/Lidarr queue, library, missing, metadata and health queries.

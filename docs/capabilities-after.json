@@ -3,7 +3,7 @@
   "baseline_source_commit": "a536483a75ada2d4d26f7bc93ee0790695f6e697",
   "neural_contract_unchanged": "arrmes.tools.v2",
   "extension_contract": "arrmes.tools.v3",
-  "native_service_operation_pairs": 29,
+  "native_service_operation_pairs": 31,
   "new_native_services": [
     {
       "service": "sonarr",
@@ -145,10 +145,25 @@
       "test_reference": "tests/test_native_services.py:test_every_advertised_pair_routes_through_executor_to_native_http",
       "unavailable_behavior": "Structured service_not_configured/service_unavailable error; no fallback to another service",
       "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial"
+    },
+    {
+      "service": "bitmagnet",
+      "native_operations": [
+        "health",
+        "search"
+      ],
+      "permission": "releases:read",
+      "effect": "read",
+      "route_layer": "explicit-service deterministic NL, not newly trained neural prediction",
+      "execution": "Fixed native GraphQL read queries through ServiceQueryAdapter and BoundedExecutor",
+      "adapter_qualification": "Real loopback HTTP fixtures plus full primary SDL validation for v0.10.0 and v0.10.1-beta.1; actual upstream binary and production untested",
+      "test_reference": "tests/test_native_bitmagnet.py",
+      "unavailable_behavior": "Structured auth/configuration/GraphQL/transport error; no BitAgent fallback",
+      "pagination": "Finite offset/limit pages and response bytes; hasNextPage drives exhaustion independently of estimated count; incomplete/overlapping pages remain partial"
     }
   ],
   "legacy_gaps_still_open": [
-    "Native Bitmagnet API and full pagination",
+    "Native Bitmagnet advanced facets, files and lifecycle management",
     "Native request lifecycle and per-user identity mapping",
     "Verified Armiger model execution",
     "Verified DH-Waypoint health",
@@ -233,6 +248,15 @@
       "route_layer": "unchanged trained neural v2 tool; native executor bridge when configured",
       "test_reference": "tests/test_native_media.py",
       "qualification": "6/6 actual-model runtime smoke plus ambiguity/unavailability; upstream binaries untested"
+    },
+    {
+      "service": "bitmagnet",
+      "name": "bitmagnet_search",
+      "effect": "read",
+      "permission": "releases:read",
+      "route_layer": "unchanged trained v2 tool; native executor bridge when configured",
+      "test_reference": "tests/test_native_bitmagnet.py",
+      "qualification": "Scripted model-output\u2192executor\u2192nativeHTTP fixture; no new neural qualification claim"
     }
   ],
   "native_transfer_qualification": {

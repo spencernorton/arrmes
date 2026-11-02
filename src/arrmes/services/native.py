@@ -215,8 +215,9 @@ class ServiceQueryAdapter:
     """Read-only adapter over explicit native API versions, with finite response/page budgets.
 
     No credentials or URL comes from a tool argument. Every dispatch revalidates
-    the pair and current authenticated scopes. This class contains no HTTP write
-    method, generic endpoint forwarding, automatic login, or application command.
+    the pair and current authenticated scopes. REST reads use GET; the separate
+    Bitmagnet module permits only two immutable GraphQL query documents by POST.
+    There is no generic endpoint forwarding, login or application command.
     """
 
     def __init__(self, configs: Mapping[str, ServiceConfig], *, max_pages: int = 5,
@@ -508,3 +509,7 @@ class ServiceQueryAdapter:
             "query": args["query"], "page": page + 1}), audit), records_key="results", total_key="totalResults")
         _validated_rows("seerr", "search", rows)
         return self._result("seerr", args, rows, total, truncated, audit, api_version="v1")
+
+    def _bitmagnet(self, args: dict[str, Any], audit: list[dict[str, Any]]) -> AdapterObservation:
+        from .bitmagnet import execute_bitmagnet
+        return execute_bitmagnet(self, args, audit)

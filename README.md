@@ -18,8 +18,9 @@ Arrmes turns media-stack requests into validated tool calls. A small local model
 
 ## What it does
 
-- **Native read workflows:** 29 service/operation pairs across Sonarr, Radarr, Lidarr, Bazarr, qBittorrent, Tautulli and Seerr. Inspect libraries, missing media or subtitles, metadata search, queues, history, activity and health where each service supports them. [Capabilities and exact limits](docs/capabilities.md).
+- **Native read workflows:** 31 service/operation pairs across Sonarr, Radarr, Lidarr, Bazarr, qBittorrent, Tautulli, Seerr and Bitmagnet. Inspect libraries, missing media or subtitles, metadata search, queues, history, activity and health where each service supports them. [Capabilities and exact limits](docs/capabilities.md).
 - **Direct execution of existing media intents:** the trained `tv_status`, `tv_missing`, `movie_status`, `music_status`, `now_playing` and `watch_history` actions now use native service adapters when configured. They do not require the legacy gateway.
+- **Native torrent discovery:** search Bitmagnet's indexed metadata through its native GraphQL API, inspect health and use the existing `bitmagnet_search` action without the BitAgent facade. [Setup and read-only limits](docs/native-bitmagnet.md).
 - **Confirmed transfer control:** list torrents and pause/resume one exact, uniquely resolved transfer through native qBittorrent 4.1+ or 5.x APIs. Confirmation binds the caller, arguments, torrent hash, service version and expiry. Mutations are never automatically retried.
 - **Bounded independent reads:** “Show Sonarr queue and Radarr history” validates every clause and scope before execution. An unavailable service produces a partial result while other independent reads continue. Compound writes remain unsupported.
 - **A preserved neural contract:** `arrmes.tools.v2` has 18 service actions plus `clarify` and `unsupported`. New native reads use `arrmes.tools.v3` and report `routing_source=explicit_service_deterministic`; they are not newly trained v6 model capabilities.
@@ -33,7 +34,7 @@ The original 230–245 ms warm p50 claim timed generation only. Prompt preparati
 
 New comparisons retain raw model predictions, translated-format scores, verifier decisions and controlled fixture execution as separate tracks. See the [comparison report](docs/benchmark-comparison.md) and versioned inputs under `data/overnight-v1/`. Historical sealed-suite results are not a substitute for performance on new requests.
 
-The native adapters are validated against loopback HTTP fixtures. A separate empty-library Sonarr 4.0.20.3014 instance also passes selected read checks through a GET-only Docker transport bridge. Broader upstream versions, seeded entities, large libraries and production writes still need qualification. Native Bitmagnet integration, subtitle mutations, request lifecycle management and genuine Armiger/DH-Waypoint adapters remain gaps. The old gateway Armiger and Waypoint substitutions now return unsupported.
+The native adapters are validated against loopback HTTP fixtures. A separate empty-library Sonarr 4.0.20.3014 instance also passes selected read checks through a GET-only Docker transport bridge. Broader upstream versions, seeded entities, large libraries and production writes still need qualification. Advanced Bitmagnet management, subtitle mutations, request lifecycle management and genuine Armiger/DH-Waypoint adapters remain gaps. The old gateway Armiger and Waypoint substitutions now return unsupported.
 
 ## Install
 
