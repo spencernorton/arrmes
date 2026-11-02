@@ -32,11 +32,15 @@ the current internal checkpoint labelled v6. Keep those variants separate.
   2 GiB workload budget, at least 8 GiB reserved free and no Plex transcoding.
   All test containers were removed and the lease released. This does not prove
   a native host CUDA build or Windows CUDA behavior.
-- Windows x86_64 CPU and NVIDIA: backend, explicit device selection and
-  installation paths are implemented. The pinned CPU llama-server compiles and
-  runs `--version` on Windows CI. No native Windows GGUF inference or NVIDIA
-  hardware test was performed here. Python fixture checks are separate from
-  that compiler check and from actual model execution.
+- Windows x86_64 CPU: actual native GGUF inference passed in a hosted Windows
+  Server 2025 AMD64 CI runner. Four documented model calls, one controlled
+  activity fixture and all eight operational checks passed with the exact
+  public C7 artifact and official b11429 CPU runtime. This tested installed
+  v1.2.0 product source, separately from later core Python CI and native
+  compilation. It is not owned Windows hardware, broad model accuracy or RAM
+  qualification. [Receipt and offline verification](windows-cpu-qualification.md).
+- Windows NVIDIA: backend/device selection and installation paths are
+  implemented, but actual CUDA generation has not been tested.
 - Other ARM64 CPUs, Vulkan and SYCL: implemented native-runtime selection where
   available; not hardware-tested. Unsupported builds fail with a device error.
 
@@ -84,6 +88,28 @@ headroom, uses one CPU/768 MiB, isolates networking and removes its test resourc
 
 ## CPU installation
 
+The reviewed experimental GGUF is now a separate
+[release asset](https://github.com/spencernorton/arrmes/releases/download/v1.2.0/arrmes-qwen3-0.6b-public-8a9bcf-cpu-q4_k_m.gguf).
+It is 396,704,352 bytes, with SHA-256
+`c7d6f1eef1eb4cd0f93769dadca7e270f3c3d470cfb542240733859c7d02f255`.
+Get the accompanying MODEL-LICENSE.txt, NOTICE.txt, documentation ZIP and
+SHA256SUMS from the [same release](https://github.com/spencernorton/arrmes/releases/tag/v1.2.0).
+The model is Apache-2.0; application/tooling licenses are separate. Preserve the
+notices when redistributing. The artifact uses the actual public float32 LoRA,
+not the different retained research checkpoint. It is an experimental
+conversion with measured, non-identical predictions; it is not a new training.
+
+For example, on Linux or macOS, download to a new local file and verify it:
+
+```sh
+curl --fail --location --output arrmes-q4.gguf \
+  https://github.com/spencernorton/arrmes/releases/download/v1.2.0/arrmes-qwen3-0.6b-public-8a9bcf-cpu-q4_k_m.gguf
+printf '%s  %s\n' c7d6f1eef1eb4cd0f93769dadca7e270f3c3d470cfb542240733859c7d02f255 arrmes-q4.gguf | shasum -a 256 --check
+```
+
+Model-file size is not a RAM requirement. The measurements above depend on
+backend, context and hardware; Windows memory remains unmeasured.
+
 Use Python 3.12 or later. From the Arrmes checkout:
 
 ```sh
@@ -103,9 +129,9 @@ cmake --build llama.cpp/build --target llama-server llama-quantize -j 2
 ```
 
 Point `--llama-server` to the resulting executable if it is not on `PATH`.
-Supply a separately exported, hash-checked fused GGUF; the Hugging Face Arrmes
-repository currently supplies an MLX LoRA, not an interchangeable native GGUF.
-The conversion recipe below produces revision-specific experimental artifacts.
+Supply the separate hash-checked GGUF above, or export your own. The Hugging
+Face Arrmes repository supplies an MLX LoRA rather than an interchangeable
+native GGUF. The conversion recipe below produces revision-specific artifacts.
 
 ```sh
 .venv/bin/python -m arrmes route --backend llama-server --family hermes \
@@ -131,8 +157,10 @@ py -3.12 -m venv .venv
 .\.venv\Scripts\python.exe -m arrmes route --backend llama-server --family hermes --contract-version v2 --model C:\Arrmes\model-q4_k_m.gguf --llama-server C:\Arrmes\llama\llama-server.exe --device cpu --threads 4 "Which episodes of Sintel are missing?"
 ```
 
-The CPU runtime has been compiled in Windows CI; this model setup path has not
-been executed on Windows hardware here. For NVIDIA,
+After downloading the separate GGUF, verify it with
+`(Get-FileHash C:\Arrmes\model-q4_k_m.gguf -Algorithm SHA256).Hash` against the
+full digest above. Keep its license and notice files. This CPU path has actual
+hosted CI generation evidence for v1.2.0, with the scope recorded above. For NVIDIA,
 use the official `llama-b11429-bin-win-cuda-12.4-x64.zip` and its matching
 `cudart-llama-bin-win-cuda-12.4-x64.zip`, then select `--device cuda`.
 The installed driver must support that runtime. Arrmes never installs or alters

@@ -29,6 +29,8 @@ Arrmes turns media-stack requests into validated tool calls. A small local model
 - **A preserved neural contract:** `arrmes.tools.v2` has 18 service actions plus `clarify` and `unsupported`. New native reads use `arrmes.tools.v3` and report `routing_source=explicit_service_deterministic`; they are not newly trained v6 model capabilities.
 - **Portable inference:** optional native llama.cpp/GGUF on CPU, with explicit accelerator selection; optional MLX on Apple Silicon. CPU inference installs neither CUDA nor MLX. [Runtime setup, conversion and tested platforms](docs/portable-runtime.md).
 
+The separately licensed [experimental Q4 GGUF](https://github.com/spencernorton/arrmes/releases/tag/v1.2.0) is available with its exact checksums and notices. Windows CPU generation now passes a [hosted CI operational test](docs/windows-cpu-qualification.md); Windows NVIDIA remains untested. The Windows test uses pinned v1.2.0 product source and does not qualify every newer workflow or model accuracy.
+
 Every dispatch validates the tool, arguments, entity and caller scopes. The HTTP service requires bearer authentication and explicit confirmation for consequential writes. Execution references come from a verified per-caller ledger. Credentials are kept out of model prompts, image layers and audit responses.
 
 ## Measurements and scope
@@ -36,6 +38,8 @@ Every dispatch validates the tool, arguments, entity and caller scopes. The HTTP
 The original 230–245 ms warm p50 claim timed generation only. Prompt preparation, verification, HTTP handling and service execution must be measured separately. The original roughly 344 MB of model/adapter files is not a runtime RAM measurement; the published adapter tensors are float32. The current public adapter also differs from a retained research checkpoint with the same v6 label, so their results are recorded separately.
 
 Comparisons retain raw predictions, translated-format scores, verifier decisions and fixture execution separately. The [new 1,000-input diagnostic](docs/benchmark-acceptance-v4.md) gets 770 raw exact calls versus 396 for the untuned base and 782 for a stronger 4B reference. Frozen improved verification regresses from 717 to 678 exact calls while reducing unexpected write proposals from ten to two. Later boundary repairs are development regressions, with no new independent acceptance claim. The [earlier 80-case comparison](docs/benchmark-comparison.md) remains a separate experiment. Historical sealed-suite results do not establish performance on new requests.
+
+A separate [public FunctionGemma adapter diagnostic](docs/functiongemma-public-diagnostic.md) now measures the fine-tune previously omitted from the base-only comparison: 63/80 raw exact versus 12/80 for its identical BF16 base. This is a known-input Apple Silicon MLX result; FunctionGemma GGUF and distribution-file corrections remain open.
 
 The native adapters are validated against loopback HTTP fixtures. Separate actual Sonarr 4.0.20.3014 and Seerr 3.5.1 instances pass selected empty-library reads and identity checks. Broader upstream versions, seeded entities, large libraries and actual service writes still need qualification. Advanced Bitmagnet/transfer management, subtitle upload/sync, broader request lifecycle and genuine Armiger/DH-Waypoint adapters remain gaps. The old gateway Armiger and Waypoint substitutions now return unsupported. New [workflow diagnostics](docs/native-workflow-evaluation.md) retain raw model failures separately from verifier recovery and explicit routing.
 

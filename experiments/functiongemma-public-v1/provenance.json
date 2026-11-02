@@ -1,0 +1,90 @@
+{
+  "schema_version": 1,
+  "scope": "One paired known-input operational diagnostic; not fresh acceptance or a 1000-case result.",
+  "plan_original_sha256": "94a844c410f02c14828a8275d734106f65a765c42e06eb034dcb175ac252c64d",
+  "original_owner_summary_sha256": "260ca1a7eef4f682ec8a838eecb6eb756ac9ba82cd9a50ad16339ead364725da",
+  "original_owner_archive_sha256": "1be803f609afc5aef53d5fde2d030179fcf09d6b261578645387bdb5b0dfaaf6",
+  "frozen_at": "2026-11-02T11:24:28.076561+00:00",
+  "runtime_commit": "a536483a75ada2d4d26f7bc93ee0790695f6e697",
+  "hardware": {
+    "os": "macOS-27.0.1-arm64-arm-64bit",
+    "machine": "arm64",
+    "python": "3.12.13",
+    "logical_cpus": 14,
+    "machdep.cpu.brand_string": "Apple M4 Pro",
+    "hw.memsize": "51539607552"
+  },
+  "packages": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.31.1",
+    "transformers": "5.22.1",
+    "jsonschema": "4.26.0",
+    "huggingface-hub": "2.4.0"
+  },
+  "generation": {
+    "family": "functiongemma",
+    "contract_version": "v2",
+    "max_output_tokens": 160,
+    "temperature": 0,
+    "thinking": false,
+    "repetitions": 1,
+    "sample_count_per_condition": 80,
+    "warmups": [
+      "Show the current Plex streaming activity.",
+      "Give me DH-Waypoint status."
+    ],
+    "warmup_accuracy_and_warm_timing": "excluded",
+    "format_translation": "none; native FunctionGemma parser",
+    "verifier": "original runtime; raw output scored separately"
+  },
+  "actual_call_counts": {
+    "conditions": 2,
+    "accuracy_rows_per_condition": 80,
+    "excluded_warmups_per_condition": 2,
+    "total_inference_calls": 164,
+    "repetitions": 1
+  },
+  "public_adapter": {
+    "repository": "NorviTech/arrmes-functiongemma-270m",
+    "revision": "96e89a722f4789f5eaceee06fe0327dfb9371ba0",
+    "adapter_sha256": "b2af9abc1883d515647be2539cb9192b53016701e1c7b4a71e6c7a9b3d432eac",
+    "adapter_bytes": 7620457,
+    "config_sha256": "6cbde2e313992dc26f967f470de360487dc81a513aba5ba2658b6f9aea615de2",
+    "representation": "MLX rank-8 LoRA over all 18 blocks, 252 F32 tensors / 126 pairs; BF16 base, not quantized"
+  },
+  "static_checks": {
+    "adapter_tensors": 252,
+    "lora_pairs": 126,
+    "rank": 8,
+    "all_pairs_match_base_shapes": true,
+    "scalar_parameters": 1898496,
+    "nonfinite_tensors": 0,
+    "all_zero_tensors": 0,
+    "public_config_byte_identical": true,
+    "public_lfs_adapter_sha_matches_local": true,
+    "model_load_or_generation_before_freeze": false
+  },
+  "historical_gap": {
+    "recorded_v5_gradient_sha256": "7d47fc15688b2f77d4d0ca8bb22658ef585addb94ef6402692c84368524ceb75",
+    "matches": "v5 intermediate 0000320 checkpoint, not the public final adapter",
+    "old_v5_evaluation_files": "Six older v5 reports bind paths but not adapter/base file hashes; their scores do not establish the exact published artifact.",
+    "retained_functiongemma_quantized_exports": "v3 only; not public v5 qualification"
+  },
+  "unchanged": {
+    "all_36_frozen_file_identities_before_and_after": true,
+    "source_or_prompt_or_schema_tuning": false,
+    "training": false,
+    "production_calls": false,
+    "weights_upload": false,
+    "frozen_1000_case_evaluation_changed_or_run": false
+  },
+  "primary_sources": {
+    "adapter_card": "https://huggingface.co/NorviTech/arrmes-functiongemma-270m/blob/96e89a722f4789f5eaceee06fe0327dfb9371ba0/README.md",
+    "base": "https://huggingface.co/mlx-community/functiongemma-270m-it-bf16/tree/bb327a9ad61044e1496a2bee2365a6b6a6684c72",
+    "functiongemma": "https://huggingface.co/google/functiongemma-270m-it",
+    "format": "https://ai.google.dev/gemma/docs/functiongemma/formatting-and-best-practices",
+    "terms": "https://ai.google.dev/gemma/terms",
+    "converter": "https://github.com/ggml-org/llama.cpp/blob/b11429/conversion/gemma.py"
+  },
+  "license_scope": "Evidence/source only; no weights are included or redistributed. This report does not accept new terms on anyone’s behalf."
+}

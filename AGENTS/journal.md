@@ -1,3 +1,21 @@
+## 2026-11-02 — pin evidence before executing its retained analyzer
+
+- Independent review of the unpublished offline verifier caught a self-signed manifest/analyzer trust flaw. Pin both the known experiment manifest and original analyzer, authenticate bounded payload buffers once, then compile only those verified bytes. A relocated evidence directory cannot supply new code or win a read/execute race.
+- Six independent regressions reject coordinated receipt/manifest/analyzer forgery, permit relocation of authentic evidence and prove a single authenticated snapshot. All13 Windows evidence checks pass after the fix. The actual original receipt/API projection/analysis remain exact; no new generation.
+- Correct the Windows description to a bulk/wildcard refusal, rather than a clarification. Prior full984/1skip and publication313-file/52,828,382-byte zero-finding checks are retained; the final hardened candidate is validated separately before release.
+
+## 2026-11-02 — qualify the previously omitted public FunctionGemma adapter
+
+- A separately predeclared known80-input pair on original v1.1.0 source gives12→63 raw and23→68 verified calls for the same BF16 base without/with the exact public finalv5 adapter. All160 complete row trees remain unchanged. This closes an omitted measurement, not fresh acceptance or an added1,000-case run.
+- Version the public-safe metadata projection, original digests, source/harness distinction and guarded offline verifier/reproducer. Seventeen meaningful checks cover identity/tamper/failure retention; no new training or weight distribution. Old gradient evidence binds an intermediate checkpoint, and old quantized exports arev3; neither qualifies publicv5.
+- Current Gemma terms and missing distribution agreement/Notice files are explicit follow-up work. FunctionGemma GGUF conversion remains unqualified. The comparison now links the actual hosted Windows CPU proof and this separate diagnostic while retaining all frozen1,000-case results.
+
+## 2026-11-02 — retain actual hosted Windows CPU qualification
+
+- The exact published experimental C7 model passed the single hosted Windows Server2025 AMD64 workflow41436216278: four actual model calls, eight operational checks and13 independent identity/environment/source checks. Product source is pinned v1.2.0/e76, helper/workflow v1.2.1/b937. No broad model accuracy, newer-workflow inference, owned Windows hardware, NVIDIA or memory result is claimed.
+- Version the original analysis/source manifest/API metadata and a lossless source-hash-record export. The offline verifier reconstructs the original CRLF receipt SHA and reproduces all13 checks; six artifact/run/source/device/dependency/cleanup mutants fail qualification. Seven new evidence tests pass.
+- Add exact model download/checksum/license instructions and keep Windows CPU CI versus other hardware/accelerator classes explicit. Core runtime behavior and the neural contract are unchanged; this is a1.3.1 qualification/documentation increment.
+
 ## 2026-11-02 — isolate body deadlines from CI scheduling
 
 - Public macOS CI at65b8e80 passed958 tests but one80ms slow-body assertion hit the separate finite socket timeout before its expected body-deadline branch. The failure is retained; no CI rerun or accepted two-error assertion hides it.

@@ -1,0 +1,22 @@
+{
+  "schema_version": 1,
+  "model_calls": 0,
+  "results": [
+    {
+      "control": "failed_startup",
+      "passed": true,
+      "exit": 1,
+      "partial_rows": 0,
+      "cleanup_verified": true,
+      "raw_exception_omitted": true
+    },
+    {
+      "control": "mid_generation",
+      "passed": true,
+      "exit": 1,
+      "partial_rows": 1,
+      "cleanup_verified": true,
+      "raw_exception_omitted": true
+    }
+  ]
+}

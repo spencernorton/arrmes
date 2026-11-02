@@ -1,0 +1,15 @@
+{
+  "id": 41436216278,
+  "head_sha": "b937d5c855a584fb5fb5bef642dfd5282e59f443",
+  "head_branch": "v1.2.1",
+  "event": "workflow_dispatch",
+  "status": "completed",
+  "conclusion": "success",
+  "path": ".github/workflows/windows-model-smoke.yml",
+  "html_url": "https://github.com/spencernorton/arrmes/actions/runs/41436216278",
+  "created_at": "2026-11-02T11:21:41Z",
+  "run_started_at": "2026-11-02T11:21:41Z",
+  "updated_at": "2026-11-02T11:23:23Z",
+  "workflow_id": 404280766,
+  "run_attempt": 1
+}

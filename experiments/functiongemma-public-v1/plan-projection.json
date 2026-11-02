@@ -1,0 +1,307 @@
+{
+  "schema_version": 1,
+  "owner_only": true,
+  "kind": "prespecified paired operational diagnostic; no training or fresh acceptance claim",
+  "frozen_at": "2026-11-02T11:24:28.076561+00:00",
+  "source_commit": "a536483a75ada2d4d26f7bc93ee0790695f6e697",
+  "source_root": "source-snapshot/src",
+  "source_note": "Exact original public v1.1.0 runtime. The later comparison harness is pinned independently and is not released source.",
+  "harness_path": "evidence/benchmark_comparison.py",
+  "harness_sha256": "edb100098d990196b7443620fcdcdcc2950594d4a69f24259596be9d1fbc2146",
+  "harness_note": "Unmodified retained harness with documented business-observation grading, different from earlier base-only receipt harness d7293867e20d104516f326a797649ad45861b081592d823ad30ad5a2305113b6. Both new conditions use the identical frozen harness.",
+  "dataset_path": "evidence/routing-heldout.jsonl",
+  "dataset_sha256": "1ed8e3e83c78a22d37991e7b2ef861464bf2bf6c224c782e81bc352005a31e14",
+  "cases": 80,
+  "oracle_path": "evidence/fixture-oracle.json",
+  "oracle_sha256": "e1775f040176a800d153138c02bd077af3a5536a11a93225911b2f47a89c8cba",
+  "data_limits": [
+    "Existing known overnight-v1 diagnostic inputs; one known recorded-training template overlap, not new held-out acceptance.",
+    "Public-adapter complete training lineage is not established.",
+    "Frozen acceptance-v4 1000-case inputs, plan, labels, outputs and scores are outside this diagnostic and will not be read, edited or rerun."
+  ],
+  "conditions": {
+    "base": {
+      "label": "functiongemma270m-base-paired-diagnostic",
+      "adapter_path": null,
+      "model_revision": "mlx-community/functiongemma-270m-it-bf16@bb327a9ad61044e1496a2bee2365a6b6a6684c72"
+    },
+    "public_v5": {
+      "label": "arrmes-functiongemma270m-public-v5-paired-diagnostic",
+      "adapter_path": "local-model/public-adapter",
+      "model_revision": "mlx-community/functiongemma-270m-it-bf16@bb327a9ad61044e1496a2bee2365a6b6a6684c72 + NorviTech/arrmes-functiongemma-270m@96e89a722f4789f5eaceee06fe0327dfb9371ba0; adapter b2af9abc1883d515647be2539cb9192b53016701e1c7b4a71e6c7a9b3d432eac"
+    }
+  },
+  "condition_order": [
+    "base",
+    "public_v5"
+  ],
+  "one_process_per_condition": true,
+  "base_path": "local-model/base",
+  "backend": "mlx",
+  "base_dtype": "BF16",
+  "adapter_dtype": "F32",
+  "quantization": null,
+  "context_limit": 32768,
+  "training_max_sequence_length": 2048,
+  "generation": {
+    "family": "functiongemma",
+    "contract_version": "v2",
+    "max_output_tokens": 160,
+    "temperature": 0,
+    "thinking": false,
+    "repetitions": 1,
+    "sample_count_per_condition": 80,
+    "warmups": [
+      "Show the current Plex streaming activity.",
+      "Give me DH-Waypoint status."
+    ],
+    "warmup_accuracy_and_warm_timing": "excluded",
+    "format_translation": "none; native FunctionGemma parser",
+    "verifier": "original runtime; raw output scored separately"
+  },
+  "maximum_seconds_per_condition": 1200,
+  "metrics": [
+    "raw native schema validity",
+    "raw tool accuracy",
+    "raw exact tool, arguments and entities",
+    "post-verifier exactness and changed/caught calls",
+    "raw unexpected write proposals",
+    "controlled original-fixture behavior already implemented by the harness",
+    "load/cold-generation/routing/fixture-end-to-end latency separately",
+    "process peak RSS and MLX unified-memory allocation, not dedicated VRAM",
+    "artifact size separately from runtime memory"
+  ],
+  "measurement_limits": [
+    "Single pass and fixed sequential order: accuracy diagnostic, not latency qualification.",
+    "Shared Mac load and any separate CPU work are not fully controlled.",
+    "Fixture execution does not establish upstream API/production correctness.",
+    "No confirmation round-trip is included in fixture timing."
+  ],
+  "invariants": [
+    "No training, prompt/schema/source/harness tuning, model substitution, input edits, generation restart for better accuracy, GGUF conversion, upload or production calls.",
+    "All frozen source/input/model hashes checked before and after each condition.",
+    "Only the two exact published adapter files are loaded; never v3 fused models or v5 intermediate checkpoints.",
+    "Runtime exceptions stop the pair and retain completed rows plus safe failure type/stage; no retries."
+  ],
+  "failure_preservation": {
+    "wrapper_path": "evidence/run_condition.py",
+    "wrapper_sha256": "65947586c4fd3655472ba5d33e42684776947278ddfc41b30458788026929bea",
+    "method": "No inference instrumentation. Only after exception, retain pre-existing harness run-frame completed rows/warmups/source hashes. Sandbox/temp context managers unwind and MLX process exits."
+  },
+  "license": {
+    "base_and_adapter": "Gemma Terms of Use; not Apache/MIT",
+    "primary_terms": "https://ai.google.dev/gemma/terms",
+    "base_card": "https://huggingface.co/google/functiongemma-270m-it",
+    "adapter_card": "https://huggingface.co/NorviTech/arrmes-functiongemma-270m/blob/96e89a722f4789f5eaceee06fe0327dfb9371ba0/README.md",
+    "scope": "Authorized local diagnostic using existing cached base and exact published LoRA. No redistribution; any future derivative distribution requires Gemma agreement/Notice/use restrictions/modification notices."
+  },
+  "static_preflight": {
+    "adapter_tensors": 252,
+    "lora_pairs": 126,
+    "rank": 8,
+    "all_pairs_match_base_shapes": true,
+    "scalar_parameters": 1898496,
+    "nonfinite_tensors": 0,
+    "all_zero_tensors": 0,
+    "public_config_byte_identical": true,
+    "public_lfs_adapter_sha_matches_local": true,
+    "model_load_or_generation_before_freeze": false
+  },
+  "historical_binding_gap": {
+    "receipt_path": "historical-evidence/gradient_and_quantization_receipt.json",
+    "recorded_v5_sha256": "7d47fc15688b2f77d4d0ca8bb22658ef585addb94ef6402692c84368524ceb75",
+    "matches": "adapters/functiongemma-distilled-v5/0000320_adapters.safetensors",
+    "public_final_sha256": "b2af9abc1883d515647be2539cb9192b53016701e1c7b4a71e6c7a9b3d432eac",
+    "old_evaluations": "Six historical v5 reports bind only model/adapter paths, not file hashes. Their scores do not establish exact public-v5 behavior.",
+    "quantized_exports": "Retained fused/4-bit FunctionGemma artifacts explicitly use v3, not published v5."
+  },
+  "packages": {
+    "mlx": "0.32.4",
+    "mlx-lm": "0.31.1",
+    "transformers": "5.22.1",
+    "jsonschema": "4.26.0",
+    "huggingface-hub": "2.4.0"
+  },
+  "frozen_files": [
+    {
+      "path": "source-snapshot/src/arrmes/__init__.py",
+      "bytes": 138,
+      "sha256": "60f8cf7673211951561e904433c8064999b3a7eeb4539f65de82b2716ffe2997"
+    },
+    {
+      "path": "source-snapshot/src/arrmes/__main__.py",
+      "bytes": 30,
+      "sha256": "6d8b7d7846a845059d7a3107143f11131f63c5511d669b44085b15ec5e3d2279"
+    },
+    {
+      "path": "source-snapshot/src/arrmes/adapters.py",
+      "bytes": 29084,
+      "sha256": "199a21e864c81438cb355d5e9c0193b42efd5bc848e033019e183be2787a666d"
+    },
+    {
+      "path": "source-snapshot/src/arrmes/auth.py",
+      "bytes": 4495,
+      "sha256": "04a5bac9f5d328ad08142e70428f4b1dc75460c8ef9fa62b55ded95ef8bb77e8"
+    },
+    {
+      "path": "source-snapshot/src/arrmes/catalog.py",
+      "bytes": 7385,
+      "sha256": "85855d567abfe3c1b19a25b2df1b94a12175204eec2af4626c8e1616b7586a8f"
+    },
+    {
+      "path": "source-snapshot/src/arrmes/cli.py",
+      "bytes": 8835,
+      "sha256": "8048c50d3cadbea00b023d0294b755a90f243703ec0db3b5bf7f7b748679bb37"
+    },
+    {
+      "path": "source-snapshot/src/arrmes/corpus.py",
+      "bytes": 31131,
+      "sha256": "d378023367c61e4b93724890636090daa383b449c661c21412331f0c061d8425"
+    },
+    {
+      "path": "source-snapshot/src/arrmes/evaluate.py",
+      "bytes": 13191,
+      "sha256": "9a06d23c5454ef0c02a66f18c7af7d2f33fcd8c19608e7eb834c3550cab9ff21"
+    },
+    {
+      "path": "source-snapshot/src/arrmes/executor.py",
+      "bytes": 15237,
+      "sha256": "b2763ae7ac15861c237648081f18a2ab1d24f97f2928572e8cab997e9c0046e3"
+    },
+    {
+      "path": "source-snapshot/src/arrmes/live_adapter.py",
+      "bytes": 57636,
+      "sha256": "8ebf868476872e3f0c20e9d22228e2a1ae4fc25cbec5b0ddf801734375201bd4"
+    },
+    {
+      "path": "source-snapshot/src/arrmes/model.py",
+      "bytes": 17984,
+      "sha256": "5d0aafc4ee5a1e1487d7b26a6d148b6a8cd0db8af43ac94589f11d7c34729651"
+    },
+    {
+      "path": "source-snapshot/src/arrmes/planner.py",
+      "bytes": 35868,
+      "sha256": "47982bf80f52460c6ee51b89c3cd673d41d654c9afd58e32c2a88346cdf44c25"
+    },
+    {
+      "path": "source-snapshot/src/arrmes/probe.py",
+      "bytes": 1918,
+      "sha256": "473b3cbd87e8fa1e1b374ec5fcd8888750ef3e4c6a5b95d40fcf226561abbdc8"
+    },
+    {
+      "path": "source-snapshot/src/arrmes/protocol.py",
+      "bytes": 6344,
+      "sha256": "13007f5a558abe7cd10b255f23d12288b88bd8d2d801af9025ffba222a240959"
+    },
+    {
+      "path": "source-snapshot/src/arrmes/sandbox/__init__.py",
+      "bytes": 608,
+      "sha256": "3d24a42f654890e59903e0eaeecfbad9086f5e016721906d166fad4e6e7be8e0"
+    },
+    {
+      "path": "source-snapshot/src/arrmes/sandbox/isolation.py",
+      "bytes": 9494,
+      "sha256": "5ae98b74892812c46be6bb8dd75ea5ebff5498ec87f27881602fd6b625db92e9"
+    },
+    {
+      "path": "source-snapshot/src/arrmes/sandbox/sanitize.py",
+      "bytes": 56373,
+      "sha256": "6f7e8a286551ac3402a2698aac1d085e8bea0ec123ab3879038dfbc4b022756e"
+    },
+    {
+      "path": "source-snapshot/src/arrmes/sandbox/server.py",
+      "bytes": 44994,
+      "sha256": "f5dac79768e388b3a9e1e07dc0b5f402463c87988477d72cf3419228c099d851"
+    },
+    {
+      "path": "source-snapshot/src/arrmes/server.py",
+      "bytes": 20409,
+      "sha256": "c66042b219f533b63c516d2c6f73024ba6818525eb198974db3b3fd4295fd270"
+    },
+    {
+      "path": "evidence/benchmark_comparison.py",
+      "bytes": 28067,
+      "sha256": "edb100098d990196b7443620fcdcdcc2950594d4a69f24259596be9d1fbc2146"
+    },
+    {
+      "path": "evidence/run_condition.py",
+      "bytes": 5562,
+      "sha256": "65947586c4fd3655472ba5d33e42684776947278ddfc41b30458788026929bea"
+    },
+    {
+      "path": "evidence/routing-heldout.jsonl",
+      "bytes": 38976,
+      "sha256": "1ed8e3e83c78a22d37991e7b2ef861464bf2bf6c224c782e81bc352005a31e14"
+    },
+    {
+      "path": "evidence/manifest.json",
+      "bytes": 1135,
+      "sha256": "358496d690c1721f8268d2134cf0e8a3e5b5086ae0181d47a25872535c31b4e9"
+    },
+    {
+      "path": "evidence/fixture-oracle.json",
+      "bytes": 78137,
+      "sha256": "e1775f040176a800d153138c02bd077af3a5536a11a93225911b2f47a89c8cba"
+    },
+    {
+      "path": "evidence/hf-public-model-api.json",
+      "bytes": 4082,
+      "sha256": "8b310782e4f46a0df8249c5d2697de263db3efd9af3ceded34ce694da42c3f09"
+    },
+    {
+      "path": "evidence/public-README.md",
+      "bytes": 1837,
+      "sha256": "96db6b46e3294776bd58853a6f6791ef0279a2dc0dbd3f28522cd82b947ab957"
+    },
+    {
+      "path": "evidence/public-adapter_config.json",
+      "bytes": 1032,
+      "sha256": "6cbde2e313992dc26f967f470de360487dc81a513aba5ba2658b6f9aea615de2"
+    },
+    {
+      "path": "local-model/base/model.safetensors",
+      "bytes": 536222768,
+      "sha256": "fb64bf18b2911fcaa59d44c1b7d5842a011a874530be9dc5bc9d307e82b4edee"
+    },
+    {
+      "path": "local-model/base/config.json",
+      "bytes": 1539,
+      "sha256": "c60d3e4c9a04dcb53fae5e616d2d76a75f3eeecdc6e82f9b805904fc11724608"
+    },
+    {
+      "path": "local-model/base/generation_config.json",
+      "bytes": 176,
+      "sha256": "f3f694d69c044000d84e777938fe314137af2ae06014c552332d1c82f5e1b13d"
+    },
+    {
+      "path": "local-model/base/model.safetensors.index.json",
+      "bytes": 17220,
+      "sha256": "419991d2afa817203a4941777d0511cc736c7c38912e33021366ba7b7a2bb83b"
+    },
+    {
+      "path": "local-model/base/tokenizer.json",
+      "bytes": 33378493,
+      "sha256": "3b83627b470a2b3eeb6cbd480490191e50f21549cb3de1d0fcc1a001a48c6c04"
+    },
+    {
+      "path": "local-model/base/tokenizer_config.json",
+      "bytes": 828,
+      "sha256": "9ffb9b4c29d60699a0c50b00abce43379640678852e442b1dec36a0421003a42"
+    },
+    {
+      "path": "local-model/base/chat_template.jinja",
+      "bytes": 13792,
+      "sha256": "db61fb01017bd82401d3ffca4f8e066cd56ff6d38d2a30c4058770c0bf7ab49b"
+    },
+    {
+      "path": "local-model/public-adapter/adapter_config.json",
+      "bytes": 1032,
+      "sha256": "6cbde2e313992dc26f967f470de360487dc81a513aba5ba2658b6f9aea615de2"
+    },
+    {
+      "path": "local-model/public-adapter/adapters.safetensors",
+      "bytes": 7620457,
+      "sha256": "b2af9abc1883d515647be2539cb9192b53016701e1c7b4a71e6c7a9b3d432eac"
+    }
+  ]
+}
