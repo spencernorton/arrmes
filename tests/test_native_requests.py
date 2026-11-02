@@ -27,7 +27,8 @@ STATUS = Call("request_status", {"title": "Fixture movie"})
 
 def _request(identity=1, *, owner=7, tmdb=101, kind="movie", state=1, availability=2, **extra):
     return {"id": identity, "type": kind, "status": state, "is4k": False,
-            "requestedBy": {"id": owner, "email": "do-not-expose.invalid", "apiKey": "DO-NOT-EXPOSE"},
+            "requestedBy": {"id": owner, "createdAt": "2020-01-01T00:00:00.000Z",
+                            "email": "do-not-expose.invalid", "apiKey": "DO-NOT-EXPOSE"},
             "media": {"tmdbId": tmdb, "mediaType": kind, "status": availability,
                       "serviceUrl": "https://private.invalid", "serviceId": 998},
             "rootFolder": "/private/fixture/library", **extra}
@@ -43,6 +44,9 @@ class RequestFixture:
     search_size: int = 20
     identity_override: int | None = None
     identity_sequence: list[int] = field(default_factory=list)
+    identity_created_at: str = "2020-01-01T00:00:00.000Z"
+    identity_created_sequence: list[object] = field(default_factory=list)
+    identity_email: str = "DO-NOT-EXPOSE"
     ignore_owner_filter: bool = False
     repeated_request_page: bool = False
     faults: dict = field(default_factory=dict)
@@ -84,7 +88,8 @@ def request_fixture(state=None, *, mapping=None, mode="confirm", store=None, **n
                 self.respond(*state.faults[path]);return
             if path == "/api/v1/auth/me":
                 actual = state.identity_sequence.pop(0) if state.identity_sequence else state.identity_override or user
-                self.respond(200, {"id": actual, "email": "DO-NOT-EXPOSE", "permissions": 999});return
+                created = state.identity_created_sequence.pop(0) if state.identity_created_sequence else state.identity_created_at
+                self.respond(200, {"id": actual, "createdAt": created, "email": state.identity_email, "permissions": 999});return
             if path == "/api/v1/status":
                 self.respond(200, {"version": state.version, "path": "/private/fixture/config"});return
             if path == "/api/v1/search":
@@ -444,3 +449,83 @@ def test_person_and_collection_search_results_cannot_become_a_movie_request_targ
         _, confirmation = _pending(adapter)
         assert adapter.confirm_write(confirmation, VIEWER).verified_complete
         assert _posts(state)[0]["body"] == {"mediaType": "movie", "mediaId": 101}
+
+
+def test_reused_numeric_user_id_is_rejected_before_reading_the_replacement_accounts_data():
+    with request_fixture() as (adapter, state):
+        executor, confirmation = _pending(adapter)
+        before = len(state.calls)
+        state.identity_created_at = "2026-11-02T00:00:00.000Z"
+        result = executor.confirm_write(confirmation, VIEWER)
+        assert result.terminal_state == "denied"
+        assert result.observation.data["error"] == "confirmation_account_identity_changed"
+        assert [call["path"] for call in state.calls[before:]] == ["/api/v1/auth/me"]
+        assert not _posts(state)
+
+
+def test_replacement_account_on_the_final_auth_me_check_cannot_receive_the_post():
+    state = RequestFixture(identity_created_sequence=["2020-01-01T00:00:00.000Z",
+        "2020-01-01T00:00:00.000Z", "2026-11-02T00:00:00.000Z"])
+    with request_fixture(state) as (adapter, _):
+        executor, confirmation = _pending(adapter)
+        result = executor.confirm_write(confirmation, VIEWER)
+        assert result.terminal_state == "denied" and not _posts(state)
+        assert result.observation.data["error"] == "confirmation_account_identity_changed"
+        assert state.calls[-1]["path"] == "/api/v1/auth/me"
+
+
+@pytest.mark.parametrize("created", [None, "", "not-a-date", "2020-01-01T00:00:00", True, 1])
+def test_missing_or_invalid_account_creation_timestamp_fails_before_metadata(created):
+    state = RequestFixture(identity_created_sequence=[created])
+    with request_fixture(state) as (adapter, _):
+        obs = adapter.execute(MOVIE, VIEWER)
+        assert obs.status == "denied" and obs.data["error"] == "native_request_account_identity_unavailable"
+        assert len(state.calls) == 1 and not _posts(state)
+
+
+def test_normalized_account_instant_is_stable_and_preview_exposes_only_a_fingerprint():
+    state = RequestFixture(identity_email="fixture.viewer@example.invalid",
+        identity_created_sequence=["2020-01-01T00:00:00.000Z", "2020-01-01T01:00:00+01:00", "2020-01-01T00:00:00Z"])
+    with request_fixture(state) as (adapter, _):
+        pending = adapter.execute(MOVIE, VIEWER)
+        entity = pending.data["resolved_entity"]
+        assert len(entity["user_identity_fingerprint"]) == 64
+        assert "fixture.viewer@example.invalid" not in json.dumps(pending.data)
+        assert "createdAt" not in entity and "email" not in entity
+        assert adapter.confirm_write(pending.data["confirm_id"], VIEWER).verified_complete
+        assert len(_posts(state)) == 1
+
+
+def test_changed_email_requires_new_confirmation_without_exposing_either_value():
+    with request_fixture() as (adapter, state):
+        executor, confirmation = _pending(adapter)
+        state.identity_email = "replacement.viewer@example.invalid"
+        result = executor.confirm_write(confirmation, VIEWER)
+        assert result.terminal_state == "denied" and not _posts(state)
+        assert "replacement.viewer@example.invalid" not in json.dumps(result.observation.data)
+
+
+@pytest.mark.parametrize("version", ["1.34.0", "2.7.3", "4.0.0", "Overseerr 1.34.0", "Jellyseerr 2.7.3", "develop", "3.5.1-other invalid"])
+def test_unknown_or_other_product_version_families_cannot_resolve_or_submit(version):
+    with request_fixture(RequestFixture(version=version)) as (adapter, state):
+        obs = adapter.execute(MOVIE, VIEWER)
+        assert obs.status == "error" and obs.http_status == 501 and obs.data["error"] == "unsupported_seerr_version"
+        assert [call["path"] for call in state.calls] == ["/api/v1/auth/me", "/api/v1/status"]
+        assert not _posts(state)
+
+
+def test_version_family_change_after_preview_cannot_mutate():
+    with request_fixture() as (adapter, state):
+        executor, confirmation = _pending(adapter)
+        state.version = "2.7.3"
+        result = executor.confirm_write(confirmation, VIEWER)
+        assert result.terminal_state == "error" and result.observation.data["error"] == "unsupported_seerr_version"
+        assert not _posts(state)
+
+
+@pytest.mark.parametrize("version", ["v3.5.1", "3.6.0-beta.1", "3.5.1+build.1"])
+def test_implemented_three_x_version_syntax_still_requires_exact_bound_version(version):
+    with request_fixture(RequestFixture(version=version)) as (adapter, state):
+        executor, confirmation = _pending(adapter)
+        assert executor.confirm_write(confirmation, VIEWER).terminal_state == "completed"
+        assert len(_posts(state)) == 1

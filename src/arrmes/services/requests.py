@@ -1,9 +1,10 @@
 """Caller-owned native Seerr requests with single-use movie confirmation."""
 from __future__ import annotations
 
-from datetime import date
+from datetime import date, datetime, timezone
 import hashlib
 import json
+import re
 import threading
 import time
 from typing import Any
@@ -21,6 +22,7 @@ REQUEST_ACTIONS = frozenset({"request_status", "request_media"})
 _REQUEST_STATES = {1: "pending", 2: "approved", 3: "declined", 4: "failed", 5: "completed"}
 _MEDIA_STATES = {1: "unknown", 2: "pending", 3: "processing", 4: "partially_available",
                  5: "available", 6: "blocklisted", 7: "deleted"}
+_SEERR_VERSION = re.compile(r"v?3\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?(?:\+[A-Za-z0-9.-]+)?")
 
 
 class _Clarify(ValueError):
@@ -146,12 +148,33 @@ class NativeRequestAdapter:
         me = self._http("GET", "/api/v1/auth/me", context, audit)
         if not isinstance(me, dict) or not _id(me.get("id")) or me["id"] != context[1]:
             raise _UpstreamError("native_request_caller_identity_mismatch", 403)
+        created = me.get("createdAt")
+        if not _text(created) or len(created) > 128 or any(ord(char) < 32 for char in created):
+            raise _UpstreamError("native_request_account_identity_unavailable", 403)
+        try:
+            created_at = datetime.fromisoformat(created.replace("Z", "+00:00"))
+        except ValueError:
+            raise _UpstreamError("native_request_account_identity_unavailable", 403) from None
+        if created_at.tzinfo is None or created_at.utcoffset() is None:
+            raise _UpstreamError("native_request_account_identity_unavailable", 403)
+        # Numeric IDs may be reused after account deletion. Bind the stable
+        # creation instant, plus a digest of email when supplied, without
+        # exposing account fields or copying the raw /auth/me response.
+        email = me.get("email")
+        if email is not None and (not isinstance(email, str) or len(email) > 512 or
+                                  any(ord(char) < 32 or ord(char) == 127 for char in email)):
+            raise _UpstreamError("native_request_account_identity_unavailable", 403)
+        identity = {"id": me["id"], "created_at": created_at.astimezone(timezone.utc).isoformat(),
+                    "email": email.strip().casefold() if email is not None else None}
+        return hashlib.sha256(json.dumps(identity, sort_keys=True).encode("utf-8")).hexdigest()
 
     def _version(self, context, audit):
         status = self._http("GET", "/api/v1/status", context, audit)
         version = status.get("version") if isinstance(status, dict) else None
         if not _text(version) or len(version) > 128 or any(ord(c) < 32 for c in version):
             raise _UpstreamError("invalid_seerr_version")
+        if not _SEERR_VERSION.fullmatch(version):
+            raise _UpstreamError("unsupported_seerr_version", 501)
         return version
 
     def _resolve(self, args, context, audit):
@@ -253,13 +276,16 @@ class NativeRequestAdapter:
                 break
         raise _Clarify("own_request_inventory_incomplete")
 
-    def _preflight(self, call, context, audit):
-        self._identity(context, audit)
+    def _preflight(self, call, context, audit, *, expected_identity=None):
+        user_identity = self._identity(context, audit)
+        if expected_identity is not None and user_identity != expected_identity:
+            raise _UpstreamError("confirmation_account_identity_changed", 409)
         version = self._version(context, audit)
         media, availability = self._resolve(call.arguments, context, audit)
         own = [row for row in self._own_requests(context, audit)
                if row["tmdb_id"] == media["tmdb_id"] and row["media_type"] == media["media_type"]]
-        entity = {**media, "user_id": context[1], "service": "seerr", "server_version": version, "seasons": [],
+        entity = {**media, "user_id": context[1], "user_identity_fingerprint": user_identity,
+                  "service": "seerr", "server_version": version, "seasons": [],
                   "api_root_digest": hashlib.sha256(context[0].base_url.encode()).hexdigest()}
         return entity, availability, own
 
@@ -341,7 +367,10 @@ class NativeRequestAdapter:
                 raise _UpstreamError("confirmation_user_mapping_changed", 403)
             if token.resolved_entity.get("api_root_digest") != hashlib.sha256(context[0].base_url.encode()).hexdigest():
                 raise _UpstreamError("confirmation_service_changed", 409)
-            entity, availability, own = self._preflight(call, context, audit)
+            expected_identity = token.resolved_entity.get("user_identity_fingerprint")
+            if not isinstance(expected_identity, str) or not re.fullmatch(r"[a-f0-9]{64}", expected_identity):
+                raise _UpstreamError("confirmation_account_binding_missing", 409)
+            entity, availability, own = self._preflight(call, context, audit, expected_identity=expected_identity)
             if entity != token.resolved_entity or entity["media_type"] != "movie":
                 raise _UpstreamError("confirmation_entity_changed", 409)
             existing = self._existing(own)
@@ -350,7 +379,8 @@ class NativeRequestAdapter:
                     "already_requested": True, "confirmed_call": confirmed_call,
                     "completion_scope": "request_submission_not_download"}, audit)
             # Check effective upstream identity immediately before mutation too.
-            self._identity(context, audit)
+            if self._identity(context, audit) != entity["user_identity_fingerprint"]:
+                raise _UpstreamError("confirmation_account_identity_changed", 409)
             post_attempted = True
             body = self._http("POST", "/api/v1/request", context, audit,
                               body={"mediaType": "movie", "mediaId": entity["tmdb_id"]})

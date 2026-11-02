@@ -11,6 +11,11 @@ This integration targets **seerr-team/seerr**, audited at stable
 `564bfb08b54caa374bddaf820abfd226e5e69151`. Its API prefix is `/api/v1`.
 It is separate from the older custom `Seer` request-portal compatibility route.
 No claim is made that arbitrary similarly named services have this contract.
+The adapter implements Seerr 3.x API-v1 version syntax, with exact application
+version binding during confirmation. Older Overseerr 1.x, Jellyseerr 2.x and
+unknown major versions return an unsupported-version error. Only the pinned
+3.5.1 contract was audited; accepting another 3.x version string does not qualify
+that patch or deployment.
 
 ## Configuration and caller identity
 
@@ -42,6 +47,15 @@ checks `/auth/me.id` before metadata or request lookups, and checks it again
 immediately before mutation. A missing mapping, wrong effective ID or a dropped
 identity header fails closed. A configured Seerr connection never falls back to
 the legacy gateway because its caller mapping is missing.
+
+The adapter also requires a timezone-aware `createdAt` in `/auth/me` and binds an
+account fingerprint built from ID, normalized creation instant and email when
+supplied. This detects a deleted/recreated account reusing the same numeric ID.
+The fingerprint is checked before reading confirmation-time account data and
+again immediately before POST. Creation timestamps, email and the raw user body
+are not returned. A legitimate email change after preview also requires a fresh
+confirmation; this conservative tradeoff prevents an old preview from authorizing
+a different account identity.
 
 A reverse proxy must consistently preserve these headers on every endpoint.
 Arrmes checks identity before submission and ownership after it; it cannot prove
@@ -87,7 +101,7 @@ selection accuracy or change the frozen neural prompt.
 The preview identifies one movie, canonical year, mapped Seerr account and
 standard quality. It explains that Seerr approval/download policy applies. A
 short-lived, single-use HMAC token binds the principal, original arguments,
-canonical TMDB ID/title/type/year, Seerr version, mapped user and configured API
+canonical TMDB ID/title/type/year, Seerr version, mapped account fingerprint and configured API
 root digest. Confirmation checks current scopes/mapping and repeats the complete
 fresh lookup. An upgrade, changed identity or changed target requires a new
 confirmation. Expiry and replay fail before mutation.
@@ -141,9 +155,16 @@ python -m pytest -q tests/test_native_requests.py
 
 Fixtures cover identity-header loss/admin fallback, ownership isolation, scopes,
 exact metadata, ambiguity, bounded pagination, signed bindings, expiry/replay,
-concurrent confirmations, rejected/uncertain mutations and postconditions.
+concurrent confirmations, numeric user-ID reuse, last-moment account replacement,
+unsupported version families, rejected/uncertain mutations and postconditions.
 Response and page limits inherit the native adapter's finite budgets. Existing
 v2 schemas and model artifacts are unchanged.
+
+The stable [User entity](https://github.com/seerr-team/seerr/blob/564bfb08b54caa374bddaf820abfd226e5e69151/server/entity/User.ts)
+persists `createdAt`, and the
+[authenticated-user route](https://github.com/seerr-team/seerr/blob/564bfb08b54caa374bddaf820abfd226e5e69151/server/routes/auth.ts)
+returns it through `toJSON()`. Additional synthetic version-string tests exercise
+the 3.x parser and binding, not real compatibility with untested patch releases.
 
 **No actual Seerr binary, real account, production endpoint, production write or
 new model training was used for this increment.** Scripted model-output fixtures
