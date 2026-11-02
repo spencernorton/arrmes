@@ -1,3 +1,22 @@
+## 2026-11-02 Actual Seerr identity and empty-read qualification
+
+Recorded actual official Seerr 3.5.1 Linux AMD64 evidence in the capability matrix
+and workflow limitations: 25/25 bounded binary/read-policy checks and 22 Linux
+harness tests. Mapped identity with database-created createdAt, administrator
+fallback without the user header, authentication/owner-filter status codes and
+the empty owned-request parser match the native adapter assumptions. The
+explicit health phrase reaches the actual binary through runtime and executor.
+Both initial failed receipts and exact source snapshots remain retained.
+
+These checks use a GET-only Docker-exec bridge with synthetic accounts. They do
+not qualify populated requests, metadata resolution, HTTP request POST,
+submission/confirmation/lifecycle, external login or direct TCP/TLS. Added stable
+primary source digests without replacing the historical develop audit. The
+31 read pairs over eight APIs are unchanged; no model, benchmark input, score or
+runtime source changed. Temporary test containers/processes/source/venv were
+removed; only the pinned image cache remains. JSON/schema, registry/receipt and
+local-link consistency checks cover this documentation follow-up.
+
 ## 2026-11-02 Final scope-conservation regressions
 
 Adjacent independent probes also rejected unquoted artist/album role splitting,

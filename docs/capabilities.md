@@ -13,8 +13,8 @@ evidence. Several release claims combined them.
 Current coverage includes **31 native read workflows over eight service APIs**. Each
 advertised service/operation pair is tested from an explicit natural-language
 request through `BoundedExecutor` to a loopback HTTP service fixture under
-`NetworkIsolationGuard`. These are HTTP contract tests, not tests against real
-Sonarr, Radarr, Lidarr, Bazarr, qBittorrent, Tautulli or Seerr binaries. No
+`NetworkIsolationGuard`. These per-pair checks use HTTP fixtures. Selected
+actual Sonarr and Seerr binary checks are described separately below. No
 production service was used for training, evaluation or mutation.
 
 An additional actual Sonarr 4.0.20.3014 ARM64 instance passes eight bounded
@@ -28,6 +28,19 @@ and successful follow-up are both retained in `experiments/portable-v1/`.
 No seeded entity, missing-media semantics, discovery or write was qualified.
 All temporary containers, networks, app/proxy processes and configuration were
 removed; the pinned image cache remains for reproduction.
+
+An actual Seerr 3.5.1 AMD64 binary on Linux passes **25/25** bounded
+identity/empty-read checks, with **22/22** Linux harness boundary tests. The
+mapped identity and its database-generated creation timestamp, API-key/user-header
+behavior and empty caller-owned request page are accepted by Arrmes's native
+read helpers. The explicit health phrase also executes through the runtime and
+executor without inference. Two initial failures remain recorded: a Docker
+image-ID assumption before startup, and a missing-key 401 that the harness first
+expected to be 403. [Qualification and raw evidence](seerr-upstream-qualification.md)
+separate these checks from metadata search, complete title-based request status,
+populated requests, submission/confirmation/lifecycle, normal external login and
+direct TCP/TLS, which remain unqualified against this binary. No request POST
+or production service was used; temporary test resources were removed.
 
 Six existing neural v2 reads also execute directly against configured native
 services: `tv_status`, `tv_missing`, `movie_status`, `music_status`,
@@ -86,7 +99,8 @@ test is recorded separately from the 29 explicit grammar checks.
   A separate caller-bound adapter now provides title-specific owned request
   status and confirmed standard movie submission. Trusted subject-to-user mappings
   and current account fingerprints are required. TV/4K submission, approval,
-  cancellation and retries remain unsupported.
+  cancellation and retries remain unsupported. Actual 3.5.1 identity and empty-read
+  qualification does not qualify metadata search or the full request workflow.
 - **Legacy `seer_discover` and Request Service:** the old tool calls a custom
   request-portal discovery route, rather than native Seerr. The local service
   migration record says this portal moved discovery to TMDB and retired Seerr
@@ -290,8 +304,9 @@ local file paths, IP addresses and credential fields, including nested fields.
 Audited source revisions, exact content digests and retrieval times are in
 [capabilities-api-sources.json](capabilities-api-sources.json). Upstream
 application releases and API path versions are separate facts. The selected
-empty-library Sonarr 4.0.20.3014 check above is the only real upstream application
-version tested in this increment; the remaining service contracts use fixtures.
+empty-library Sonarr 4.0.20.3014 and Seerr 3.5.1 identity/empty-read checks above
+exercise actual upstream binaries. Their selected operations and transport
+limits remain separate from broader fixture coverage.
 
 - **Sonarr:** the pinned upstream
   [v3 OpenAPI contract](https://github.com/Sonarr/Sonarr/blob/bc54afbdd0e38bdb0fca4785fcf7d7a6af77bf9a/src/Sonarr.Api.V3/openapi.json)
@@ -324,10 +339,13 @@ version tested in this increment; the remaining service contracts use fixtures.
   This adapter uses the API-key header, requiring Tautulli v2.18.0 or newer;
   older query-string-key installations are not qualified.
 - **Seerr:** the pinned
-  [API schema](https://github.com/seerr-team/seerr/blob/b185621e8e48743bb38adaa0d15b334626b7b100/seerr-api.yml)
+  [stable 3.5.1 API schema](https://github.com/seerr-team/seerr/blob/564bfb08b54caa374bddaf820abfd226e5e69151/seerr-api.yml)
   defines status and paginated search under `/api/v1` and API-key header
-  authentication. This does not establish compatibility with an arbitrary
-  differently named Seer service or an older Overseerr/Jellyseerr deployment.
+  authentication. Stable identity, User and request-filter source digests accompany
+  the actual binary checks described above. Earlier develop-schema audit records
+  are retained separately. This does not qualify metadata search against the
+  binary or establish compatibility with another Seerr version, a differently
+  named Seer service or an older Overseerr/Jellyseerr deployment.
 - **Bitmagnet:** the pinned
   [native GraphQL schema](https://github.com/bitmagnet-io/bitmagnet/blob/4d4042acdddfa1af05bfaf092a68c97b1e3698e2/graphql/schema/query.graphqls)
   defines `version`, health/workers and `torrentContent.search`. The search/model

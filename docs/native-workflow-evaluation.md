@@ -114,5 +114,15 @@ and four neural calls are too few for broad quality or safety-rate claims. Raw,
 verifier and system denominators differ and must not be combined. Recorded wall
 times are immediate-confirmation in-process fixture timings; they exclude real
 services, TLS, concurrency and human delay and are not a new latency distribution.
-Peak memory was not newly measured here. Real Bazarr/Seerr binaries, providers,
-indexers, seeded upstream libraries and resulting files remain unqualified.
+Peak memory was not newly measured for these model integration sets. The actual
+Bazarr binary, providers, indexers, seeded upstream libraries and resulting files
+remain unqualified.
+
+A [separate actual Seerr 3.5.1 Linux binary check](seerr-upstream-qualification.md)
+passes 25/25 identity/empty-read checks and 22/22 harness boundary tests. The
+real creation timestamp, mapped-user semantics and empty owned-request parser
+are accepted by Arrmes; its explicit health route also completes through the
+runtime/executor without inference. Both initial harness failures are retained.
+This is not populated request-workflow, metadata-search, HTTP POST,
+submission/confirmation/lifecycle or direct TCP/TLS qualification. It changes
+none of the model or fixture-workflow denominators reported above.

@@ -185,6 +185,51 @@
       "sha256": "5518232df09a0fccb5dba5648bec4200cf5111c2b5e98712903aedfcb8592f4b",
       "retrieved_at": "2026-11-02T06:31:08.827756+00:00",
       "support_note": "Stable v0.10.0 native schema/HTTP/auth audit; fixed document SDL validation and HTTP fixtures separate from binary qualification"
+    },
+    {
+      "service": "seerr",
+      "source_url": "https://github.com/seerr-team/seerr/blob/564bfb08b54caa374bddaf820abfd226e5e69151/seerr-api.yml",
+      "revision": "564bfb08b54caa374bddaf820abfd226e5e69151",
+      "sha256": "9533fc4ce04a5e68ef3d7c2deef5a25c43b560dbde07c361eb0f736fce66bf56",
+      "retrieved_at": "2026-11-02T10:35:50.630872+00:00",
+      "release_tag": "v3.5.1",
+      "support_note": "Stable source audit accompanies actual 3.5.1 identity/empty-read 25/25 checks and 22 Linux harness tests. Metadata resolution, populated request workflows and request POST remain unqualified against the binary; see docs/seerr-upstream-qualification.md."
+    },
+    {
+      "service": "seerr",
+      "source_url": "https://github.com/seerr-team/seerr/blob/564bfb08b54caa374bddaf820abfd226e5e69151/server/middleware/auth.ts",
+      "revision": "564bfb08b54caa374bddaf820abfd226e5e69151",
+      "sha256": "d449e1c136427b0f4bc1f3fc4e864780fde3cbb08e8bd75f1f1f2d86db44139a",
+      "retrieved_at": "2026-11-02T10:35:50.844088+00:00",
+      "release_tag": "v3.5.1",
+      "support_note": "Stable source audit accompanies actual 3.5.1 identity/empty-read 25/25 checks and 22 Linux harness tests. Metadata resolution, populated request workflows and request POST remain unqualified against the binary; see docs/seerr-upstream-qualification.md."
+    },
+    {
+      "service": "seerr",
+      "source_url": "https://github.com/seerr-team/seerr/blob/564bfb08b54caa374bddaf820abfd226e5e69151/server/routes/auth.ts",
+      "revision": "564bfb08b54caa374bddaf820abfd226e5e69151",
+      "sha256": "1bfe7e51ad3da83c7831d5d2cdc1d5194836fc3c2a1e7dd42d07b86e4eace994",
+      "retrieved_at": "2026-11-02T10:35:50.997145+00:00",
+      "release_tag": "v3.5.1",
+      "support_note": "Stable source audit accompanies actual 3.5.1 identity/empty-read 25/25 checks and 22 Linux harness tests. Metadata resolution, populated request workflows and request POST remain unqualified against the binary; see docs/seerr-upstream-qualification.md."
+    },
+    {
+      "service": "seerr",
+      "source_url": "https://github.com/seerr-team/seerr/blob/564bfb08b54caa374bddaf820abfd226e5e69151/server/entity/User.ts",
+      "revision": "564bfb08b54caa374bddaf820abfd226e5e69151",
+      "sha256": "0d640dfa0f310d7e8fb5bb8da4801ce4eaa52c6ad88493935714f58764744981",
+      "retrieved_at": "2026-11-02T10:35:51.129608+00:00",
+      "release_tag": "v3.5.1",
+      "support_note": "Stable source audit accompanies actual 3.5.1 identity/empty-read 25/25 checks and 22 Linux harness tests. Metadata resolution, populated request workflows and request POST remain unqualified against the binary; see docs/seerr-upstream-qualification.md."
+    },
+    {
+      "service": "seerr",
+      "source_url": "https://github.com/seerr-team/seerr/blob/564bfb08b54caa374bddaf820abfd226e5e69151/server/routes/request.ts",
+      "revision": "564bfb08b54caa374bddaf820abfd226e5e69151",
+      "sha256": "6b2bd21b66f5f898cf2f617b0e1933df78e3b59ecb2f0fab1b46f6b47f6951c4",
+      "retrieved_at": "2026-11-02T10:35:51.368346+00:00",
+      "release_tag": "v3.5.1",
+      "support_note": "Stable source audit accompanies actual 3.5.1 identity/empty-read 25/25 checks and 22 Linux harness tests. Metadata resolution, populated request workflows and request POST remain unqualified against the binary; see docs/seerr-upstream-qualification.md."
     }
   ]
 }

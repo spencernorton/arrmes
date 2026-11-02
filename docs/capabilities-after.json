@@ -141,10 +141,50 @@
       "effect": "read",
       "route_layer": "explicit-service deterministic NL, not v6 trained neural prediction",
       "execution": "ServiceQueryAdapter through BoundedExecutor",
-      "adapter_qualification": "Real loopback HTTP fixtures under NetworkIsolationGuard; actual upstream binaries and production not tested",
+      "adapter_qualification": "Both native read pairs have real loopback HTTP fixtures; health additionally exercised against actual Seerr 3.5.1 through a GET-only transport bridge. Caller-bound identity/version/empty-request helpers also tested; metadata search, populated request workflows, HTTP POST and production remain unqualified against the binary.",
       "test_reference": "tests/test_native_services.py:test_every_advertised_pair_routes_through_executor_to_native_http",
       "unavailable_behavior": "Structured service_not_configured/service_unavailable error; no fallback to another service",
-      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial"
+      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial",
+      "actual_upstream_qualification": {
+        "application": "Seerr 3.5.1",
+        "platform": "Linux x86_64; Ubuntu 26.04.1 LTS; official AMD64 Docker binary",
+        "source_basis_commit": "e5e76b80ac3f0c2f222bfcd629ae51c76a0cabd4",
+        "upstream_source_revision": "564bfb08b54caa374bddaf820abfd226e5e69151",
+        "operations": [
+          "health"
+        ],
+        "state": "Isolated empty request database; two synthetic users inserted with actual stable User ORM; no external-account setup",
+        "checks": "25/25 actual binary and read-policy checks; 22/22 Linux harness boundary tests",
+        "actual_binary_checks_passed": 25,
+        "actual_binary_checks_total": 25,
+        "harness_tests_passed": 22,
+        "native_request_helpers": [
+          "Mapped /auth/me identity fingerprint including actual createdAt",
+          "Version guard for actual 3.5.1",
+          "Bounded caller-owned empty /request page parser",
+          "Current scope/mapping preflight and actual upstream403 propagation before metadata lookup"
+        ],
+        "natural_language_route": "Show Seerr health through ArrmesRuntimeService and BoundedExecutor; no model inference",
+        "authentication_observations": "Valid key without X-API-User defaults to administrator 1; mapped non-admin 2 accepted; unknown user/bad key 403, missing key 401; foreign-owner request filter 403 even with empty database",
+        "transport": "GET-only Docker exec Node HTTP bridge; unchanged upstream responses; direct TCP/TLS and Arrmes HTTP entrypoint untested",
+        "receipt": "experiments/upstream-seerr-v1/run-03.json",
+        "harness_test_reference": "tests/test_smoke_seerr_upstream.py",
+        "details": "docs/seerr-upstream-qualification.md",
+        "initial_failures_retained": [
+          "experiments/upstream-seerr-v1/run-01.json: preflight Docker image-ID assumption; no container started",
+          "experiments/upstream-seerr-v1/run-02.json: 20/21; missing API key correctly 401 rather than harness expected 403"
+        ],
+        "receipt_export_ledger": "experiments/upstream-seerr-v1/receipt-export.json",
+        "not_qualified": [
+          "Metadata search/provider access",
+          "Populated request ownership/content and complete title-based request_status",
+          "Request submission HTTP POST, confirmation/postcondition and lifecycle",
+          "Normal external-account setup",
+          "Direct TCP/TLS and Arrmes HTTP entrypoint",
+          "Other Seerr versions",
+          "Cosign signature/SBOM verification"
+        ]
+      }
     },
     {
       "service": "bitmagnet",
@@ -297,7 +337,7 @@
       "route_layer": "Existing neural v2 or explicit quoted Seerr status phrase",
       "behavior": "Complete exact metadata lookup and caller-owned request inventory; trusted subject mapping, current /auth/me fingerprint and owner checks; title-only schema refuses unsupported qualifiers",
       "test_reference": "tests/test_native_requests.py",
-      "qualification": "Pinned Seerr3.5.1 source/HTTP fixtures; neural title truncation remains a measured raw failure, quoted-span recovery is verifier behavior; actual Seerr binary/accounts untested"
+      "qualification": "Pinned Seerr3.5.1 source/HTTP fixtures; neural title truncation remains a measured raw failure, quoted-span recovery is verifier behavior. Actual 3.5.1 identity/version/empty-inventory helpers pass within 25/25 binary/read-policy checks plus 22 harness tests; complete title-based request_status and populated request reads remain unqualified against the binary."
     },
     {
       "service": "seerr",
@@ -307,7 +347,7 @@
       "route_layer": "Existing neural v2 or explicit quoted Seerr movie phrase",
       "behavior": "One standard movie submission, exact title/type/year/TMDBID and current mapped account incarnation; HMAC confirmation, one POST then owner/target-bound GET; completed means submission exists, not downloaded files",
       "test_reference": "tests/test_native_requests.py",
-      "qualification": "Pinned Seerr3.5.1 source, HTTP fixtures and actual-model movie integration; TV requests/4K/approval/cancel/retry remain unsupported"
+      "qualification": "Pinned Seerr3.5.1 source, HTTP fixtures and actual-model movie integration; actual binary qualification covers identity/empty reads only, with no request POST/confirmation/lifecycle qualification. TV requests/4K/approval/cancel/retry remain unsupported."
     }
   ],
   "native_transfer_qualification": {
