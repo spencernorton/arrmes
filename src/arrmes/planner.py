@@ -358,6 +358,8 @@ def _write_scope_fits_schema(name: str, args: dict[str, Any], query: str) -> boo
             return False
         if re.search(r"\b(latest|newest|oldest|first|last|next|previous|selected|random|few|some|several|couple)\b", text):
             return False
+        if re.search(r"\b(before|after|since|starting|ending|excluding|besides|apart\s+from|other\s+than)\b", text):
+            return False
         if re.search(r"\b(?:18|19|20|21)\d{2}\b", text) or any(_TRAILING_PAREN_YEAR_RE.match(span) for span in _quoted_spans(query)):
             return False
     if name == "music_search":

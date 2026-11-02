@@ -1,3 +1,9 @@
+## 2026-11-02 — retain relative scope and publish the losing comparison
+
+- Independent review adds before/after episode subsets to the unrepresentable write scopes. Sixty-one new regression checks pass; the first 59-check result remains historical rather than being overwritten.
+- The readable 1,000-case report leads with raw public770/base396/4B782 and the frozen verifier regression717→678. It separates proposal write errors, complete execution evidence, native format, partial entity diagnostics, clustered independence, startup/RAM and later development fixes.
+- A fabricated private-home-path test value is now assembled from fragments, preserving its GGUF privacy-detector assertion without shipping a home-path literal. The first complete candidate publication scan caught this synthetic test and remains recorded. No real path, model, frozen input or result is scrubbed.
+
 ## 2026-11-02 — extend independent scope regressions before release
 
 - Independent review caught residual universal-episode subranges, negated resume inflections and quoted identity clauses. Check numeric/ordinal scope before removing universal wording, retain all resume prohibitions, and reject any remaining AS/UNDER identity introducer after recognized caller-self phrases.

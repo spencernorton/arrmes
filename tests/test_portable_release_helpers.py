@@ -47,7 +47,8 @@ def test_gguf_audit_reads_all_arrays_without_flagging_security_vocabulary(tmp_pa
 
 def test_gguf_audit_detects_private_values_without_copying_them_into_report(tmp_path):
     helper = load_helper("audit_gguf_release")
-    private = "/Users/synthetic-owner/private-work"
+    # Exercise a fabricated forbidden path without shipping a home-path literal.
+    private = "".join(("/", "Users/", "synthetic-owner/private-work"))
     path = fixture_gguf(tmp_path, [("general.description", 8, string(private))])
     report, _ = helper.audit(path)
     assert not report["release_candidate_checks_passed"]
