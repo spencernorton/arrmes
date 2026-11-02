@@ -1,8 +1,10 @@
 # Service capability audit and native read workflows
 
 The released `arrmes.tools.v2` catalog has **20 names: 18 service operations and
-two control operations** (`clarify`, `unsupported`). The code names ten service
-categories, rather than the nine claimed in older prose. A catalog entry, a
+two control operations** (`clarify`, `unsupported`). The code names ten tool
+categories; discovery and requests share a legacy portal, so this is not a
+physical-service count. Older prose summarized nine services without separating
+tool labels, gateway facades and actual upstream APIs. A catalog entry, a
 training label, a sandbox handler and a working live integration are separate
 evidence. Several release claims combined them.
 
@@ -43,20 +45,27 @@ test is recorded separately from the 29 explicit grammar checks.
   missing inventory, metadata lookup, download queue, event history and health.
   Missing inventory never sends `MissingEpisodeSearch`. New reads preserve
   nested series/episode metadata so queue and missing rows retain their target.
+  The trained indexer-search action now has a native confirmed controller with
+  fixed aired/monitored missing episode IDs and optional season scope.
 - **Radarr:** v2 had movie status and an indexer-search write. Native reads add
   global library, monitored missing inventory, metadata lookup, queue, history
   and health. Metadata lookup calls `movie/lookup`; it does not add a movie or
   start a download.
+  The trained `movie_search` can separately confirm a one-ID native indexer
+  command; metadata discovery and consequential search remain different actions.
 - **Lidarr:** v2 had artist/album status and indexer-search writes. Native reads
   add artist library, monitored missing albums, artist metadata lookup, queue,
   history and health. Track-level management and album-specific discovery remain
   gaps.
+  Native confirmed search supports one exact album or an explicitly requested,
+  bounded artist missing-album set. Track/disc/format restrictions clarify.
 - **Bazarr:** absent from v2 at every layer. Native reads now report missing
   movie or TV subtitles, subtitle status for an exact movie/series title, and
   health issues. Movie and TV scope is explicit. TV subtitle status first
   resolves the series through the bounded library, then reads its episodes;
-  duplicate titles clarify. Subtitle download, upload, deletion, synchronization
-  and language-profile changes remain unsupported.
+  duplicate titles clarify. A separate confirmed provider-search/candidate-download
+  workflow handles one exact movie or episode with explicit language/flags.
+  Upload, deletion, synchronization and profile changes remain unsupported.
 - **qBittorrent:** v2's live listing uses a QUI facade, and its live pause/resume
   actions are explicitly unsupported. Native reads now list torrents with
   bounded offset pagination, report transfer speeds/counters and inspect
@@ -74,8 +83,10 @@ test is recorded separately from the 29 explicit grammar checks.
   [seerr-team/seerr](https://github.com/seerr-team/seerr), with native `/api/v1`.
   New reads cover server status and paginated metadata search. `Seer` is accepted
   as an explicit NL spelling alias for this configured native service.
-  Identity-sensitive request listing, approval and creation are not implemented
-  in this adapter.
+  A separate caller-bound adapter now provides title-specific owned request
+  status and confirmed standard movie submission. Trusted subject-to-user mappings
+  and current account fingerprints are required. TV/4K submission, approval,
+  cancellation and retries remain unsupported.
 - **Legacy `seer_discover` and Request Service:** the old tool calls a custom
   request-portal discovery route, rather than native Seerr. The local service
   migration record says this portal moved discovery to TMDB and retired Seerr
@@ -98,7 +109,7 @@ test is recorded separately from the 29 explicit grammar checks.
 The v6 model and frozen v2 tool prompt remain intact. The new `service_query`
 contract is a separate v3 extension. Its route is a conservative deterministic
 parser requiring an explicit service mention and a recognized read intent.
-Responses identify `routing_source=explicit_service_deterministic`; these
+Read responses identify `routing_source=explicit_service_deterministic`; these
 successes must not be counted as raw neural accuracy or additional fine-tuned
 model knowledge. This delivers useful native reads while model/data expansion
 is still unqualified.
@@ -129,6 +140,43 @@ filtered-torrent and confirmation-gated write intents remain on the legacy
 neural v2 route, with native execution where implemented. Unqualified
 paraphrases and context references are explicit gaps for
 these new reads.
+
+The new Bazarr write phrases report `explicit_bazarr_deterministic`; explicit
+Seerr request phrases report `explicit_seerr_deterministic`. Neither is attributed
+to neural inference. Existing trained Arr/Seerr/Bitmagnet tools retain their v2
+route when an explicit grammar does not match, with actual-model successes and
+failures documented in [the workflow evaluation](native-workflow-evaluation.md).
+
+## Confirmed subtitles, requests and indexer searches
+
+[Bazarr](bazarr-subtitles.md) requires `media:manage` even for its provider-search
+GET because that operation has external effects. Search and download each require
+a separate confirmation. Candidates are server-issued, caller/target/language/
+profile/path/version bound and short-lived. Duplicate IDs, mixed-series pages,
+unknown selections and stale candidates fail before provider effects. Download
+acceptance is dispatched, not correlated file completion.
+
+[Seerr](native-requests.md) requires a trusted subject mapping and sends the
+effective-user header on every call. `requests:read` returns only matching owned
+requests. `requests:create` permits one confirmed standard movie submission,
+with current account-incarnation checks before lookup and immediately before
+POST. Completed means that caller's matching request exists, not downloaded media.
+Missing mappings never fall back to a credential-owner gateway.
+
+[Native Arr searches](native-arr-writes.md) require `media:manage`, complete
+inventory and fresh signed snapshots. Sonarr 4/API v3, Radarr 6/API v3 and
+Lidarr 3/API v1 use fixed positive-ID command bodies. A command is dispatched
+once with no retry; search-job evidence and media-file completion stay separate.
+Artist-wide sets exclude complete/unreleased/unmonitored albums; unknown empty
+scope clarifies. Album searches need an explicit performer relationship.
+
+Selectors absent from these schemas cannot be silently dropped: individual
+episodes/ranges, tracks/discs, quality profiles and conditional writes clarify
+or refuse. Movie/TV context cannot establish a different entity role. Explicitly
+quoted literals stay distinct from pronouns, and typographic negation does not
+offer a write. The model-free server remains read-only by default; the
+[trusted opt-in](portable-runtime.md) enables only documented explicit Bazarr/
+Seerr phrases with scopes and confirmation still enforced.
 
 The runtime supports at most four independent native read clauses (or the
 configured executor step bound). It validates all clauses and scopes before

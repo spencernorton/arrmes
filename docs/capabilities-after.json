@@ -163,13 +163,14 @@
     }
   ],
   "legacy_gaps_still_open": [
-    "Native Bitmagnet advanced facets, files and lifecycle management",
-    "Native request lifecycle and per-user identity mapping",
-    "Verified Armiger model execution",
-    "Verified DH-Waypoint health",
-    "Subtitle writes and additional transfer controls beyond single-torrent pause/resume",
-    "Broad unquoted paraphrase coverage for v3 reads",
-    "Conditional/entity-dependent composites and write workflows; independent native read clauses are bounded and supported"
+    "Library add/remove and monitoring/profile changes for Sonarr/Radarr/Lidarr",
+    "Subtitle upload/delete/sync/profile changes and correlated file completion",
+    "TV/4K request creation, approvals/cancel/retry and broader lifecycle",
+    "Transfer add/remove/limits/priority and Bitmagnet advanced facets/files/lifecycle",
+    "Verified actual Armiger model execution and actual DH-Waypoint health",
+    "Broad unquoted paraphrases, independently disjoint language acceptance and full contextual entity roles",
+    "Conditional/entity-dependent composites and compound writes; bounded independent native reads remain supported",
+    "Broader real upstream binaries, versions, seeded entities and production qualification"
   ],
   "bounded_native_composites": "Up to executor.max_steps independent service-explicit read clauses, default 4; full scope preflight; continue independent reads on unavailable services",
   "distribution_note": "GitHub is canonical. Public baseline and unchanged v2 model contract are separate from explicit native workflow routing.",
@@ -256,7 +257,57 @@
       "permission": "releases:read",
       "route_layer": "unchanged trained v2 tool; native executor bridge when configured",
       "test_reference": "tests/test_native_bitmagnet.py",
-      "qualification": "Scripted model-output\u2192executor\u2192nativeHTTP fixture; no new neural qualification claim"
+      "qualification": "HTTP fixtures and actual model smoke; unquoted Fixture title query truncated to Fixture and remains a recorded raw/system failure; quoted explicit native route is separately supported"
+    },
+    {
+      "service": "sonarr",
+      "name": "tv_search_missing",
+      "effect": "write",
+      "permission": "media:manage",
+      "route_layer": "Preserved neural v2 action; actual published-model integration plus executor/native HTTP confirmation",
+      "behavior": "Exact unique series, known aired monitored missing episode IDs; optional season, specials only explicit season0; EpisodeSearch explicit IDs; accepted command remains dispatched",
+      "test_reference": "tests/test_native_arr_writes.py",
+      "qualification": "Controlled HTTP fixtures and actual-model integration; real service writes/indexers not tested"
+    },
+    {
+      "service": "radarr",
+      "name": "movie_search",
+      "effect": "write",
+      "permission": "media:manage",
+      "route_layer": "Preserved neural v2 action; actual published-model integration plus executor/native HTTP confirmation",
+      "behavior": "One exact existing movie/title/year, MoviesSearch with one ID; fresh monitoring/file/path/service snapshot; no add or monitoring mutation; accepted command remains dispatched",
+      "test_reference": "tests/test_native_arr_writes.py",
+      "qualification": "Controlled HTTP fixtures and actual-model integration; real service writes/indexers not tested"
+    },
+    {
+      "service": "lidarr",
+      "name": "music_search",
+      "effect": "write",
+      "permission": "media:manage",
+      "route_layer": "Preserved neural v2 action; explicit album or verified artist-wide NL scope",
+      "behavior": "Exact artist/album; artist-wide only monitored released missing-track albums, fixed bounded album IDs; narrowed track/disc/quality/omitted-album scope clarifies; AlbumSearch remains dispatched",
+      "test_reference": "tests/test_native_arr_writes.py",
+      "qualification": "Controlled HTTP fixtures and actual-model integration; real service writes/indexers not tested"
+    },
+    {
+      "service": "seerr",
+      "name": "request_status",
+      "effect": "read",
+      "permission": "requests:read",
+      "route_layer": "Existing neural v2 or explicit quoted Seerr status phrase",
+      "behavior": "Complete exact metadata lookup and caller-owned request inventory; trusted subject mapping, current /auth/me fingerprint and owner checks; title-only schema refuses unsupported qualifiers",
+      "test_reference": "tests/test_native_requests.py",
+      "qualification": "Pinned Seerr3.5.1 source/HTTP fixtures; neural title truncation remains a measured raw failure, quoted-span recovery is verifier behavior; actual Seerr binary/accounts untested"
+    },
+    {
+      "service": "seerr",
+      "name": "request_media",
+      "effect": "write",
+      "permission": "requests:create",
+      "route_layer": "Existing neural v2 or explicit quoted Seerr movie phrase",
+      "behavior": "One standard movie submission, exact title/type/year/TMDBID and current mapped account incarnation; HMAC confirmation, one POST then owner/target-bound GET; completed means submission exists, not downloaded files",
+      "test_reference": "tests/test_native_requests.py",
+      "qualification": "Pinned Seerr3.5.1 source, HTTP fixtures and actual-model movie integration; TV requests/4K/approval/cancel/retry remain unsupported"
     }
   ],
   "native_transfer_qualification": {
@@ -271,7 +322,33 @@
   "model_free_explicit_read_mode": {
     "backend": "native-only",
     "requires_model": false,
-    "writes": "disabled",
+    "writes": "disabled by default; ARRMES_NATIVE_CONFIRMED_WRITES=1 plus confirm/scopes opts into explicit Bazarr/Seerr workflows only",
     "abstention": "clarify outside explicit service grammar"
-  }
+  },
+  "application_version": "1.3.0",
+  "native_write_action_count": 8,
+  "native_service_operation_pairs_scope": "31 explicit service_query read pairs; do not sum this with overlapping neural bridges as unique capability count",
+  "explicit_native_consequential_actions": [
+    {
+      "service": "bazarr",
+      "name": "bazarr_subtitle_search",
+      "effect": "consequential_provider_search",
+      "permission": "media:manage",
+      "route_layer": "Explicit quoted natural-language grammar, not neural prediction",
+      "behavior": "Exact movie or episode/title/year/language/forced/HI/profile/path/version identity; independent single-use confirmation; server-issued candidate download only; accepted download stays dispatched/unverified file completion",
+      "test_reference": "tests/test_bazarr_subtitles.py and tests/test_native_runtime_writes.py",
+      "qualification": "Pinned Bazarr1.6.2 source + controlled HTTP fixtures and deterministic runtime smoke; no actual Bazarr/provider/file tested"
+    },
+    {
+      "service": "bazarr",
+      "name": "bazarr_subtitle_download",
+      "effect": "write",
+      "permission": "media:manage",
+      "route_layer": "Explicit quoted natural-language grammar, not neural prediction",
+      "behavior": "Exact movie or episode/title/year/language/forced/HI/profile/path/version identity; independent single-use confirmation; server-issued candidate download only; accepted download stays dispatched/unverified file completion",
+      "test_reference": "tests/test_bazarr_subtitles.py and tests/test_native_runtime_writes.py",
+      "qualification": "Pinned Bazarr1.6.2 source + controlled HTTP fixtures and deterministic runtime smoke; no actual Bazarr/provider/file tested"
+    }
+  ],
+  "native_write_confirmation_safety": "Current scopes, one entity role per quoted span, complete fresh inventory, signed principal/args/target/service/account identity; exact expiry and single-use replay prevention; unsupported narrow scopes clarify before preflight"
 }

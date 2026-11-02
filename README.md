@@ -14,7 +14,7 @@
   <a href="https://buy.stripe.com/8x26oH2U44f65TRe574wM04"><img alt="Donate" src="https://img.shields.io/badge/donate-Stripe-635bff.svg?logo=stripe&logoColor=white"></a>
 </p>
 
-Arrmes turns media-stack requests into validated tool calls. A small local model handles the released media intents; a separate deterministic route adds native service reads. Trusted code owns service credentials, entity resolution, permissions, confirmation and execution.
+Arrmes turns media-stack requests into validated tool calls. A small local model handles the released media intents; a separate deterministic route adds native service reads and explicit confirmed workflows. Trusted code owns service credentials, entity resolution, permissions, confirmation and execution.
 
 ## What it does
 
@@ -22,6 +22,9 @@ Arrmes turns media-stack requests into validated tool calls. A small local model
 - **Direct execution of existing media intents:** the trained `tv_status`, `tv_missing`, `movie_status`, `music_status`, `now_playing` and `watch_history` actions now use native service adapters when configured. They do not require the legacy gateway.
 - **Native torrent discovery:** search Bitmagnet's indexed metadata through its native GraphQL API, inspect health and use the existing `bitmagnet_search` action without the BitAgent facade. [Setup and read-only limits](docs/native-bitmagnet.md).
 - **Confirmed transfer control:** list torrents and pause/resume one exact, uniquely resolved transfer through native qBittorrent 4.1+ or 5.x APIs. Confirmation binds the caller, arguments, torrent hash, service version and expiry. Mutations are never automatically retried.
+- **Confirmed native media searches:** search missing Sonarr episodes, one Radarr movie or a Lidarr album/bounded missing-album set using fixed IDs. Accepted indexer jobs remain dispatched; they do not prove downloaded files. [Exact scope and service versions](docs/native-arr-writes.md).
+- **Subtitle workflow:** separately confirm a Bazarr provider search, inspect server-issued candidates, then confirm one exact movie/episode subtitle download. Language and subtitle flags are explicit. [Setup and completion limits](docs/bazarr-subtitles.md).
+- **Caller-owned movie requests:** map an authenticated Arrmes subject to its Seerr account, inspect that caller's request status and confirm one movie submission. TV/4K creation and approval/cancellation remain gaps. [Identity and request policy](docs/native-requests.md).
 - **Bounded independent reads:** “Show Sonarr queue and Radarr history” validates every clause and scope before execution. An unavailable service produces a partial result while other independent reads continue. Compound writes remain unsupported.
 - **A preserved neural contract:** `arrmes.tools.v2` has 18 service actions plus `clarify` and `unsupported`. New native reads use `arrmes.tools.v3` and report `routing_source=explicit_service_deterministic`; they are not newly trained v6 model capabilities.
 - **Portable inference:** optional native llama.cpp/GGUF on CPU, with explicit accelerator selection; optional MLX on Apple Silicon. CPU inference installs neither CUDA nor MLX. [Runtime setup, conversion and tested platforms](docs/portable-runtime.md).
@@ -34,7 +37,7 @@ The original 230–245 ms warm p50 claim timed generation only. Prompt preparati
 
 New comparisons retain raw model predictions, translated-format scores, verifier decisions and controlled fixture execution as separate tracks. See the [comparison report](docs/benchmark-comparison.md) and versioned inputs under `data/overnight-v1/`. Historical sealed-suite results are not a substitute for performance on new requests.
 
-The native adapters are validated against loopback HTTP fixtures. A separate empty-library Sonarr 4.0.20.3014 instance also passes selected read checks through a GET-only Docker transport bridge. Broader upstream versions, seeded entities, large libraries and production writes still need qualification. Advanced Bitmagnet management, subtitle mutations, request lifecycle management and genuine Armiger/DH-Waypoint adapters remain gaps. The old gateway Armiger and Waypoint substitutions now return unsupported.
+The native adapters are validated against loopback HTTP fixtures. A separate empty-library Sonarr 4.0.20.3014 instance also passes selected read checks through a GET-only Docker transport bridge. Broader upstream versions, seeded entities, large libraries and actual service writes still need qualification. Advanced Bitmagnet/transfer management, subtitle upload/sync, broader request lifecycle and genuine Armiger/DH-Waypoint adapters remain gaps. The old gateway Armiger and Waypoint substitutions now return unsupported. New [workflow diagnostics](docs/native-workflow-evaluation.md) retain raw model failures separately from verifier recovery and explicit routing.
 
 ## Install
 
@@ -57,7 +60,8 @@ For Apple Silicon MLX, install `.[mlx]` and provide the pinned base and adapter 
 - `ARRMES_SERVICES_FILE` — operator file containing native API roots and credentials. Native-only installations do not require a gateway.
 - `ARRMES_GATEWAY_URL` — optional legacy gateway. Existing gateway operations remain a separate integration with their documented restrictions.
 - `ARRMES_BACKEND` — `auto`, `mlx` or `llama-server`.
-- `ARRMES_BACKEND=native-only` — an optional model-free, read-only mode for the explicit service grammar. It loads no weights or inference runtime and clarifies requests outside that grammar.
+- `ARRMES_BACKEND=native-only` — an optional model-free mode, read-only by default. It loads no weights or inference runtime and clarifies requests outside the explicit grammar.
+- `ARRMES_NATIVE_CONFIRMED_WRITES=1` — deliberate native-only opt-in for documented Bazarr/Seerr phrases, with current scopes and single-use confirmation still required.
 - `ARRMES_MODEL_PATH` — MLX directory or fused GGUF file; `ARRMES_ADAPTER_PATH` applies to MLX. An unfused adapter is rejected on the GGUF path.
 - `ARRMES_INFERENCE_URL` — optional explicitly configured native llama-server origin; otherwise the selected GGUF starts a managed local process.
 - `ARRMES_DEVICE` — portable backend device selection; `cpu` is the default. See the runtime guide for supported accelerator names and platform qualification.

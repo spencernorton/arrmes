@@ -1,7 +1,13 @@
 # Changelog
 
-## Unreleased
+## 1.3.0 — 2026-11-02
 
+- Dispatch existing Sonarr/Radarr/Lidarr search actions through confirmed exact-ID native commands, with search-job evidence separate from downloaded files.
+- Add separately confirmed Bazarr provider search and exact candidate download for movies/episodes, including strict inventory identity checks and honest asynchronous dispatch.
+- Add caller-owned native Seerr movie submission/status using trusted user mappings and account-incarnation binding; TV creation and lifecycle changes remain unsupported.
+- Add a deliberate model-free confirmed-write opt-in for explicit Bazarr/Seerr phrases; preserve read-only defaults and unchanged neural v2 tools.
+- Reject unsupported narrow/quality/conditional write scopes, incompatible context roles, typographic negation and ambiguous quote-slot reuse.
+- Preserve failed actual-model integration outcomes and separately labelled cached verifier regressions; no new model training or acceptance claim.
 - Add direct native Bitmagnet metadata search and health with bounded GraphQL read queries, estimated-count handling and scoped explicit natural-language routing.
 - Execute the existing trained `bitmagnet_search` action through the native adapter when configured; preserve released v2 schemas, weights and benchmark inputs.
 
