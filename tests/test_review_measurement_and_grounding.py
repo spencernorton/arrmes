@@ -50,6 +50,36 @@ def test_title_recovery_uses_the_complete_requested_span_before_write():
     assert _is_grounded_in_text("夜之国", '查找电影 "夜之国"')
 
 
+@pytest.mark.parametrize("name,args,query,slot,expected", [
+    ("movie_search", {"title": "Solar"}, 'Search for the movie "Solar Echo" in Radarr', "title", "Solar Echo"),
+    ("request_status", {"title": "Quiet"}, 'Show my request status for "Quiet Harbor"', "title", "Quiet Harbor"),
+    ("bitmagnet_search", {"query": "Winter"}, 'Search Bitmagnet for "Winter Signal"', "query", "Winter Signal"),
+])
+def test_unique_quoted_entity_conserves_the_complete_explicit_span(name, args, query, slot, expected):
+    result = verify_proposal(Call(name, args), query)
+    assert result.name == name
+    assert result.arguments[slot] == expected
+
+
+def test_partial_entity_with_multiple_quoted_spans_never_selects_a_target():
+    result = verify_proposal(Call("movie_search", {"title": "Solar"}),
+                             'Search for "Solar Echo" or "Solar Tide" in Radarr')
+    assert result.name == "clarify"
+
+
+@pytest.mark.parametrize("condition", ["if it is missing", "unless it is available", "only when nobody is watching"])
+def test_unimplemented_write_conditions_do_not_become_unconditional_commands(condition):
+    result = verify_proposal(Call("movie_search", {"title": "Solar Echo"}),
+                             'Download "Solar Echo" in Radarr ' + condition)
+    assert result == Call("unsupported", {"reason": "complex"})
+
+
+def test_read_to_write_request_correction_rechecks_conditional_scope():
+    result = verify_proposal(Call("request_status", {"title": "Solar Echo"}),
+                             'Request the movie "Solar Echo" only when it is available')
+    assert result.name in {"clarify", "unsupported"}
+
+
 @pytest.mark.parametrize("descriptor", ["active", "paused", "downloading", "first", "newest", "current"])
 def test_transfer_descriptors_do_not_become_unbound_mutation_targets(descriptor):
     call = Call("torrent_pause", {"title": descriptor})

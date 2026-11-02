@@ -8,7 +8,7 @@ from typing import Any, Iterable
 import unicodedata
 
 from .catalog import (BY_NAME, CONTRACT_VERSION, CONTRACT_VERSION_V3, V3_BY_NAME,
-                      contract_hash, contract_hash_v3)
+                      WRITE_EFFECT_ACTIONS_V3, contract_hash, contract_hash_v3)
 from .protocol import Call, normalized, validate_call
 
 
@@ -376,6 +376,8 @@ def verify_proposal(
     # 0. Compound multi-action, unsafe instruction, and vague-scope guard (ignoring quoted titles and .mkv filenames)
     if _COMPLEX_RE.search(q_unquoted):
         return validate_call("unsupported", {"reason": "complex"})
+    if name in WRITE_EFFECT_ACTIONS_V3 and re.search(r"\b(if|unless|except|until|only\s+when|provided\s+that|as\s+long\s+as)\b", q_unquoted, re.I):
+        return validate_call("unsupported", {"reason": "complex"})
     if _UNSAFE_RE.search(q_unquoted):
         return validate_call("unsupported", {"reason": "unsafe"})
     if _SCOPE_RE.search(q_unquoted):
@@ -453,6 +455,21 @@ def verify_proposal(
             args["title"] = clean_title
             if name in {"movie_status", "movie_search", "request_media"} and "year" not in args:
                 args["year"] = extracted_year
+
+    # Quoting supplies an explicit full entity boundary. A word inside that
+    # span is not a different requested title. Recover only one uniquely quoted
+    # non-generic entity; multiple quoted spans require clarification rather
+    # than guessing which slot or target the model shortened.
+    quoted = [match[1] or match[2] for match in re.finditer(r'''"([^"\n]+)"|(?<!\w)'([^'\n]+)'(?!\w)''', query)]
+    for slot in {_MANDATORY_ENTITY_SLOTS.get(name), _OPTIONAL_ENTITY_SLOTS.get(name)} - {None}:
+        value = args.get(slot)
+        if not isinstance(value, str):
+            continue
+        partial = [span for span in quoted if _is_grounded_in_text(value, span) and _norm_alnum(value) != _norm_alnum(span)]
+        if partial:
+            if len(quoted) != 1 or _norm_alnum(value) in _GENERIC_DOMAIN_PLACEHOLDERS | _DEICTIC_PLACEHOLDERS:
+                return validate_call("clarify", {"slot": "title"})
+            args[slot] = quoted[0]
 
     # 2. Check optional entity slots first (strip if ungrounded/placeholder)
     ungrounded_album_dropped = False
@@ -741,6 +758,8 @@ def verify_proposal(
     # 10. Contract version guard (v1 only allows 15 actions)
     if contract_version in {"v1", CONTRACT_VERSION} and name not in BY_NAME:
         return validate_call("unsupported", {"reason": "out_of_scope"})
+    if name in WRITE_EFFECT_ACTIONS_V3 and re.search(r"\b(if|unless|except|until|only\s+when|provided\s+that|as\s+long\s+as)\b", q_unquoted, re.I):
+        return validate_call("unsupported", {"reason": "complex"})
 
     return validate_call(name, args)
 

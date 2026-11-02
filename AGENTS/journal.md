@@ -1,3 +1,19 @@
+## 2026-11-02 Exact native indexer searches and quoted entity conservation
+
+Integrated the three trained Arr search actions through native explicit-ID
+commands and namespaced confirmations. Search-job correlation stays separate
+from media-download completion. Artist-only scope is bounded to known released,
+monitored missing albums; partial album intent cannot widen into artist scope.
+127 focused controller/runtime/instrument/grounding tests pass.
+
+The first frozen actual-public-model integration smoke passed 5/8 system
+scenarios. Five neural calls across three unique prompts produced 2/5 exact raw
+calls; quoted title truncation and an unquoted search-query truncation remain
+in the preserved receipt. Three explicit workflows passed without inference.
+A general quoted-span conservation safeguard and conditional-write refusal
+were added after this diagnostic; any replay is separately labelled and cannot
+replace raw model results or become held-out acceptance. No weights were trained.
+
 ## 2026-11-02 Confirmed subtitle and caller-owned request integration
 
 Integrated exact-target Bazarr provider search/candidate download and Seerr
