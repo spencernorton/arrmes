@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.4.0] - 2026-11-02
+
+### Added
+- Versioned `arrmes.tools.v3` contract (`src/arrmes/catalog.py`, `src/arrmes/protocol.py`) unifying the 20 `v2` tools with `service_query` (31 native service/operation pairs across 8 APIs), `bazarr_subtitle_search`, and `bazarr_subtitle_download` while preserving exact `arrmes.tools.v2` hash compatibility.
+- Learned compact neural router `ArrmesNeuralRouterV3` (`src/arrmes/neural_router.py`, `models/arrmes-neural-router-v3`, `7.52 MiB` CPU NumPy artifact, `<1 ms` warm CPU routing latency on macOS ARM64 and Linux x86_64) selectable via `ARRMES_BACKEND=neural-router` or `ARRMES_BACKEND=auto`.
+- Locked 2,460-case `acceptance-v5` benchmark suite (`data/acceptance-v5/`, `seed=7007`, 492 independent clusters, automated zero-leakage gate) and `docs/benchmark-acceptance-v5.md` with Track A, Track B, and Track C execution scorecards.
+- Cross-platform runtime and 4-phase memory profiler (`scripts/profile_runtime_v7.py`, `experiments/runtime-profile-v7.json`) and Hugging Face model/dataset cards (`docs/huggingface-cards/`).
+
+### Fixed
+- Repaired general entity-agnostic verifier grounding in `src/arrmes/planner.py` (parenthesized year extraction, causative imperative write preservation, `<QUOTED>` non-word regex boundary handling, contrast-clause negation scoping, and compound vs unsafe ordering), improving frozen `acceptance-v4` verified accuracy on Released Arrmes from `678/1000` (`e5e76b8`) / `795/1000` (`v1.3.1`) to `981/1000` with `0` damaged raw predictions and `0` unauthorized writes.
+- Accelerated `LocalModel` MLX inference (`src/arrmes/model.py`) with in-process `mlx_lm.generate`, reducing per-query MLX latency from ~`3.2 s` subprocess spawn to `43.5 ms` (`FunctionGemma-270M`) and `114.4 ms` (`Qwen3-0.6B`).
+
 ## 1.3.1 — 2026-11-02
 
 - Publish practical download/checksum/license instructions for the separately distributed experimental GGUF.

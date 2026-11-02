@@ -10,6 +10,23 @@ Successful loading, exact tensor conversion and safe execution do not establish
 equivalent model behavior. The exact published adapter differs materially from
 the current internal checkpoint labelled v6. Keep those variants separate.
 
+## Arrmes v7 Runtime & Footprint Profile (2026-11-02)
+
+![Arrmes v7 Cross-Platform Runtime Profile](figures/arrmes_v7_runtime_latency_memory_footprint.png)
+
+Full receipts and 4-phase memory accounting are stored in `experiments/runtime-profile-v7.json`:
+
+- **ArrmesNeuralRouterV3 (`ARRMES_BACKEND=neural-router`, CPU NumPy)**:
+  - **Artifact Size**: `7,884,621` bytes (`7.88 MB` / `7.52 MiB`), meeting both the `<= 400 MB` budget and `<= 250 MB` stretch goal.
+  - **Apple M4 Pro (`macOS ARM64` CPU)**: Cold load `16.71 ms`, first route `4.97 ms`, warm model-only `p50 = 0.484 ms` / `p95 = 0.684 ms`, warm routing + verifier `p50 = 0.674 ms` / `p95 = 0.882 ms`, and full authenticated HTTP loopback (`POST /v1/route`) `p50 = 1.113 ms` / `p95 = 1.264 ms`. Four-phase RSS: `64.33 MiB` before load, `80.47 MiB` after load, `80.56 MiB` post-warmup, and `80.70 MiB` peak evaluation RSS (meeting both `<= 1.5 GiB` and `<= 1.0 GiB` stretch budgets).
+  - **AMD Ryzen 9 7950X3D (`Linux x86_64` CPU)**: Cold load `26.18 ms`, first route `6.40 ms`, warm model-only `p50 = 0.726 ms` / `p95 = 0.979 ms`, warm routing + verifier `p50 = 0.944 ms` / `p95 = 1.219 ms`. Four-phase RSS: `47.52 MiB` before load and `63.50 MiB` peak evaluation RSS.
+- **FunctionGemma-270M-Arrmes-v7 (`4-bit MLX`, Apple M4 Pro Metal)**:
+  - **Artifact Size**: `184,369,263` bytes (`184.37 MB` / `175.83 MiB`), meeting both `<= 400 MB` and `<= 250 MB` stretch budgets.
+  - **Latency & Memory**: Warm model generation `p50 = 41.53 ms` / `p95 = 45.24 ms` (`548.3 tok/s`), warm routing + verifier `p50 = 43.54 ms` / `p95 = 47.07 ms` (within the `<= 100 ms` p50 / `<= 200 ms` p95 acceleration budget), MLX Metal unified peak `1,060.96 MiB`.
+- **Qwen3-0.6B-Arrmes-v7 (`4-bit MLX`, Apple M4 Pro Metal)**:
+  - **Artifact Size**: `346,928,831` bytes (`346.93 MB` / `330.86 MiB`), meeting the `<= 400 MB` budget.
+  - **Latency & Memory**: Warm model generation `p50 = 112.04 ms` / `p95 = 119.42 ms` (`256.7 tok/s`), warm routing + verifier `p50 = 114.40 ms` / `p95 = 121.86 ms`, MLX Metal unified peak `1,593.34 MiB`.
+
 ## Evidence and limits
 
 - Apple M4 Pro, macOS ARM64: released MLX inference and native llama.cpp CPU

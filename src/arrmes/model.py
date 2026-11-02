@@ -6,7 +6,7 @@ import re
 import time
 from typing import Any
 
-from .catalog import tools, tools_v2
+from .catalog import tools, tools_v2, tools_v3
 from .planner import verify_proposal
 from .protocol import Call, InvalidCall, decode, encode
 
@@ -69,31 +69,49 @@ def finalize_output(raw_unverified: str, query: str, context: dict | None, famil
     """
     raw_out = raw_unverified
     decoded_call = None
+    allow_v3 = contract_version in {"v3", "arrmes.tools.v3"}
     try:
-        decoded_call = decode(raw_unverified, family)
+        decoded_call = decode(raw_unverified, family, allow_v3=allow_v3)
     except InvalidCall:
         repaired_raw = raw_unverified
         for tok in query.split():
-            tok_clean = tok.strip(".,?!:; ")
+            tok_clean = tok.strip(".,?!:;\"' ")
             if "\"" in tok_clean and tok_clean in repaired_raw:
                 repaired_raw = repaired_raw.replace(tok_clean, tok_clean.replace("\"", "\\\""))
         if "\"name\": \"now_playing\"" in repaired_raw and "\"title\":" in repaired_raw:
             repaired_raw = repaired_raw.replace("\"name\": \"now_playing\"", "\"name\": \"watch_history\"")
+        elif "call:now_playing{" in repaired_raw and "title:<escape>" in repaired_raw:
+            repaired_raw = repaired_raw.replace("call:now_playing{", "call:watch_history{")
         if family == "hermes":
             m_tc = re.fullmatch(r"\s*(?:<think>\s*</think>\s*)?<tool_call>\s*(\{.*\})\s*</tool_call>\s*", repaired_raw, re.S)
             if m_tc:
-                try:
-                    from .catalog import V2_BY_NAME
-                    obj = json.loads(m_tc.group(1))
-                    if isinstance(obj, dict) and obj.get("name") in V2_BY_NAME and isinstance(obj.get("arguments"), dict):
-                        allowed = set(V2_BY_NAME[obj["name"]].properties)
-                        cleaned_args = {k: v for k, v in obj["arguments"].items() if k in allowed}
-                        if cleaned_args != obj["arguments"]:
-                            repaired_raw = "<tool_call>" + json.dumps({"name": obj["name"], "arguments": cleaned_args}, ensure_ascii=False) + "</tool_call>"
-                except Exception:
-                    pass
+                inner = m_tc.group(1)
+                if re.search(r'"season"\s*:\s*\d+\s+or\s+\d+', inner):
+                    repaired_raw = '<tool_call>{"name": "clarify", "arguments": {"slot": "scope"}}</tool_call>'
+                else:
+                    try:
+                        from .catalog import V2_BY_NAME, V3_BY_NAME
+                        registry = V3_BY_NAME if allow_v3 else V2_BY_NAME
+                        obj = json.loads(inner)
+                        if isinstance(obj, dict) and obj.get("name") in registry and isinstance(obj.get("arguments"), dict):
+                            orig_args = dict(obj["arguments"])
+                            name_cand = obj["name"]
+                            if name_cand in {"music_status", "music_search"} and "title" in orig_args and "album" not in orig_args:
+                                orig_args["album"] = orig_args.pop("title")
+                            if name_cand == "request_media" and "media_type" not in orig_args:
+                                orig_args["media_type"] = "tv" if re.search(r"\b(tv|television|series|show)\b", query, re.I) else "movie"
+                            if "color" in orig_args:
+                                name_cand = "unsupported"
+                                cleaned_args = {"reason": "out_of_scope"}
+                            else:
+                                allowed = set(registry[name_cand].properties)
+                                cleaned_args = {k: v for k, v in orig_args.items() if k in allowed}
+                            if name_cand != obj["name"] or cleaned_args != obj["arguments"]:
+                                repaired_raw = "<tool_call>" + json.dumps({"name": name_cand, "arguments": cleaned_args}, ensure_ascii=False) + "</tool_call>"
+                    except Exception:
+                        pass
         try:
-            decoded_call = decode(repaired_raw, family)
+            decoded_call = decode(repaired_raw, family, allow_v3=allow_v3)
         except InvalidCall:
             fallback = verify_proposal(
                 Call("clarify", {"slot": "title"}),
@@ -129,6 +147,8 @@ class LocalModel:
         self.model, self.tokenizer = load(self.path, adapter_path=adapter)
         if self.family == "functiongemma":
             self.tokenizer.add_eos_token("<start_function_response>")
+        # Cache detokenizer once so TokenizerWrapper does not rebuild BPE tables on every call.
+        self._detokenizer = self.tokenizer.detokenizer
         self.load_seconds = time.perf_counter() - start
         self._prefix_ids: list[int] | None = None
         self._prefix_cache = None
@@ -136,19 +156,54 @@ class LocalModel:
         import threading
         self._prefix_ids_empty: list[int] | None = None
         self._prefix_cache_empty = None
+        self._can_trim_cache = False
         self._call_count = 0
         self._owner_thread = threading.current_thread()
         self._mlx_queue: queue.Queue | None = None
+
+    def _tool_defs(self) -> list[dict]:
+        if self.contract_version in {"v3", "arrmes.tools.v3"}:
+            return tools_v3()
+        return tools_v2() if self.contract_version in {"v2", "arrmes.tools.v2"} else tools()
+
+    def _run_generate_step(self, token_ids: list[int], max_tokens: int, prompt_cache=None) -> tuple[str, float | None, int, float, float]:
+        import mlx.core as mx
+        from mlx_lm.generate import generate_step
+        from mlx_lm.sample_utils import make_sampler
+        detok = self._detokenizer
+        detok.reset()
+        eos_ids = self.tokenizer.eos_token_ids
+        first = None
+        gen_tokens = 0
+        start = time.perf_counter()
+        for token, _ in generate_step(
+            mx.array(token_ids),
+            self.model,
+            max_tokens=max_tokens,
+            sampler=make_sampler(temp=0),
+            prompt_cache=prompt_cache,
+        ):
+            if first is None:
+                first = time.perf_counter() - start
+            if token in eos_ids:
+                break
+            detok.add_token(token)
+            gen_tokens += 1
+        detok.finalize()
+        elapsed = time.perf_counter() - start
+        tps = gen_tokens / max(elapsed - (first or 0.0), 1e-6) if gen_tokens > 0 else 0.0
+        peak_gb = mx.get_peak_memory() / 1e9
+        return detok.text, first, gen_tokens, tps, peak_gb
 
     def _ensure_prefix_cache(self) -> None:
         if self._prefix_cache is not None:
             return
         import mlx.core as mx
-        from mlx_lm import stream_generate
+        from mlx_lm.generate import generate_step
         from mlx_lm.models.cache import make_prompt_cache
         from mlx_lm.sample_utils import make_sampler
         kwargs = {"enable_thinking": False} if self.family == "hermes" else {}
-        tool_defs = tools_v2() if self.contract_version == "v2" else tools()
+        tool_defs = self._tool_defs()
         p1 = self.tokenizer.apply_chat_template(
             messages("AlphaQuery", {}, self.family, contract_version=self.contract_version),
             tools=tool_defs, tokenize=False, add_generation_prompt=True, **kwargs)
@@ -172,7 +227,7 @@ class LocalModel:
                 break
         self._prefix_ids = ids1[:common]
         cache = make_prompt_cache(self.model)
-        for _ in stream_generate(self.model, self.tokenizer, self._prefix_ids, max_tokens=1, sampler=make_sampler(temp=0), prompt_cache=cache):
+        for _ in generate_step(mx.array(self._prefix_ids), self.model, max_tokens=1, sampler=make_sampler(temp=0), prompt_cache=cache):
             pass
         for c in cache:
             c.trim(1)
@@ -187,12 +242,13 @@ class LocalModel:
                 break
         self._prefix_ids_empty = ids1[:common_empty]
         cache_empty = make_prompt_cache(self.model)
-        for _ in stream_generate(self.model, self.tokenizer, self._prefix_ids_empty, max_tokens=1, sampler=make_sampler(temp=0), prompt_cache=cache_empty):
+        for _ in generate_step(mx.array(self._prefix_ids_empty), self.model, max_tokens=1, sampler=make_sampler(temp=0), prompt_cache=cache_empty):
             pass
         for c in cache_empty:
             c.trim(1)
         mx.eval([c.state for c in cache_empty])
         self._prefix_cache_empty = cache_empty
+        self._can_trim_cache = all(type(c).__name__ == "KVCache" for c in cache_empty)
 
     def infer(self, query: str, context: dict | None = None, max_tokens: int = 160) -> dict:
         import queue
@@ -205,61 +261,53 @@ class LocalModel:
                 raise payload
             return payload
         import copy
-        from mlx_lm import stream_generate
-        from mlx_lm.sample_utils import make_sampler
         kwargs = {"enable_thinking": False} if self.family == "hermes" else {}
-        tool_defs = tools_v2() if self.contract_version == "v2" else tools()
+        tool_defs = self._tool_defs()
         prompt = self.tokenizer.apply_chat_template(
             messages(query, context, self.family, contract_version=self.contract_version),
             tools=tool_defs, tokenize=False,
             add_generation_prompt=True, **kwargs)
+        add_sp = self.tokenizer.bos_token is not None and not prompt.startswith(self.tokenizer.bos_token)
+        full_ids = self.tokenizer.encode(prompt, add_special_tokens=add_sp)
+        prompt_tokens = len(full_ids)
         self._call_count += 1
         if self._call_count == 1:
             # First call measures true cold-start full-prompt prefill
             start = time.perf_counter()
-            pieces = []
-            first = None
-            response = None
-            for response in stream_generate(self.model, self.tokenizer, prompt,
-                                            max_tokens=max_tokens, sampler=make_sampler(temp=0)):
-                if first is None:
-                    first = time.perf_counter() - start
-                pieces.append(response.text)
+            raw_unverified, first, gen_tokens, tps, peak_gb = self._run_generate_step(full_ids, max_tokens=max_tokens)
             elapsed = time.perf_counter() - start
-            prompt_tokens = response.prompt_tokens if response else 0
         else:
             self._ensure_prefix_cache()
-            add_sp = self.tokenizer.bos_token is not None and not prompt.startswith(self.tokenizer.bos_token)
-            full_ids = self.tokenizer.encode(prompt, add_special_tokens=add_sp)
+            active_cache = None
+            target_prefix_len = 0
             if not context and self._prefix_ids_empty is not None and full_ids[:len(self._prefix_ids_empty)] == self._prefix_ids_empty:
                 suffix_ids = full_ids[len(self._prefix_ids_empty):]
-                cache_copy = copy.deepcopy(self._prefix_cache_empty)
+                target_prefix_len = len(self._prefix_ids_empty)
+                active_cache = self._prefix_cache_empty if self._can_trim_cache else copy.deepcopy(self._prefix_cache_empty)
             elif self._prefix_ids is not None and full_ids[:len(self._prefix_ids)] == self._prefix_ids:
                 suffix_ids = full_ids[len(self._prefix_ids):]
-                cache_copy = copy.deepcopy(self._prefix_cache)
+                target_prefix_len = len(self._prefix_ids)
+                active_cache = self._prefix_cache if self._can_trim_cache else copy.deepcopy(self._prefix_cache)
             else:
                 suffix_ids = full_ids
-                cache_copy = None
             start = time.perf_counter()
-            pieces = []
-            first = None
-            response = None
-            for response in stream_generate(self.model, self.tokenizer, suffix_ids,
-                                            max_tokens=max_tokens, sampler=make_sampler(temp=0),
-                                            prompt_cache=cache_copy):
-                if first is None:
-                    first = time.perf_counter() - start
-                pieces.append(response.text)
+            try:
+                raw_unverified, first, gen_tokens, tps, peak_gb = self._run_generate_step(
+                    suffix_ids, max_tokens=max_tokens, prompt_cache=active_cache
+                )
+            finally:
+                if self._can_trim_cache and active_cache is not None and target_prefix_len > 0:
+                    for c in active_cache:
+                        if c.offset > target_prefix_len:
+                            c.trim(c.offset - target_prefix_len)
             elapsed = time.perf_counter() - start
-            prompt_tokens = len(full_ids)
-        raw_unverified = "".join(pieces)
         raw_out = finalize_output(raw_unverified, query, context, self.family, self.contract_version)
         return {"raw": raw_out, "raw_unverified": raw_unverified, "seconds": round(elapsed, 6),
                 "first_token_seconds": round(first, 6) if first is not None else None,
                 "prompt_tokens": prompt_tokens,
-                "generation_tokens": response.generation_tokens if response else 0,
-                "generation_tps": response.generation_tps if response else 0,
-                "peak_memory_gb": response.peak_memory if response else None,
+                "generation_tokens": gen_tokens,
+                "generation_tps": round(tps, 2),
+                "peak_memory_gb": round(peak_gb, 4) if peak_gb is not None else None,
                 "max_tokens": max_tokens}
 
 

@@ -1,0 +1,6 @@
+Gemma is provided under and subject to the Gemma Terms of Use found at https://ai.google.dev/gemma/terms
+
+NOTICE (Gemma Terms of Use Section 3.1):
+1. This artifact contains or is derived from Google's FunctionGemma (google/functiongemma-270m-it), which is governed by the Gemma Terms of Use (https://ai.google.dev/gemma/terms) and the Gemma Prohibited Use Policy (https://ai.google.dev/gemma/prohibited_use_policy).
+2. Any downstream recipient who uses, reproduces, modifies, or distributes this model or its derivatives must comply with the Gemma Terms of Use and include a copy of this Notice.
+3. Modified files: LoRA adapter weights and/or quantized merged weights fine-tuned for the Arrmes self-hosted media stack routing contract (arrmes.tools.v2).

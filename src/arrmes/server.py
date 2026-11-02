@@ -551,8 +551,8 @@ def main() -> None:
     authenticator = BearerTokenAuthenticator.from_file(clients_file)
 
     backend = os.environ.get("ARRMES_BACKEND", "auto")
-    if backend not in {"auto", "mlx", "llama-server", "native-only"}:
-        raise SystemExit("ARRMES_BACKEND must be auto, mlx, llama-server, or native-only")
+    if backend not in {"auto", "mlx", "llama-server", "native-only", "neural-router"}:
+        raise SystemExit("ARRMES_BACKEND must be auto, mlx, llama-server, native-only, or neural-router")
     model_path, adapter_path = ("", None) if backend == "native-only" else _autodiscover_model_and_adapter()
     family = os.environ.get("ARRMES_MODEL_FAMILY", "hermes")
     endpoint = os.environ.get("ARRMES_INFERENCE_URL", "").strip() or None

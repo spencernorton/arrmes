@@ -1,3 +1,9 @@
+## 2026-11-02 — Arrmes v7 (`ArrmesNeuralRouterV3`), Protocol v3, General Verifier Repairs, and Locked `acceptance-v5`
+
+- **Protocol v3 & Verifier Repairs**: Added `arrmes.tools.v3` (`V3_ACTIONS`, `contract_hash_v3`) while preserving `arrmes.tools.v2` hash `e34f94ec5110423f7e5dfc0309c5e8f10988f158253559f88f34d9d977a2efe8`. Repaired general entity-agnostic grounding in `src/arrmes/planner.py`; on frozen `acceptance-v4` (`1,000` cases), Released Arrmes verified accuracy rose from `678/1000` (`e5e76b8`) and `795/1000` (`v1.3.1`) to `981/1000` (`0` damaged, `0` unauthorized writes).
+- **Model Development & Training**: Built leakage-audited `TrainPool-v7` (`5,827` examples), trained `ArrmesNeuralRouterV3` (`models/arrmes-neural-router-v3/router_weights.npz`, `7.52 MiB`), and trained MLX LoRA v7 checkpoints for `FunctionGemma-270M` (`175.83 MiB` 4-bit) and `Qwen3-0.6B` (`330.86 MiB` 4-bit) (`experiments/mlx-lora-v7-provenance.json`).
+- **Locked `acceptance-v5` (`seed=7007`, `2,460` cases across `492` clusters)**: Retired initial development splits into `data/dev-v5` and evaluated once on freshly locked `data/acceptance-v5` (`0` query and `0` entity overlap). `ArrmesNeuralRouterV3` achieved `1,060/1,060` (`100.00%`, Wilson LB `99.64%`, Bootstrap LB `100.00%`) on Positive v2, `1,257/1,260` (`99.76%`, Wilson LB `99.30%`, Bootstrap LB `99.44%`) on Positive v3, `1,200/1,200` (`100.00%`, Wilson LB `99.68%`, Bootstrap LB `100.00%`, `0` unauthorized writes) on Negative/Safety, and `52/52` (`100.00%`) on Track C end-to-end execution workflows.
+
 ## 2026-11-02 — pin evidence before executing its retained analyzer
 
 - Independent review of the unpublished offline verifier caught a self-signed manifest/analyzer trust flaw. Pin both the known experiment manifest and original analyzer, authenticate bounded payload buffers once, then compile only those verified bytes. A relocated evidence directory cannot supply new code or win a read/execute race.
