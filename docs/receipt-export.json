@@ -1,20 +1,484 @@
 {
-  "changes": "Source-checksum maps use path/digest records to distinguish checksums from credentials. Local operator paths are omitted. Raw model predictions, task labels and measured counts are preserved.",
+  "schema_version": 2,
+  "scope": "Public privacy export of measured evidence; original source and receipt bytes are retained separately for the owner. This is not a new inference run.",
+  "rules": [
+    "Local operator paths/host identifiers omitted.",
+    "A private loopback fixture address is replaced with public placeholder 127.0.0.1, including observations. This can affect comparison against private fixture hashes; original hashes remain evidence.",
+    "Raw model text, expected tool calls, correctness labels, measured timings and memory values are unchanged.",
+    "Source snapshots validate exported source bytes and retain original SHA; they do not claim byte identity to measured source.",
+    "Checksum maps use explicit path/digest records rather than credential-shaped keys.",
+    "The comparison summary uses model_id instead of the ambiguous key metadata field; numeric results are unchanged.",
+    "The native integration input manifest uses explicit source path/digest records; cases are unchanged and the original manifest hash remains in its receipt."
+  ],
   "files": [
     {
-      "path": "experiments/overnight-v1/torrent-transfer-smoke.json",
-      "original_sha256": "6be70c4ca8ad8ebf801d06e0adb863fe4ffa1afcadfd35e4329ee475b7e68967",
-      "public_sha256": "6be70c4ca8ad8ebf801d06e0adb863fe4ffa1afcadfd35e4329ee475b7e68967"
+      "path": "experiments/overnight-v1/cold-mlx.json",
+      "original_sha256": "26a363eb90114f25ea73409984b8af32598ab7c59b6c7c0d0eb7316947fc71cc",
+      "public_sha256": "57a9ca60954b0dd34d22ea6eb043adb16a412ab29f5e91b1ae1017fdd70653ac",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
     },
     {
-      "path": "experiments/overnight-v1/native-transfer-neural-smoke.json",
-      "original_sha256": "05b5c6bcc9d539a2f38cfb307b1135a26f1d6dd4b9b5774bff4b05b761fe216a",
-      "public_sha256": "047fd2129b18c88b41d8526d8f42b35e9b1b84ee4ff5c28171ab44b0ba0d8fa1"
+      "path": "experiments/overnight-v1/cold-q4-cpu.json",
+      "original_sha256": "8973efd26de760b993c2158d20597ef2c280b78779e4bdcf3959365478a331e3",
+      "public_sha256": "8973efd26de760b993c2158d20597ef2c280b78779e4bdcf3959365478a331e3",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/comparison-summary.csv",
+      "original_sha256": "12d3824b140d479d97a1874b4602aa4e47b12eb193e8060c97841820ac36f163",
+      "public_sha256": "493894d1403e06a2b155f000b6130ce336c621da1221e2dc6da0c40d95744e01",
+      "transformation": "local metadata only"
+    },
+    {
+      "path": "experiments/overnight-v1/comparison-summary.json",
+      "original_sha256": "58b2498a6b7f061d7ed0e6ea2a2474d6587e52986c98f351c2573a11b3326f1a",
+      "public_sha256": "cfb0f61c380a25e70fffb504bc7958b8fd9abf62dcf368a751767d7ac91bf15d",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/dataset-audit.json",
+      "original_sha256": "9b8079aede70f51235ac10659a9ede0203cfb18490426b0fb5455e3133e9539c",
+      "public_sha256": "9b8079aede70f51235ac10659a9ede0203cfb18490426b0fb5455e3133e9539c",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/deterministic.json",
+      "original_sha256": "c7818ae9cd4eb20485d87dc7ac84a7fce4b2e30ab02b40b2ffb7da8b235e1500",
+      "public_sha256": "bbe5221c56523bbb113ea7f31c30eae3878cb89a72559117dfaf569de4256449",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/final-source-manifest.json",
+      "original_sha256": "37a62ff21f62ec515e5267c1abd6d2d67aaeda209c7a4c60c7246c5c0ee01291",
+      "public_sha256": "8127bbdbb15d665f955f5720a69e45d4aad190c6a3560e20d983df6cb8ab99b5",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/frozen-source.jsonl",
+      "original_sha256": "4d0bd2640c90b9b50d81c10f214b8872e392473f215d066bd1d7c7270ba015b9",
+      "public_sha256": "230a6401a1e84108cbe22c284d240db91308c102e67ae2521e0c69a8ebb0a773",
+      "transformation": "sanitized executable source cut with original and exported source hashes; unchanged baseline files use public release equivalents"
+    },
+    {
+      "path": "experiments/overnight-v1/functiongemma-base.json",
+      "original_sha256": "70bd7a675bd9a1bd3a4a84dca07cf82c69d86af6cddbca015f36bc149ff5a3a6",
+      "public_sha256": "789689e4138582eb1e694b209194d97d5691d89980d413ef6a10820a4ad39083",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/granite-bf16.json",
+      "original_sha256": "a8869ad84a5e0bbb31d1c545a4206a745fc71149649ae48a3e69327a02db98ba",
+      "public_sha256": "29fa0a2a7d7f4b5b826c524e5e1991b75fe4fbe9925ccd4343f98ae991db7e73",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/granite-compatibility-smoke.json",
+      "original_sha256": "d945aefa1be8cfde2a15275c0d16e7fc69824d23c16a58f8555c89b3c5150cc6",
+      "public_sha256": "d945aefa1be8cfde2a15275c0d16e7fc69824d23c16a58f8555c89b3c5150cc6",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/granite350m.json",
+      "original_sha256": "877b65a9594ed3131266dc88fb361fd9d98400e6692c708f7af317d2a360bca9",
+      "public_sha256": "871a0b81819def5c4a8aa119ae487191f7ca1ef4b5d3c2bb8d2fa1c5099923d1",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/http-public.json",
+      "original_sha256": "a2184b4ae58f2f748f8541e1afd954cd72e2d5c07d17e9b54101839d843260c3",
+      "public_sha256": "a2184b4ae58f2f748f8541e1afd954cd72e2d5c07d17e9b54101839d843260c3",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/improved-public-final.json",
+      "original_sha256": "8c7c08320beb2c8b11f90c65f29484529c78d4f218b73281ea0a24aee36567f6",
+      "public_sha256": "cd559d1c5bee6acdffa76ee0203c815b391c8b143da8aa2104792ce7dc85c1cb",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/improved-public.json",
+      "original_sha256": "820a2a97bac5d98ed1fada6ffa550113ec3a17ea4db0bfb45f50e0fc72268edb",
+      "public_sha256": "6a9e8c914e080a28af23f58499523547804fa9ffdcb002b1a76a996d74171c60",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/internal-v6.json",
+      "original_sha256": "f7260afe754bf34204a4362efbb026c403e7313e92e31f13b0dbba51af71f006",
+      "public_sha256": "11610061a05d3cd3343ba0696dc444a8eb84e8ca38c0c3c53f2e3f22a9626730",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/linux-cpuexport-q4-cuda.json",
+      "original_sha256": "bcc1d1c9dea79791ec4a7ced2bea3c5acd8061df4279316983ab159a94398a5c",
+      "public_sha256": "7c54b85b72fc4363689cf52ed93166c1d6769c87c4e88155141a3635d1bef3d9",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/linux-cpuexport-q4.json",
+      "original_sha256": "cf128ec2006b36f16d8ae36781743279de8c10056e58d33c25efadf956cd98f0",
+      "public_sha256": "9f03350e16390303f4ec6863b6672f470aa17c1960774ad5bf0bcb20ca6a0b29",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/linux-macexport-q4.json",
+      "original_sha256": "7cebb49daf6784f76f7a076e1c44adfa129c4d576eba28215e610b97105bb0c7",
+      "public_sha256": "6d2aff4ea151210be00fd4e6644751517de11cf3a72966e61cf4ff58d0445d42",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/native-media-neural-smoke.json",
+      "original_sha256": "e2d457e516ffc8fc898021b6fba6b6080fda34c7b96c38a318a621c6d98fb177",
+      "public_sha256": "b8c33cfe80ddf1a8c3395375819861c57984034cf24335c7daa66f5bb0babe24",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/native-media-source.jsonl",
+      "original_sha256": "b186f26c244c5cad091e2b6ab59990481a600d2b229387b60938ed801148a7c5",
+      "public_sha256": "756ed3233b4da1439342a7c58a5af31b1ce83be21322af634302b95fea68a638",
+      "transformation": "sanitized executable source cut with original and exported source hashes; unchanged baseline files use public release equivalents"
     },
     {
       "path": "experiments/overnight-v1/native-transfer-execution-smoke.json",
-      "original_sha256": "03c15c3a5a1aba25ec3f2befca655b412fa321aac608bbb7ce229a6b31660d4e",
-      "public_sha256": "e23dfb92e5806a54a4ead0316f06a85fc025b234c72b14d1d977e0501f23a06a"
+      "original_sha256": "b49a172e972c45dec8e1dc2c62924b6b23cde4b6dec98c38b49e7b45a9044633",
+      "public_sha256": "9489172ed8bcc45120954a85a192f1a0375d7cd47088a83b4ae2bbaf26772767",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/native-transfer-neural-postguard-smoke.json",
+      "original_sha256": "61a9752e4f3cf3ef026317a429f3852610c204dc19b579f79d6f534574de6300",
+      "public_sha256": "7f0979f3d1894b84d691ff9b52ca1cddd583a863927a33d8b2c2cd969566d703",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/native-transfer-neural-smoke.json",
+      "original_sha256": "9e0293603e883615c6284c54c3e4cb2f684d7d59a9f33b9626ad68d2b5fc24ce",
+      "public_sha256": "c00eb0c51e3914746b04f8907b900d72965adefe54e95f6418bfd26a6c44238f",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/portable-public-f16-cpu.json",
+      "original_sha256": "b0972543ff098963ea1d4b6d96d8053e1d8163de12cfefa1af465350f5ea35c9",
+      "public_sha256": "972d9ffeb8315519326ddcc0e0c28ed3037af77b31de3350cd18198157dc168b",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/portable-public-q4-cpu.json",
+      "original_sha256": "c33a27767a27054d35c7bd7511346f3518f20ebd2e8bf4f6f202a8247cf12e89",
+      "public_sha256": "2940da479113df30b97cfe2d5617b3973d7be9e20be6806b6bc62a7cc4431bcf",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/portable-public-q4-final.json",
+      "original_sha256": "1b3771d53309292a00d5071a2382d1b3c528aacbba5a8bccec5eb658a6355264",
+      "public_sha256": "8a20b0010882b3b878b0152802c7f3076e0087fb4123d981a6fe0168982784d6",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/public-heldout-postguard-replay.json",
+      "original_sha256": "57f33852dd039c8c82da41585d50f1f8f903918f3b38f999bbc37d06380ff99f",
+      "public_sha256": "f82fe01dff33a6ebcbc98d0d4bde54208a0b741542270b920625ae47a275ba39",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/public-historical-final-verifier-replay.json",
+      "original_sha256": "8f17fc9f3264bb88936c8859f6b96d517eb04dfb37f947c064a5a56e56393c9e",
+      "public_sha256": "8f17fc9f3264bb88936c8859f6b96d517eb04dfb37f947c064a5a56e56393c9e",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/public-historical-postguard-replay.json",
+      "original_sha256": "4d765ff5623c274f12ec56b79abc978233664332874407ab8c19d2eda19c8572",
+      "public_sha256": "fbdecb589bb1a822201cf1bf6f1b5ab94adcca95d032592451f6f6f6c37bb173",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/public-historical-sealed-v3.json",
+      "original_sha256": "794270851f3918e0033bf3c4191d14249da1beafdd2dc8364d5e47ba5f07ec19",
+      "public_sha256": "84f8ced623361004a38fe9a08cf5707c64c68ad429e15d9c1f9d940b805d8803",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/pyarr-reads.json",
+      "original_sha256": "b655a55fcd2c978c84aa781919340517756fa0912a17f2959d92f8dd3df00662",
+      "public_sha256": "b655a55fcd2c978c84aa781919340517756fa0912a17f2959d92f8dd3df00662",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/qwen-base.json",
+      "original_sha256": "b363745e5d7c382bb1c35e1900a5be03cbbe4e9e0b8768d54e764ae266d098b2",
+      "public_sha256": "3ed034e84a6d6a0c7ef0eda624bf605d8b86f78031958918dc4eb25c5d799f60",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/qwen1.7b.json",
+      "original_sha256": "efa990247b593ba0e1c7cd72266bc287c8334ccafeb06e8d0102e8700250244a",
+      "public_sha256": "10faaf6ba146e68c8769591b29128442d243888c901aeaeee3dfed70e8fc0bdc",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/qwen4b.json",
+      "original_sha256": "c400cb7b748effe283ec5cb5d2cc71a4adc24a69df26eb660c7258eeda35f656",
+      "public_sha256": "d4309317bbdf16f8d979e3acda2e7dce0554f0ee181260316cb1c8c3851b179f",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/receipt-encoding-index.json",
+      "original_sha256": "02e0a8673b6fe39c0bbb52318ca8ccf7a7977caece0ef1f240b81c77c9c0630f",
+      "public_sha256": "af325cb671265cecc9a41aee8666cf49d030820cba705c111e3681f2f53c0075",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/released-arrmes.json",
+      "original_sha256": "608751e1f2d1256640ef79ab8bf52afcb659c3e6789b190217a17890a9113ca3",
+      "public_sha256": "87f917db7d854361d6ea424c2d090d4aa034f72b026774db3b73a6742381c45b",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/torrent-transfer-smoke.json",
+      "original_sha256": "13c60f9bab529af9c31836b7aa30673f3478ec2cbe749064f49584e69a9f2359",
+      "public_sha256": "13c60f9bab529af9c31836b7aa30673f3478ec2cbe749064f49584e69a9f2359",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/workflow-source-v2.jsonl",
+      "original_sha256": "6179469a0fecb5f43a68184edea296cdf00e36371785196f98fb5bf76b7a1548",
+      "public_sha256": "95be4bc25906da211d267ef867c22d895d95fd1c7d897ea99aaf2ff6560684cb",
+      "transformation": "sanitized executable source cut with original and exported source hashes; unchanged baseline files use public release equivalents"
+    },
+    {
+      "path": "experiments/overnight-v1/workflows-base.json",
+      "original_sha256": "60889012d1478ec69f22e09256070097e0a231eb8a53bb2553dae8f4301821c8",
+      "public_sha256": "60889012d1478ec69f22e09256070097e0a231eb8a53bb2553dae8f4301821c8",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/workflows-deterministic.json",
+      "original_sha256": "9206807063043243ada5a94c2259dcd6fbe82816a246d48c0a3c10cb9aa5fe5d",
+      "public_sha256": "9206807063043243ada5a94c2259dcd6fbe82816a246d48c0a3c10cb9aa5fe5d",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/workflows-public.json",
+      "original_sha256": "10b18082fccbb3bb61174ef5582f2aa0ca6262689b24d18854500a5e7ffa9245",
+      "public_sha256": "10b18082fccbb3bb61174ef5582f2aa0ca6262689b24d18854500a5e7ffa9245",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/workflows-qwen1.7b.json",
+      "original_sha256": "e5f80bbfde0b2bd2159c24bc29b2d02bd55352bf69f25cbcdbc6c1e3346345a3",
+      "public_sha256": "e5f80bbfde0b2bd2159c24bc29b2d02bd55352bf69f25cbcdbc6c1e3346345a3",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/workflows-qwen4b.json",
+      "original_sha256": "ae79137368de52572604a030a7ac3a3a9c9543d0fc31285944f8374591e5b46d",
+      "public_sha256": "ae79137368de52572604a030a7ac3a3a9c9543d0fc31285944f8374591e5b46d",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/workflows-v2-base.json",
+      "original_sha256": "2e25156eabd166cc233447d2b537fb6fe4f0e5699eb3ef4e0388380e2eb082d0",
+      "public_sha256": "c7ef1a395e8a0b9f3a363cca3179621dbac4f4bae6209b2ff3c928ce1efaf72f",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/workflows-v2-deterministic.json",
+      "original_sha256": "b01011f3728510f24bb0c7cdef278152bb33a2a4ca0b060bbf13c94744f59a7f",
+      "public_sha256": "63da1546ecc543fcaa22efd4a2642c4fb04893b2cf6d1c29da560a641aae895d",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/workflows-v2-public.json",
+      "original_sha256": "8b24ddb29d41d28d19a04ee55d9bddbae9db7aeb4644764bf36a420eaa63d665",
+      "public_sha256": "c883d536e9cd5f37b1138fc52fc535eea346d5ce8938fc6fb80f6b8dc62f2083",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/workflows-v2-qwen1.7b.json",
+      "original_sha256": "2cf49c240e04ed6e10173e20a4a6ed30ef02e6e57fb102d09af4b46a637e95d5",
+      "public_sha256": "48d0cc7089cd70e23cc7ced6b2b3e02878232b4d596a27d59abaa639241d6bbb",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/overnight-v1/workflows-v2-qwen4b.json",
+      "original_sha256": "8726140c9d98d79cc1ec152d903debf8770e0eb6b2687505d4b6c9a7cbbfe33c",
+      "public_sha256": "22e93a691b9f3c204137f98d9efc17a58d220c33a802cde6acc76fcb320e77d2",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/portable-v1/compose-validation.json",
+      "original_sha256": "ab8f9d5a2a8dd49c8ae448788cb0c0164e28baf7dd4a354375cb5f042bef0563",
+      "public_sha256": "d6a441e0ec4b6b342a5727e255368f2f3a49ce071b49939f1b433c0b3ba4d890",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/portable-v1/container-license-check.json",
+      "original_sha256": "8e612a08bcc57b30ee0d953a6da5172de532fb6246e2da374130e03c1f2fd40e",
+      "public_sha256": "9805ddbb42749b44b88c670e1438ecbf86ef79b9e298bc983f5ff8e59b40d450",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/portable-v1/cpu-vs-mac-q4-tensors.json",
+      "original_sha256": "491a071a7297db912c530d23f67df966a23a27c70e125c619a1135d95ef2fe06",
+      "public_sha256": "cb598ee8000fc40cd3865d3b60bb1b64823458708eb8d9415d805c711d34c666",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/portable-v1/cpu-vs-mlx-fusion-tensors.json",
+      "original_sha256": "b044573504220ecad13dd411d54e830c6fc0e10406551aeb4772069c44d7b97a",
+      "public_sha256": "445f13df056bc325da57aa0936cf332554cecb40908a3c9df8b22b53397945fd",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/portable-v1/launchers/llama-server",
+      "original_sha256": "56327bf1f52fc79444695c48e3f22d64d7728c32969f980ff5b929b418c18ef5",
+      "public_sha256": "56327bf1f52fc79444695c48e3f22d64d7728c32969f980ff5b929b418c18ef5",
+      "transformation": "local metadata only"
+    },
+    {
+      "path": "experiments/portable-v1/linux-arm64-container-smoke.json",
+      "original_sha256": "4592a2f80e15e9868c1ace0c8c9463ebcc5edcfb710f7e398d6eedf038132bf1",
+      "public_sha256": "707f9178355666ddeb8845346482bd1601bd1cd9cfd3188c02243e70fc9e69ae",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/portable-v1/linux-cpu-smoke-exact-call.json",
+      "original_sha256": "78a6777ea7dad369b985f539ac70f76044e229021e60ae4eaaf1e4ab527cb90b",
+      "public_sha256": "69917feaf41d040a9e9046fe6b272324fe79057da0d3e1d865dc9403b125e479",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/portable-v1/linux-cpu-smoke-tool-only.json",
+      "original_sha256": "336d24db710b5ee453dbdaf83dd3537f5568c62bd7ea8975af11829bb1c5da08",
+      "public_sha256": "c03ab6be7915410a5627d7616dfaaf96e715cfb7c1e6dceba3befe9e04a3712e",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/portable-v1/linux-cuda-execution-policy.json",
+      "original_sha256": "8b08e88892ceb83a606468a298ff5a71c120046a9d1fb88ad15e37fc50eba893",
+      "public_sha256": "49fd556a36c0169b8be65d8f25b742f58e7f243a6f354bd80795c9c61927be91",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/portable-v1/linux-x86-entrypoint-smoke.json",
+      "original_sha256": "90e52452d02ea4484a929414f42145927d622774a36467014945b426826d3606",
+      "public_sha256": "d09504005cdd7d44b3aaec4f68e1f09722260842aa72fa0ecb9d66ccfe4fe167",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/portable-v1/public-cpu-export-receipt.json",
+      "original_sha256": "5d6d0582bf2c019b9700c3a6ff839436f69c06db723ebb58bd6a874ae0fe25a4",
+      "public_sha256": "49e489a264a451c534c2fd7763e7cffd9d5372dfe8be9e25319d831f57bf25f1",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/portable-v1/public-mlx-export-receipt.json",
+      "original_sha256": "4e980111bd26e27fedeb1f7fe068076cc82fc029e774583e3fd53a9825a30c7f",
+      "public_sha256": "60ae39637be48a9145d1a172f52fd65a93c63bc107f04bcc6173fdb168a4e0aa",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "experiments/portable-v1/public-vs-internal-adapter-tensors.json",
+      "original_sha256": "0a9359883ed70462267f967ceee6b70780f964c75cdf1d7934df4580e37919de",
+      "public_sha256": "77a42f223390507416198b1db495fe4c9f6eab6e774bf9ddff26299bf438bd75",
+      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+    },
+    {
+      "path": "scripts/benchmark_native_media_smoke.py",
+      "original_sha256": "897e9ad91faecc24f346ad2192e35c029ef86ffff65ab74a78cdbd26e0d136fd",
+      "public_sha256": "897e9ad91faecc24f346ad2192e35c029ef86ffff65ab74a78cdbd26e0d136fd",
+      "transformation": "operator paths omitted; public source restoration identifies export provenance"
+    },
+    {
+      "path": "scripts/benchmark_native_transfer_smoke.py",
+      "original_sha256": "ff22b361e745c79606d307a3a96bff054b49ba763c4fd8929017720d57de91bd",
+      "public_sha256": "ff22b361e745c79606d307a3a96bff054b49ba763c4fd8929017720d57de91bd",
+      "transformation": "operator paths omitted; public source restoration identifies export provenance"
+    },
+    {
+      "path": "scripts/report_benchmark_comparison.py",
+      "original_sha256": "98cba75af1ca1da57ed4ec844f3e4ba556fdebd4f6d369d00cf5bb6e3a5fb916",
+      "public_sha256": "2ed47571a728f267c83664d29f552418bf535c716a09d6e8dcfbfa05c59cdde9",
+      "transformation": "operator paths omitted; public source restoration identifies export provenance"
+    },
+    {
+      "path": "scripts/replay_benchmark_verifier.py",
+      "original_sha256": "3510a9d8a4906e470c27fc0cf25761f98be6cd5945c9bb94b7bc41cfbc20a4e4",
+      "public_sha256": "3510a9d8a4906e470c27fc0cf25761f98be6cd5945c9bb94b7bc41cfbc20a4e4",
+      "transformation": "operator paths omitted; public source restoration identifies export provenance"
+    },
+    {
+      "path": "scripts/replay_historical_release.py",
+      "original_sha256": "96c77ab0d3498f631bf93c61fa3bf5528c4dffb022223761377f16637da617b5",
+      "public_sha256": "96c77ab0d3498f631bf93c61fa3bf5528c4dffb022223761377f16637da617b5",
+      "transformation": "operator paths omitted; public source restoration identifies export provenance"
+    },
+    {
+      "path": "scripts/restore_benchmark_source.py",
+      "original_sha256": "600b32622430056eeea60752ea713a30c78339c5d1d89fa14f9bda02da005049",
+      "public_sha256": "a811328c231e71aad6dc6b59ce6122ff5fb8a6a6bf657797d5768cca48ee1965",
+      "transformation": "operator paths omitted; public source restoration identifies export provenance; CLI explicitly labels privacy-exported snapshots"
+    },
+    {
+      "path": "scripts/compact_benchmark_receipts.py",
+      "original_sha256": "aa3ce8781b37cd275d1eabb17f9b342482d5fbc43feddd0f7af03c06ad58e2c2",
+      "public_sha256": "aa3ce8781b37cd275d1eabb17f9b342482d5fbc43feddd0f7af03c06ad58e2c2",
+      "transformation": "operator paths omitted; public source restoration identifies export provenance"
+    },
+    {
+      "path": "scripts/rescore_benchmark_observations.py",
+      "original_sha256": "efcbcb33cfd49a5befdbf81adfc383658b53b8b979d1c1254f2b13e45281a301",
+      "public_sha256": "efcbcb33cfd49a5befdbf81adfc383658b53b8b979d1c1254f2b13e45281a301",
+      "transformation": "operator paths omitted; public source restoration identifies export provenance"
+    },
+    {
+      "path": "scripts/benchmark_workflows.py",
+      "original_sha256": "1526d088b2ccf94d9e50fb6deccbccf20c37dacc8325ad2b8ad2d21d89dbdbec",
+      "public_sha256": "1526d088b2ccf94d9e50fb6deccbccf20c37dacc8325ad2b8ad2d21d89dbdbec",
+      "transformation": "operator paths omitted; public source restoration identifies export provenance"
+    },
+    {
+      "path": "scripts/benchmark_comparison.py",
+      "original_sha256": "edb100098d990196b7443620fcdcdcc2950594d4a69f24259596be9d1fbc2146",
+      "public_sha256": "ba0679f228b5404deb028e2f48d232c3c43ca03fd2ddb2519e6f27285cf86c14",
+      "transformation": "operator paths omitted; public source restoration identifies export provenance"
+    },
+    {
+      "path": "data/overnight-v1/native-media-smoke-inputs.json",
+      "original_sha256": "59d97d8057cc0cb27bf42cf3391158925d77504a530602b124118db878e9bf17",
+      "public_sha256": "8c08317c5dbc05f04891d22b85ebe6437a090602e284eb1e8a5bcab81fb1d2c3",
+      "transformation": "local metadata only; task inputs unchanged"
+    },
+    {
+      "path": "reports/benchmark-overnight-v1.md",
+      "original_sha256": "9ff5a84be71ba3b53a1e95a8c6a63cbe57f47eebdd9aead772795b7da8b7a8ff",
+      "public_sha256": "8865ee03f67c4afe2c61dc64eb297c80547c7d055d7e1cbe749dee63d95a1a71",
+      "transformation": "local metadata omitted; links adapted for public documentation"
+    },
+    {
+      "path": "reports/benchmark-overnight-v1-accuracy.png",
+      "original_sha256": "19c3bb508d279bbe2865eb5535656f12d5cb23026624f01ca6748d0aa801c5a7",
+      "public_sha256": "fe1580cc848665de727aa1199fb45e71d1f4770eebb652b05bf4c82ed42eae54",
+      "transformation": "PNG non-image metadata removed; visible pixels preserved"
+    },
+    {
+      "path": "reports/benchmark-overnight-v1.html",
+      "original_sha256": "fbdaddae51174bed439dbbd816d2bfea5b2855311c7eb6cbd300ad7147b0a83d",
+      "public_sha256": "f2357e6e8fad5f3a100ba1fcd99aad8f913307c42748054435e2537f1bb354e8",
+      "transformation": "local metadata omitted; links adapted for public documentation"
+    },
+    {
+      "path": "reports/benchmark-overnight-v1-runtime.png",
+      "original_sha256": "fd9ed8e74984f00277436c1c81fdefc3f3b6f39c9bb8635a064b4853b1da610b",
+      "public_sha256": "fd22cf5e34e8016cb5afb8d99eb08e9048e5e8803173d082f6aac926b752f230",
+      "transformation": "PNG non-image metadata removed; visible pixels preserved"
+    }
+  ],
+  "attachments": [
+    {
+      "path": "experiments/overnight-v1/native-media-neural-smoke-fixture-source.py",
+      "sha256": "d02f0a2ad93fb4f82bc3a67d3acf9e4bb1cb107c9c8162573257a3173509cb23",
+      "source": "fixture_source field from the named native-media receipt; no semantic change"
     }
   ]
 }

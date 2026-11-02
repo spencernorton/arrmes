@@ -1,0 +1,24 @@
+{
+"schema_version":1,
+"track":"hardware_development_smoke_not_quality_benchmark",
+"created_at":"2026-11-02T03:17:07.806720+00:00",
+"hardware":{"os":"Linux-7.0.0-42-generic-x86_64-with-glibc2.43","architecture":"x86_64","cpu":"AMD Ryzen 9 7950X3D 16-Core Processor","python":"3.14.4"},
+"runtime_version":"version: 0.6.0-dev (build 1, commit d812350)\nbuilt with GNU 15.2.0 for Linux x86_64",
+"model":{"bytes":396704480,"sha256":"75209e34e8b3772b1f5f607ffc5001df69e63da68be140193704bb3ab8466366"},
+"settings":{"threads":2,"context_size":4096,"device":"cpu","native_output":true,"temperature":0,"seed":0,"max_tokens":160},
+"load_seconds":0.9126693540019915,
+"total_seconds":20.34439520999149,
+"native_peak_rss_bytes":1186762752,
+"child_ru_maxrss":1155456,
+"child_ru_maxrss_unit":"KiB",
+"service_mutation_http_requests":0,
+"isolation":{"allowed_loopback_attempts":24,"blocked_attempts":0,"nonloopback_allowed":false},
+"passed":3,
+"count":4,
+"rows":[
+{"query":"Which episodes of Severance are missing?","expected_tool":"tv_missing","expected_terminal":"completed","actual_tool":"tv_missing","terminal_state":"completed","passed":true,"inference":{"raw":"<tool_call>{\"name\": \"tv_missing\", \"arguments\": {\"title\": \"Severance\"}}</tool_call>","raw_unverified":"<tool_call>{\"name\": \"tv_missing\", \"arguments\": {\"title\": \"Severance\"}}</tool_call>","seconds":15.445683,"wall_seconds":15.457881,"first_token_seconds":null,"prompt_tokens":2526,"generation_tokens":21,"generation_tps":29.249644251201797,"peak_memory_gb":null,"max_tokens":160,"backend":"llama-server","device":"cpu","native_timings":{"cache_n":0,"prompt_n":2526,"prompt_ms":14756.757,"prompt_per_token_ms":5.841946555819478,"prompt_per_second":171.1758213542447,"predicted_n":21,"predicted_ms":683.769,"predicted_per_token_ms":34.18845,"predicted_per_second":29.249644251201797},"truncated":false},"end_to_end_seconds":15.461276065994753},
+{"query":"List downloading torrents in qBittorrent","expected_tool":"torrent_list","expected_terminal":"completed","actual_tool":"torrent_list","terminal_state":"completed","passed":true,"inference":{"raw":"<tool_call>{\"name\": \"torrent_list\", \"arguments\": {\"state\": \"all\"}}</tool_call>","raw_unverified":"<tool_call>{\"name\": \"torrent_list\", \"arguments\": {\"state\": \"all\"}}</tool_call>","seconds":1.010004,"wall_seconds":1.02369,"first_token_seconds":null,"prompt_tokens":2526,"generation_tokens":19,"generation_tps":27.969854712143583,"peak_memory_gb":null,"max_tokens":160,"backend":"llama-server","device":"cpu","native_timings":{"cache_n":2509,"prompt_n":17,"prompt_ms":361.897,"prompt_per_token_ms":21.28805882352941,"prompt_per_second":46.974691694045546,"predicted_n":19,"predicted_ms":643.55,"predicted_per_token_ms":35.75277777777777,"predicted_per_second":27.969854712143583},"truncated":false},"end_to_end_seconds":1.0251164130022516},
+{"query":"Check Dune in Radarr","expected_tool":"movie_status","expected_terminal":"clarify","actual_tool":"music_status","terminal_state":"clarify","passed":false,"inference":{"raw":"<tool_call>{\"name\": \"music_status\", \"arguments\": {\"artist\": \"Dune\"}}</tool_call>","raw_unverified":"<tool_call>{\"name\": \"music_status\", \"arguments\": {\"artist\": \"Dune\"}}</tool_call>","seconds":1.073138,"wall_seconds":1.08384,"first_token_seconds":null,"prompt_tokens":2524,"generation_tokens":20,"generation_tps":26.306279862819675,"peak_memory_gb":null,"max_tokens":160,"backend":"llama-server","device":"cpu","native_timings":{"cache_n":2509,"prompt_n":15,"prompt_ms":337.226,"prompt_per_token_ms":22.481733333333334,"prompt_per_second":44.48055606625824,"predicted_n":20,"predicted_ms":722.261,"predicted_per_token_ms":38.01373684210526,"predicted_per_second":26.306279862819675},"truncated":false},"end_to_end_seconds":1.085234459998901},
+{"query":"Pause all torrents in qBittorrent","expected_tool":"unsupported","expected_terminal":"unsupported","actual_tool":"unsupported","terminal_state":"unsupported","passed":true,"inference":{"raw":"<tool_call>{\"name\": \"unsupported\", \"arguments\": {\"reason\": \"unsafe\"}}</tool_call>","raw_unverified":"<tool_call>{\"name\": \"unsupported\", \"arguments\": {\"reason\": \"unsafe\"}}</tool_call>","seconds":1.038087,"wall_seconds":1.04874,"first_token_seconds":null,"prompt_tokens":2526,"generation_tokens":18,"generation_tps":26.78983688141085,"peak_memory_gb":null,"max_tokens":160,"backend":"llama-server","device":"cpu","native_timings":{"cache_n":2509,"prompt_n":17,"prompt_ms":399.199,"prompt_per_token_ms":23.482294117647058,"prompt_per_second":42.58527701722699,"predicted_n":18,"predicted_ms":634.569,"predicted_per_token_ms":37.327588235294115,"predicted_per_second":26.78983688141085},"truncated":false},"end_to_end_seconds":1.0489099609985715}
+]
+}

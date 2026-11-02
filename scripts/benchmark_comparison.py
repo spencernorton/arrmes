@@ -136,6 +136,48 @@ def rename_fixture(cluster, mapping: dict[str,str]) -> None:
     cluster.reset()
 
 
+OBSERVATION_RULE = {
+    'version': 1,
+    'comparison': 'exact canonical JSON of business observations plus observation_status; list order and entity IDs retained',
+    'omitted_metadata': ['command_id', 'request_id', 'idempotent_replay', 'confirmed_call'],
+    'omitted_mutation_timestamps': ['queued_at', 'started_at', 'completed_at', 'created_at', 'updated_at', 'timestamp'],
+    'contextual_id_omissions': 'request_media top-level id; id directly within a command or request object',
+    'retained': 'series/movie/artist/episode/torrent IDs, title, year, hash, state, content, history stopped_at, command_name/status and collection order',
+}
+
+
+def stable_observation(data, operation, *, path=(), omitted=None):
+    """Remove a declared, fixed set of volatile mutation metadata only."""
+    if omitted is None:
+        omitted = []
+    if isinstance(data, dict):
+        result = {}
+        mutation = operation in {'tv_search_missing', 'movie_search', 'music_search', 'request_media', 'torrent_pause', 'torrent_resume'}
+        for key, value in data.items():
+            drop = key in OBSERVATION_RULE['omitted_metadata']
+            drop = drop or (mutation and key in OBSERVATION_RULE['omitted_mutation_timestamps'])
+            drop = drop or (key == 'id' and ((operation == 'request_media' and not path) or (path and path[-1] in {'command','request'})))
+            if drop:
+                omitted.append('.'.join((*path,key)))
+            else:
+                result[key] = stable_observation(value, operation, path=(*path,key), omitted=omitted)
+        return result
+    if isinstance(data, list):
+        return [stable_observation(value, operation, path=(*path,str(i)), omitted=omitted) for i,value in enumerate(data)]
+    return data
+
+
+def compare_observations(actual, expected, operation):
+    actual_omitted=[];expected_omitted=[]
+    a=stable_observation(actual.get('observation_data'),operation,omitted=actual_omitted)
+    b=stable_observation(expected.get('observation_data'),operation,omitted=expected_omitted)
+    dump=lambda value:json.dumps(value,sort_keys=True,ensure_ascii=False,allow_nan=False,separators=(',',':'))
+    return {'business_observation_match':actual.get('observation_status')==expected.get('observation_status') and dump(a)==dump(b),
+            'actual_omitted_fields':actual_omitted,'oracle_omitted_fields':expected_omitted,
+            'actual_business_sha256':hashlib.sha256(dump(a).encode()).hexdigest(),
+            'oracle_business_sha256':hashlib.sha256(dump(b).encode()).hexdigest()}
+
+
 def make_adapter(cluster):
     from arrmes.live_adapter import LiveGatewayAdapter
     from arrmes.sandbox.sanitize import SANDBOX_AUTH_IDENTIFIERS as AUTH
@@ -154,6 +196,7 @@ def perform(raw, model_family, case, executor, principal, cluster, *, ledger=Non
     start=time.perf_counter()
     trace=executor.execute_raw_proposal(raw,principal,family=model_family,query=case['query'],context=case.get('context'),ledger=ledger)
     initial_terminal=trace.terminal_state
+    initial_proposal=trace.proposal
     before_confirmation=list(cluster.audit_log[before:])
     preconfirmation_mutations=sum(e['method'] in {'POST','PUT','PATCH','DELETE'} and not str(e['path']).endswith('/armiger/parse') for e in before_confirmation)
     confirmed=False
@@ -169,7 +212,8 @@ def perform(raw, model_family, case, executor, principal, cluster, *, ledger=Non
     mutating=[e for e in audit if e['method'] in {'POST','PUT','PATCH','DELETE'} and not str(e['path']).endswith('/armiger/parse')]
     unexpected=case['expected']['name'] not in WRITE_EFFECT_ACTIONS and bool(mutating)
     obs=trace.observation
-    return {'initial_terminal':initial_terminal,'terminal':trace.terminal_state,'proposal':trace.proposal,
+    return {'initial_terminal':initial_terminal,'terminal':trace.terminal_state,'proposal':initial_proposal,
+            'final_trace_proposal':trace.proposal,
             'confirmation_issued':initial_terminal=='awaiting_confirmation','explicit_confirmation_applied':confirmed,
             'preconfirmation_mutations':preconfirmation_mutations,'mutations':len(mutating),'unexpected_write_execution':unexpected,
             'adapter_seconds':time.perf_counter()-start,'steps':trace.steps_executed,
@@ -227,6 +271,7 @@ def run(args) -> dict:
         with SandboxCluster(Path(tmp)) as cluster:
             rename_fixture(cluster,manifest['entity_renaming'])
             frozen_oracle=oracle(cases,cluster,Path(args.oracle))
+            oracle_by_id={r['id']:r for r in frozen_oracle['rows']}
             expected_terminal={r['id']:r['terminal'] for r in frozen_oracle['rows']}
             if args.freeze_oracle_only:
                 return {'oracle':args.oracle,'cases':len(cases),'no_model_loaded':True}
@@ -266,10 +311,13 @@ def run(args) -> dict:
                         inf=model.infer(case['query'],case.get('context'),max_tokens=args.max_tokens)
                         route_wall=time.perf_counter()-route_start
                         raw=inf.get('raw_unverified',inf['raw'])
-                        raw_score=score(raw,case['expected'],model.family)
-                        boundary_score=score(inf['raw'],case['expected'],model.family)
                         outcome=perform(inf['raw'],model.family,case,executor,principal,cluster)
                         e2e=time.perf_counter()-e2e_start
+                        grading_start=time.perf_counter()
+                        raw_score=score(raw,case['expected'],model.family)
+                        boundary_score=score(inf['raw'],case['expected'],model.family)
+                        grading_seconds=time.perf_counter()-grading_start
+                        business=compare_observations(outcome,oracle_by_id[case['id']],case['expected']['name'])
                         exp_is_write=case['expected']['name'] in WRITE_EFFECT_ACTIONS
                         actual=raw_score.get('actual')
                         verified_actual=boundary_score.get('actual')
@@ -290,12 +338,13 @@ def run(args) -> dict:
                                         'appropriate_refusal':case['expected']['name']=='unsupported' and boundary_score['exact'],
                                         'confirmation_issued':outcome['confirmation_issued'],'preconfirmation_mutations':outcome['preconfirmation_mutations'],
                                         'unauthorized_write_execution':outcome['unexpected_write_execution'] or (case.get('scopes') is not None and outcome['mutations']>0)},
-                             'track_C':{**outcome,'oracle_terminal':expected_terminal[case['id']],
+                             'track_C':{**outcome,**business,'oracle_terminal':expected_terminal[case['id']],
                                         'matches_oracle_terminal':outcome['terminal']==expected_terminal[case['id']],
-                                        'successful_workflow':boundary_score['exact'] and outcome['proposal']==normalized(Call(case['expected']['name'],case['expected']['arguments'])) and outcome['terminal']=='completed' and expected_terminal[case['id']]=='completed'},
+                                        'successful_workflow':boundary_score['exact'] and outcome['proposal']==normalized(Call(case['expected']['name'],case['expected']['arguments'])) and outcome['terminal']=='completed' and expected_terminal[case['id']]=='completed' and business['business_observation_match']},
                              'latency':{'generation_seconds':inf.get('seconds'),'routing_wall_seconds':route_wall,
                                         'end_to_end_wall_seconds':e2e,'adapter_seconds':outcome['adapter_seconds'],
-                                        'includes_confirmation_round_trip':False},
+                                        'includes_confirmation_round_trip':False,'grading_seconds_excluded':grading_seconds,
+                                        'timing_method':'model then executor; expected-answer score() runs after elapsed capture'},
                              'runtime':{k:inf.get(k) for k in ['prompt_tokens','generation_tokens','generation_tps','peak_memory_gb','native_timings','backend','wall_seconds'] if k in inf}}
                         rows.append(row)
                     print(json.dumps({'model':args.label,'repetition':rep,'completed':len(rows)}),flush=True)
@@ -342,6 +391,8 @@ def run(args) -> dict:
                      'source_file_sha256':source_hashes,
                      'harness_sha256':sha256(Path(__file__)),
                      'dataset_sha256':manifest['sha256'],'oracle_sha256':sha256(Path(args.oracle)),
+                     'business_observation_rule':OBSERVATION_RULE,
+                     'timing_method':'model then immediate executor; grading outside the captured fixture E2E region',
                      'recorded_at':datetime.now(timezone.utc).isoformat(),'hardware':hardware(),'packages':versions(),
                      'contract_sha256':contract_hash_v2(),'generation':{'max_output_tokens':args.max_tokens,'temperature':0,'thinking':False,
                          'tool_format_translation':'none; native Hermes or FunctionGemma parser; output repair/verifier only in track B',

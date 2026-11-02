@@ -1,0 +1,215 @@
+{
+  "kind": "integration smoke, not new held-out qualification",
+  "frozen_at": "2026-11-02T04:58:38.558903+00:00",
+  "cases": [
+    {
+      "id": "NM1-1",
+      "scenario": "positive",
+      "query": "Is \"Fixture series\" in Sonarr?",
+      "expected": {
+        "name": "tv_status",
+        "arguments": {
+          "title": "Fixture series"
+        }
+      }
+    },
+    {
+      "id": "NM1-2",
+      "scenario": "positive",
+      "query": "Which episodes of \"Fixture series\" are missing?",
+      "expected": {
+        "name": "tv_missing",
+        "arguments": {
+          "include_specials": false,
+          "title": "Fixture series"
+        }
+      }
+    },
+    {
+      "id": "NM1-3",
+      "scenario": "positive",
+      "query": "Check the 2020 movie \"Fixture movie\" in Radarr",
+      "expected": {
+        "name": "movie_status",
+        "arguments": {
+          "title": "Fixture movie",
+          "year": 2020
+        }
+      }
+    },
+    {
+      "id": "NM1-4",
+      "scenario": "positive",
+      "query": "Check the album \"Fixture album\" by \"Fixture artist\" in Lidarr",
+      "expected": {
+        "name": "music_status",
+        "arguments": {
+          "artist": "Fixture artist",
+          "album": "Fixture album"
+        }
+      }
+    },
+    {
+      "id": "NM1-5",
+      "scenario": "positive",
+      "query": "Who is watching Plex right now?",
+      "expected": {
+        "name": "now_playing",
+        "arguments": {}
+      }
+    },
+    {
+      "id": "NM1-6",
+      "scenario": "positive",
+      "query": "Show Tautulli watch history for \"Fixture series\"",
+      "expected": {
+        "name": "watch_history",
+        "arguments": {
+          "title": "Fixture series"
+        }
+      }
+    },
+    {
+      "id": "NM1-7",
+      "scenario": "ambiguous_series",
+      "query": "Is \"Fixture series\" in Sonarr?",
+      "expected": {
+        "name": "tv_status",
+        "arguments": {
+          "title": "Fixture series"
+        }
+      }
+    },
+    {
+      "id": "NM1-8",
+      "scenario": "radarr_unavailable",
+      "query": "Check the 2020 movie \"Fixture movie\" in Radarr",
+      "expected": {
+        "name": "movie_status",
+        "arguments": {
+          "title": "Fixture movie",
+          "year": 2020
+        }
+      }
+    }
+  ],
+  "source_file_sha256": [
+    {
+      "path": "arrmes/__init__.py",
+      "sha256_digest": "cdedcd366964b959141748c0ba70b7c4e0422a06617893999ea4f9f87d1a13a2"
+    },
+    {
+      "path": "arrmes/__main__.py",
+      "sha256_digest": "6d8b7d7846a845059d7a3107143f11131f63c5511d669b44085b15ec5e3d2279"
+    },
+    {
+      "path": "arrmes/adapters.py",
+      "sha256_digest": "199a21e864c81438cb355d5e9c0193b42efd5bc848e033019e183be2787a666d"
+    },
+    {
+      "path": "arrmes/auth.py",
+      "sha256_digest": "04a5bac9f5d328ad08142e70428f4b1dc75460c8ef9fa62b55ded95ef8bb77e8"
+    },
+    {
+      "path": "arrmes/backends.py",
+      "sha256_digest": "963af834bd76fb4d872628a32bcf1c68c448ac5359d91016e91ed2ee8a785cbd"
+    },
+    {
+      "path": "arrmes/catalog.py",
+      "sha256_digest": "2ec67f3263c7eee2b4054e1d26bf81859b15507950dab0dab2d19956f796a494"
+    },
+    {
+      "path": "arrmes/cli.py",
+      "sha256_digest": "7e43e7a751c051b52cb0c517b49458a3551599391f1591f8d30e2f396d4f8a69"
+    },
+    {
+      "path": "arrmes/corpus.py",
+      "sha256_digest": "d378023367c61e4b93724890636090daa383b449c661c21412331f0c061d8425"
+    },
+    {
+      "path": "arrmes/evaluate.py",
+      "sha256_digest": "5db320cab4188bd777021044d110583f897d029bb3d7d688913a26a672edb5c3"
+    },
+    {
+      "path": "arrmes/executor.py",
+      "sha256_digest": "41b542f6493d6c178656ff6b85b1559e6bc9fb0ac12460ba16731429b6508e4d"
+    },
+    {
+      "path": "arrmes/explicit.py",
+      "sha256_digest": "bec0fdac157c2178b48aefbb8ba3ffe8ae2252e82bbeace188b51e3666eb9dda"
+    },
+    {
+      "path": "arrmes/live_adapter.py",
+      "sha256_digest": "bc3a377bd156e4d90e50c0a21f76f402eaa368790a3f81f78ed0e99394832eb5"
+    },
+    {
+      "path": "arrmes/model.py",
+      "sha256_digest": "a3618d05cf257ae4dd92f2c25413e8188810010aa10069eac20a9faeb2d5b81b"
+    },
+    {
+      "path": "arrmes/planner.py",
+      "sha256_digest": "5b67ff3a80c6810f03903f72dc93cdda2cdc94a783a1b44b589c575dc5c4cbd1"
+    },
+    {
+      "path": "arrmes/probe.py",
+      "sha256_digest": "473b3cbd87e8fa1e1b374ec5fcd8888750ef3e4c6a5b95d40fcf226561abbdc8"
+    },
+    {
+      "path": "arrmes/protocol.py",
+      "sha256_digest": "6ce079a30c5c119d6816cdd66a5368e783d7252191386811b9b5834cb0db23d9"
+    },
+    {
+      "path": "arrmes/sandbox/__init__.py",
+      "sha256_digest": "3d24a42f654890e59903e0eaeecfbad9086f5e016721906d166fad4e6e7be8e0"
+    },
+    {
+      "path": "arrmes/sandbox/isolation.py",
+      "sha256_digest": "5ae98b74892812c46be6bb8dd75ea5ebff5498ec87f27881602fd6b625db92e9"
+    },
+    {
+      "path": "arrmes/sandbox/sanitize.py",
+      "sha256_digest": "7c437cc32dadbc00056c53fb505ca769812ca3e1a7d54b9ca0e68b329309e7c0"
+    },
+    {
+      "path": "arrmes/sandbox/server.py",
+      "sha256_digest": "f5dac79768e388b3a9e1e07dc0b5f402463c87988477d72cf3419228c099d851"
+    },
+    {
+      "path": "arrmes/server.py",
+      "sha256_digest": "80b09bc2adabea652da1cf42cb0c689abe490ab10e02353e62b9115205a754cd"
+    },
+    {
+      "path": "arrmes/service_router.py",
+      "sha256_digest": "a9d6f8b618ff6253d4bfef62067251188d4e2b57e977ccd0339f22394fc1a9ce"
+    },
+    {
+      "path": "arrmes/services/__init__.py",
+      "sha256_digest": "83031f18ee6a4cb69ab599bbb3aede1131b42f9a9b43d33ab01f9aa4930322f3"
+    },
+    {
+      "path": "arrmes/services/contract.py",
+      "sha256_digest": "72b7c521126c53fa3dda70f93e9b8c9c933952862fd7cb3c5de6cd1872641abd"
+    },
+    {
+      "path": "arrmes/services/media.py",
+      "sha256_digest": "54ee4e979012eb59d544c340e52fc81fb404e310856826865f0b6b649a729ac6"
+    },
+    {
+      "path": "arrmes/services/native.py",
+      "sha256_digest": "103cabb0b422bba5afb84667298346e6f4938bc23e9efb74f8f0ef85fccc1959"
+    },
+    {
+      "path": "arrmes/services/routing.py",
+      "sha256_digest": "e8f36f38eae880ce9a287226a83e851f2531031896b27922ca11d481bd6ec22d"
+    },
+    {
+      "path": "arrmes/services/transfers.py",
+      "sha256_digest": "b1c1c79830135b46981455ee74a34ccd5b21f54068a0805fe13b910270960414"
+    },
+    {
+      "path": "arrmes/workflows.py",
+      "sha256_digest": "5eaf0e64adf8f365376be2841a43c9493648f04f2c8740698eac8f8b0e0d68c0"
+    }
+  ],
+  "fixture_sha256": "d02f0a2ad93fb4f82bc3a67d3acf9e4bb1cb107c9c8162573257a3173509cb23"
+}

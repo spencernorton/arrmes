@@ -6,7 +6,7 @@ categories, rather than the nine claimed in older prose. A catalog entry, a
 training label, a sandbox handler and a working live integration are separate
 evidence. Several release claims combined them.
 
-[The current matrix](capabilities-after.json) records native operations, scopes, route layers and fixture coverage. The released v2 catalog and historical sandbox handlers remain separate from this native API qualification. A fixture test does not prove compatibility with every actual upstream deployment.
+[The before matrix](capabilities-before.json) preserves the release audit. [The current matrix](capabilities-after.json) records native operations, scopes, route layers and fixture coverage. The released v2 catalog and historical sandbox handlers remain separate from this native API qualification. A fixture test does not prove compatibility with every actual upstream deployment.
 
 This increment adds **29 native read workflows over seven service APIs**. Each
 advertised service/operation pair is tested from an explicit natural-language

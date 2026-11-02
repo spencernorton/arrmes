@@ -1,0 +1,15 @@
+{
+"schema_version":1,
+"scope":"Programmatic candidate audit plus original-manifest-SHA-verified regenerated 4389-row training file where available. Historical entity-based family IDs do not establish template disjointness.",
+"generated_train_candidates":3865,
+"sealed_v3":314,
+"normalized_template_intersection_count":37,
+"normalized_template_overlap_sealed_rows":261,
+"examples":["check if the <entity> movie <entity> is available on disk in radarr.","check sonarr for any missing episodes of <entity> without starting a search.","check whether sonarr is monitoring the series <entity>.","check whether the artist <entity> is in our lidarr music library.","check whether the film \"<entity>\" is in radarr.","check whether the movie <entity> is on disk in radarr.","check which episodes of that series are missing without downloading.","dispatch a radarr indexer search for the movie <entity>.","do not search indexers or download <entity>; only report which episodes are missing.","find qbittorrent transfers matching <entity>.","is that series monitored in sonarr?","is the movie <entity> available in our radarr collection?"],
+"fresh_normalized_template_overlap_generated_train":1,
+"fresh_exact_query_overlap_generated_train":0,
+"fresh_overlap_rows":[{"id":"ON1-023","query":"Parse this release with Armiger: Quartz.Orchard.S01E02.1080p.WEB-DL.H264-TEST","normalized_template":"parse this release with armiger: <entity>"}],
+"fresh_fictional_entities_found_in_existing_gitted_data":[],
+"note":"Audit ran after the first public-model result. Frozen inputs and labels remain unchanged. Report all80 diagnostic cases and explicitly disclose ON1-023 template overlap; do not call this a wholly template-disjoint acceptance set.",
+"actual_verified_training":{"validation_manifest_sha256_verified":"b55577798df3c389a9c07246369a76a03a59d65a8139c92a0248831ff6170191","available":true,"manifest_sha256_verified":"59f4e8085cc096434a5b7395ce476fed06990c109ca5e232cfe774d285a4de73","rows":4389,"sealed_v3_template_intersection_count":37,"sealed_v3_rows_with_training_template":261,"sealed_v3_query_string_overlap_different_contexts":34,"sealed_v3_full_query_context_overlap":0,"fresh_template_intersection_count":1,"fresh_rows_with_training_template":["ON1-023"],"fresh_exact_query_overlap":0,"v6_readonly_selection":{"selection_script_sha256":"abd8654ce1cdf95158f754c189725d735289e1c921d1da46dcc443454231ede0","v2_rows":502,"v1_rows":147,"total_rows_including_repeats":649,"distinct_query_count":438,"sealed_v3_query_string_overlap_different_contexts":34,"sealed_v3_full_query_context_overlap":0,"sealed_v3_rows_with_selected_template":229,"fresh_rows_with_selected_template":[],"validation_only":"dev_rows[:60] used only after this prefix for validation formatting; not included in returned training selections","scope":"Reconstruction of recorded selection logic from hash-pinned data, not proof of public adapter lineage; no model or artifact mutation."}}
+}

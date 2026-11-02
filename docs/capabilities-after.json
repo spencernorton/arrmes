@@ -1,6 +1,6 @@
 {
   "schema_version": "arrmes.capability-audit.v1",
-  "baseline_source_commit": "ac3d90eca62500aacf945756ab666917a6793798",
+  "baseline_source_commit": "a536483a75ada2d4d26f7bc93ee0790695f6e697",
   "neural_contract_unchanged": "arrmes.tools.v2",
   "extension_contract": "arrmes.tools.v3",
   "native_service_operation_pairs": 29,
@@ -136,7 +136,7 @@
     "Conditional/entity-dependent composites and write workflows; independent native read clauses are bounded and supported"
   ],
   "bounded_native_composites": "Up to executor.max_steps independent service-explicit read clauses, default 4; full scope preflight; continue independent reads on unavailable services",
-  "distribution_note": "Internal source provenance; public synchronization must replace internal source commit references with the reviewed public source revision. No private URLs, credentials, host inventory or tracker identifiers are included.",
+  "distribution_note": "GitHub is canonical. Public baseline and unchanged v2 model contract are separate from explicit native workflow routing.",
   "native_existing_v2_actions": [
     {
       "service": "qbittorrent",
@@ -158,6 +158,60 @@
       "effect": "write",
       "permission": "torrents:manage",
       "behavior": "Unique exact name -> bound single hash, explicit HMAC confirmation, one native POST, postcondition GET"
+    },
+    {
+      "service": "sonarr",
+      "name": "tv_status",
+      "effect": "read",
+      "permission": "media:read",
+      "route_layer": "unchanged trained neural v2 tool; native executor bridge when configured",
+      "test_reference": "tests/test_native_media.py",
+      "qualification": "6/6 actual-model runtime smoke plus ambiguity/unavailability; upstream binaries untested"
+    },
+    {
+      "service": "sonarr",
+      "name": "tv_missing",
+      "effect": "read",
+      "permission": "media:read",
+      "route_layer": "unchanged trained neural v2 tool; native executor bridge when configured",
+      "test_reference": "tests/test_native_media.py",
+      "qualification": "6/6 actual-model runtime smoke plus ambiguity/unavailability; upstream binaries untested"
+    },
+    {
+      "service": "radarr",
+      "name": "movie_status",
+      "effect": "read",
+      "permission": "media:read",
+      "route_layer": "unchanged trained neural v2 tool; native executor bridge when configured",
+      "test_reference": "tests/test_native_media.py",
+      "qualification": "6/6 actual-model runtime smoke plus ambiguity/unavailability; upstream binaries untested"
+    },
+    {
+      "service": "lidarr",
+      "name": "music_status",
+      "effect": "read",
+      "permission": "media:read",
+      "route_layer": "unchanged trained neural v2 tool; native executor bridge when configured",
+      "test_reference": "tests/test_native_media.py",
+      "qualification": "6/6 actual-model runtime smoke plus ambiguity/unavailability; upstream binaries untested"
+    },
+    {
+      "service": "tautulli",
+      "name": "now_playing",
+      "effect": "read",
+      "permission": "activity:read",
+      "route_layer": "unchanged trained neural v2 tool; native executor bridge when configured",
+      "test_reference": "tests/test_native_media.py",
+      "qualification": "6/6 actual-model runtime smoke plus ambiguity/unavailability; upstream binaries untested"
+    },
+    {
+      "service": "tautulli",
+      "name": "watch_history",
+      "effect": "read",
+      "permission": "activity:read",
+      "route_layer": "unchanged trained neural v2 tool; native executor bridge when configured",
+      "test_reference": "tests/test_native_media.py",
+      "qualification": "6/6 actual-model runtime smoke plus ambiguity/unavailability; upstream binaries untested"
     }
   ],
   "native_transfer_qualification": {
@@ -168,5 +222,11 @@
     "raw_model_receipt": "experiments/overnight-v1/torrent-transfer-smoke.json",
     "execution_receipt": "experiments/overnight-v1/native-transfer-execution-smoke.json",
     "test_reference": "tests/test_native_transfers.py"
+  },
+  "model_free_explicit_read_mode": {
+    "backend": "native-only",
+    "requires_model": false,
+    "writes": "disabled",
+    "abstention": "clarify outside explicit service grammar"
   }
 }

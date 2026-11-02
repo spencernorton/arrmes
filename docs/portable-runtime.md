@@ -88,7 +88,7 @@ Linux or macOS CPU host:
 
 ```sh
 git clone --depth 1 --branch b11429 https://github.com/ggml-org/llama.cpp.git
-cmake -S llama.cpp -B llama.cpp/build -DGGML_CUDA=OFF -DGGML_METAL=OFF -DLLAMA_CURL=OFF
+cmake -S llama.cpp -B llama.cpp/build -DGGML_CUDA=OFF -DGGML_METAL=OFF -DLLAMA_OPENSSL=OFF
 cmake --build llama.cpp/build --target llama-server llama-quantize -j 2
 ```
 
@@ -309,8 +309,9 @@ the benchmark report checks that distinction: Mac-exported Q4 gets 66/80 raw
 and 72/80 verified exact calls; CPU-exported Q4 gets 65/80 and 72/80. Both
 complete 32/35 executable fixture workflows with zero unsafe or unauthorized
 write executions. These are 80 unique cases with one repetition per artifact,
-at two CPU threads. CPU-exported routing p50/p95 is 1.133/1.705 seconds; fixture
-end-to-end is 1.135/1.708 seconds. Its model-load plus first route is 14.049
+at two CPU threads. CPU-exported routing p50/p95 is 1.133/1.705 seconds;
+benchmark-instrumented fixture wall is 1.135/1.708 seconds and includes
+expected-answer grading. Its model-load plus first route is 14.049
 seconds, native process RSS about 1.23 GB and Python parent RSS 44 MB. These
 Linux measurements must stay separate from Mac comparisons. They establish
 similar aggregate behavior on this set, not identical predictions or universal

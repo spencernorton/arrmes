@@ -1,0 +1,13 @@
+{
+"schema_version":1,
+"backend":"mlx",
+"model":"<local-path>",
+"adapter":"work/benchmarks/public-v6-adapter",
+"repetitions":3,
+"method":"Fresh Python+native runtime process for each repetition. Parent monotonic wall to the flushed child route_ready event includes interpreter startup, imports, local model loading, first full prompt and route verification. Teardown/exit excluded; resource high-water measurements follow teardown. OS file cache not flushed; model downloads excluded. One fixed query; this is startup, not quality evaluation.",
+"rows":[
+{"load_seconds":1.0642599169514142,"generation_seconds":0.766519,"raw_unverified":"<tool_call>{\"name\": \"now_playing\", \"arguments\": {}}</tool_call>","process_peak_rss_bytes":693141504,"native_child_peak_rss_bytes":null,"launch_to_first_route_seconds":1.9317862919997424,"repetition":0},
+{"load_seconds":1.065062334004324,"generation_seconds":0.768569,"raw_unverified":"<tool_call>{\"name\": \"now_playing\", \"arguments\": {}}</tool_call>","process_peak_rss_bytes":696156160,"native_child_peak_rss_bytes":null,"launch_to_first_route_seconds":1.935925292025786,"repetition":1},
+{"load_seconds":1.0744633750291541,"generation_seconds":0.769751,"raw_unverified":"<tool_call>{\"name\": \"now_playing\", \"arguments\": {}}</tool_call>","process_peak_rss_bytes":694026240,"native_child_peak_rss_bytes":null,"launch_to_first_route_seconds":1.9420550829963759,"repetition":2}
+]
+}
