@@ -7,7 +7,8 @@ import re
 from typing import Any, Iterable
 import unicodedata
 
-from .catalog import BY_NAME, CONTRACT_VERSION, V2_BY_NAME, contract_hash
+from .catalog import (BY_NAME, CONTRACT_VERSION, CONTRACT_VERSION_V3, V3_BY_NAME,
+                      contract_hash, contract_hash_v3)
 from .protocol import Call, normalized, validate_call
 
 
@@ -245,11 +246,21 @@ _OPTIONAL_ENTITY_SLOTS: dict[str, str] = {
     "music_search": "album",
 }
 
+# Transfer states and relative selectors describe a set, not a unique title.
+# A literal torrent named "Active" remains usable when quoted or established
+# by trusted context. This vocabulary comes from transfer semantics, not media.
+_TRANSFER_DESCRIPTORS = frozenset({
+    "active", "inactive", "paused", "stopped", "running", "downloading", "seeding",
+    "completed", "stalled", "queued", "checking", "errored", "first", "second", "third",
+    "last", "latest", "newest", "oldest", "selected", "current",
+})
+_TRANSFER_REFERENCE_WORDS = _TRANSFER_DESCRIPTORS | {"the", "a", "an", "torrent", "download", "transfer", "one"}
+
 
 def _norm_alnum(text: str) -> str:
     decomposed = unicodedata.normalize("NFKD", text)
     stripped = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
-    return re.sub(r"[^a-z0-9]+", " ", stripped.casefold()).strip()
+    return re.sub(r"[^\w]+", " ", stripped.casefold(), flags=re.UNICODE).replace("_", " ").strip()
 
 
 def _strip_quoted_and_releases(query: str) -> str:
@@ -276,13 +287,10 @@ def _is_grounded_in_text(entity: str, text: str) -> bool:
     txt_norm = _norm_alnum(text)
     if not ent_norm or not txt_norm:
         return False
-    if re.search(rf"(?:^|\s){re.escape(ent_norm)}(?:$|\s)", txt_norm):
-        return True
-    if " " not in ent_norm and ent_norm in txt_norm.replace(" ", ""):
-        return True
-    if entity.casefold() in text.casefold():
-        return True
-    return False
+    # Alien is not a surface mention of Aliens, and a joined sequence of
+    # unrelated words is not a title. Punctuation/diacritics normalize above;
+    # explicit span recovery lives in _snap_entity_to_query, never here.
+    return bool(re.search(rf"(?:^|\s){re.escape(ent_norm)}(?:$|\s)", txt_norm))
 
 
 def _snap_entity_to_query(entity: str, query: str) -> str | None:
@@ -372,6 +380,18 @@ def verify_proposal(
         return validate_call("unsupported", {"reason": "unsafe"})
     if _SCOPE_RE.search(q_unquoted):
         return validate_call("clarify", {"slot": "scope"})
+    if name == "service_query":
+        from .services import route_service_query
+        if contract_version in {"v1", CONTRACT_VERSION}:
+            return validate_call("unsupported", {"reason": "out_of_scope"})
+        grounded = route_service_query(query)
+        if grounded is None:
+            return validate_call("clarify", {"slot": "scope"})
+        if grounded.name in {"clarify", "unsupported"}:
+            return grounded
+        if normalized(grounded) != normalized(call):
+            return validate_call("clarify", {"slot": "scope"})
+        return validate_call(grounded.name, grounded.arguments)
     if name == "unsupported" and args.get("reason") in {"complex", "unsafe"}:
         if re.search(r"\b(torrent|qbittorrent|sonarr|radarr|lidarr|tautulli|plex|seer|episode|episodes|movie|series|show)\b", q_unquoted, re.IGNORECASE):
             return validate_call("clarify", {"slot": _infer_clarify_slot(query, selected)})
@@ -448,6 +468,13 @@ def verify_proposal(
             and isinstance(selected.get("title"), str)
             and _norm_alnum(val) == _norm_alnum(selected["title"])
         )
+        if name in {"torrent_pause", "torrent_resume"} and not in_selected:
+            words = set(val_norm.split())
+            descriptive = bool(words & _TRANSFER_DESCRIPTORS) and words <= _TRANSFER_REFERENCE_WORDS
+            quoted_literal = any(_norm_alnum(match[1]) == val_norm
+                                 for match in re.finditer(r'''["']([^"'\n]+)["']''', query))
+            if descriptive and not quoted_literal:
+                return validate_call("clarify", {"slot": "title"})
 
         # Snap minor BPE/spelling slips or missing "The " / "PREFIX: " back to query surface text
         if not in_selected:
@@ -701,14 +728,21 @@ def resolve_title(title: str, candidates: Iterable[dict], year: int | None = Non
 
 def prepare(call: Call, principal: Principal) -> dict[str, Any]:
     call = validate_call(call.name, call.arguments)
-    spec = V2_BY_NAME[call.name]
+    spec = V3_BY_NAME[call.name]
     base = {"contract": CONTRACT_VERSION, "contract_sha256": contract_hash(),
             "dry_run": True, "executed": False}
-    if not principal.subject or (spec.permission and spec.permission not in principal.scopes):
+    permission = spec.permission
+    service = spec.service
+    if call.name == "service_query":
+        from .services import SERVICE_PERMISSIONS
+        service = call.arguments["service"]
+        permission = SERVICE_PERMISSIONS[service]
+        base.update(contract=CONTRACT_VERSION_V3, contract_sha256=contract_hash_v3())
+    if not principal.subject or (permission and permission not in principal.scopes):
         return {**base, "status": "denied", "reason": "permission_required"}
     if spec.service == "control":
         return {**base, "status": call.name, **call.arguments}
-    return {**base, "status": "planned", "service": spec.service,
+    return {**base, "status": "planned", "service": service,
             "operation": call.name, "arguments": normalized(call)["arguments"],
             "effect": spec.effect, "principal": principal.subject,
             "requires_entity_resolution": any(k in call.arguments for k in ("title", "artist")),

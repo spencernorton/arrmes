@@ -1,0 +1,12 @@
+# Keep frozen inputs, source fingerprints and receipt hashes stable on Windows.
+*.py text eol=lf
+*.json text eol=lf
+*.jsonl text eol=lf
+*.toml text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+*.txt text eol=lf
+Dockerfile text eol=lf
+LICENSE text eol=lf
+NOTICE text eol=lf

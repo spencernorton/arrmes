@@ -1,0 +1,47 @@
+services:
+  inference:
+    image: ghcr.io/ggml-org/llama.cpp:server-b11429@sha256:2f8ebc2dde83c4bd7e5c6d61efa57965e0d5a79d29802c246c4593740d9c04c1
+    command: ["--model", "/models/arrmes.gguf", "--ctx-size", "4096", "--parallel", "1", "--threads", "4", "--threads-batch", "4", "--n-gpu-layers", "0", "--host", "0.0.0.0", "--port", "8080", "--jinja", "--no-webui"]
+    volumes:
+      - type: bind
+        source: ${ARRMES_GGUF_FILE:?Set ARRMES_GGUF_FILE to a qualified fused GGUF}
+        target: /models/arrmes.gguf
+        read_only: true
+    user: "10001:10001"
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 128
+    cpus: 4
+    mem_limit: 2g
+    restart: unless-stopped
+  arrmes:
+    build: .
+    image: arrmes:local
+    user: "${ARRMES_UID:-10001}:${ARRMES_GID:-10001}"
+    depends_on:
+      inference:
+        condition: service_healthy
+    ports: ["127.0.0.1:8095:8095"]
+    environment:
+      ARRMES_INFERENCE_URL: http://inference:8080
+      ARRMES_MODEL_FAMILY: hermes
+      ARRMES_CLIENTS_FILE: /run/secrets/clients
+      ARRMES_SERVICES_FILE: /run/secrets/services
+      ARRMES_WRITE_MODE: ${ARRMES_WRITE_MODE:-confirm}
+      ARRMES_REQUEST_OWNER_SUBJECT: ${ARRMES_REQUEST_OWNER_SUBJECT:-}
+    secrets: [clients, services]
+    read_only: true
+    tmpfs: ["/tmp"]
+    cap_drop: ["ALL"]
+    security_opt: ["no-new-privileges:true"]
+    pids_limit: 128
+    cpus: 2
+    mem_limit: 512m
+    restart: unless-stopped
+secrets:
+  clients:
+    file: ${ARRMES_CLIENTS_FILE:?Set the operator-managed bearer digest registry file}
+  services:
+    file: ${ARRMES_SERVICES_FILE:?Set the native service credential registry}

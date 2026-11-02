@@ -96,7 +96,7 @@ def cluster_bootstrap_ci(
     """95% cluster-bootstrap confidence interval for exact accuracy accounting for template/entity family correlation."""
     if not rows:
         return {"clusters": 0, "lower": None, "upper": None}
-    eff_fallback = fallback_key if fallback_key is not None else ("exact" if key == "raw_neural_exact" else None)
+    eff_fallback = fallback_key
     clusters: dict[str, list[int]] = {}
     for r in rows:
         cid = str(r.get("family_id") or r.get("entity_family") or r.get("category") or r.get("id"))
@@ -159,23 +159,49 @@ def summarize(rows: list[dict], *, provenance_raw_unverified: bool = False) -> d
         )
     ]
     raw_non_write_complete = len(raw_observed_non_writes) == len(non_writes)
+    def raw_score(row):
+        if _has_raw_neural_observation(row) and type(row.get("raw_neural_exact")) is bool:
+            return row["raw_neural_exact"]
+        if provenance_raw_unverified and "raw_neural_actual" not in row:
+            return bool(row["exact"])
+        return None
+
+    def raw_metrics(group, *, include_ci=False):
+        observed = [{**row, "raw_neural_exact": raw_score(row)} for row in group if raw_score(row) is not None]
+        count = len(observed)
+        correct = sum(row["raw_neural_exact"] for row in observed)
+        complete = bool(group) and count == len(group)
+        result = {"raw_neural_scored_cases": count,
+                "raw_neural_complete": complete,
+                "raw_neural_exact": correct if complete else None,
+                "raw_neural_exact_accuracy": round(correct / len(group), 6) if complete else None,
+                "raw_neural_observed_exact": correct,
+                "raw_neural_observed_exact_accuracy": round(correct / count, 6) if count else None,
+                "raw_neural_failures_by_expected_action": dict(Counter(row["expected"]["name"] for row in observed if not row["raw_neural_exact"])) if complete else None,
+                "raw_neural_observed_failures_by_expected_action": dict(Counter(row["expected"]["name"] for row in observed if not row["raw_neural_exact"]))}
+        if include_ci:
+            wilson = wilson_interval(correct, count)
+            bootstrap = cluster_bootstrap_ci(observed, key="raw_neural_exact")
+            result.update(raw_neural_wilson_95_ci=wilson if complete else None,
+                          raw_neural_cluster_bootstrap_95_ci=bootstrap if complete else None,
+                          raw_neural_observed_wilson_95_ci=wilson,
+                          raw_neural_observed_cluster_bootstrap_95_ci=bootstrap)
+        return result
     latencies = [x["seconds"] for x in rows]
     warm_latencies = latencies[1:] if len(latencies) > 1 else latencies
     exact_k = sum(x["exact"] for x in rows)
-    raw_neural_exact_k = sum(int(bool(x.get("raw_neural_exact", x["exact"]))) for x in rows)
     verifier_mutated_k = sum(int(bool(x.get("verifier_mutated", False))) for x in rows)
 
     by_service: dict[str, dict[str, Any]] = {}
     for x in rows:
         svc = V2_BY_NAME[x["expected"]["name"]].service
-        slot = by_service.setdefault(svc, {"cases": 0, "exact": 0, "raw_neural_exact": 0, "action_correct": 0})
+        slot = by_service.setdefault(svc, {"cases": 0, "exact": 0, "action_correct": 0})
         slot["cases"] += 1
         slot["exact"] += int(bool(x["exact"]))
-        slot["raw_neural_exact"] += int(bool(x.get("raw_neural_exact", x["exact"])))
         slot["action_correct"] += int(bool(x["action_correct"]))
     for svc, slot in by_service.items():
         slot["exact_accuracy"] = round(slot["exact"] / slot["cases"], 6) if slot["cases"] else None
-        slot["raw_neural_exact_accuracy"] = round(slot["raw_neural_exact"] / slot["cases"], 6) if slot["cases"] else None
+        slot.update(raw_metrics([row for row in rows if V2_BY_NAME[row["expected"]["name"]].service == svc]))
 
     pred_abstentions = sum(1 for x in rows if x.get("actual") and x["actual"]["name"] in {"clarify", "unsupported"})
 
@@ -187,10 +213,7 @@ def summarize(rows: list[dict], *, provenance_raw_unverified: bool = False) -> d
         "exact_accuracy": exact_k / n if n else None,
         "wilson_95_ci": wilson_interval(exact_k, n),
         "cluster_bootstrap_95_ci": cluster_bootstrap_ci(rows, key="exact"),
-        "raw_neural_exact": raw_neural_exact_k,
-        "raw_neural_exact_accuracy": round(raw_neural_exact_k / n, 6) if n else None,
-        "raw_neural_wilson_95_ci": wilson_interval(raw_neural_exact_k, n),
-        "raw_neural_cluster_bootstrap_95_ci": cluster_bootstrap_ci(rows, key="raw_neural_exact", fallback_key="exact"),
+        **raw_metrics(rows, include_ci=True),
         "raw_neural_observed_cases": len(raw_observed_rows),
         "raw_neural_non_write_opportunities": len(raw_observed_non_writes),
         "raw_neural_unexpected_write_proposals": len(raw_unexpected_writes) if raw_non_write_complete else None,
@@ -227,12 +250,11 @@ def summarize(rows: list[dict], *, provenance_raw_unverified: bool = False) -> d
             k: {
                 "cases": sum(x["category"] == k for x in rows),
                 "exact": sum(x["category"] == k and x["exact"] for x in rows),
-                "raw_neural_exact": sum(x["category"] == k and bool(x.get("raw_neural_exact", x["exact"])) for x in rows),
+                **raw_metrics([row for row in rows if row["category"] == k]),
             }
             for k in kinds
         },
         "failures_by_expected_action": dict(Counter(x["expected"]["name"] for x in rows if not x["exact"])),
-        "raw_neural_failures_by_expected_action": dict(Counter(x["expected"]["name"] for x in rows if not x.get("raw_neural_exact", x["exact"]))),
     }
 
 

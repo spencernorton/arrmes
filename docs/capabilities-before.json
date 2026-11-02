@@ -1,0 +1,438 @@
+{
+  "schema_version": "arrmes.capability-audit.v1",
+  "audited_at": "2026-11-02T03:14:39.770494+00:00",
+  "source_commit": "a536483a75ada2d4d26f7bc93ee0790695f6e697",
+  "scope": "Released v2 implementation audit with retained research fixture coverage; public test inventory and model lineage are separate evidence.",
+  "contract": "arrmes.tools.v2",
+  "tool_count_including_controls": 20,
+  "operational_action_count": 18,
+  "named_service_count": 10,
+  "test_definition": "Fixture coverage is not a test against an actual upstream application or production service. Model-routing qualification is separate from adapter coverage.",
+  "rows": [
+    {
+      "service": "sonarr",
+      "api_identity": "Sonarr API v3 (application v3/v4 contract)",
+      "implemented_operations": [
+        {
+          "name": "tv_status",
+          "effect": "read",
+          "permission": "media:read",
+          "schema_implemented": true,
+          "sandbox_adapter_implemented": true,
+          "nl_route_layer": "v2 trained tools; errors remain, not a guarantee of correct selection",
+          "programmatic_candidate_count_not_public_adapter_lineage": 441,
+          "retained_research_fixture_test_references": [
+            "tests/test_sandbox_and_executor.py:test_sonarr_read_pagination_and_async_command",
+            "tests/test_sandbox_and_executor.py:test_400_series_sandbox_cohort_resolution",
+            "tests/test_sandbox_and_executor.py:test_fault_injection_retries_and_transport_error_boundary",
+            "tests/test_sandbox_and_executor.py:test_session_entity_ledger_and_multi_step_workflow",
+            "tests/test_sandbox_and_executor.py:test_verify_proposal_entity_grounding_and_safety_invariants",
+            "tests/test_sandbox_and_executor.py:test_executor_adapter_state_distinguishes_failed_and_unverified",
+            "tests/test_live_hardening.py:test_evaluate_summarize_applies_raw_neural_fallback_to_bootstrap_ci"
+          ]
+        },
+        {
+          "name": "tv_missing",
+          "effect": "read",
+          "permission": "media:read",
+          "schema_implemented": true,
+          "sandbox_adapter_implemented": true,
+          "nl_route_layer": "v2 trained tools; errors remain, not a guarantee of correct selection",
+          "programmatic_candidate_count_not_public_adapter_lineage": 780,
+          "retained_research_fixture_test_references": [
+            "tests/test_boundary.py:test_literal_data_round_trips_without_execution",
+            "tests/test_boundary.py:test_defaults_are_semantic_but_never_create_implicit_write_permissions",
+            "tests/test_boundary.py:test_scoring_separates_schema_from_meaning_and_counts_unsafe_proposals",
+            "tests/test_sandbox_and_executor.py:test_sonarr_read_pagination_and_async_command",
+            "tests/test_sandbox_and_executor.py:test_session_entity_ledger_and_multi_step_workflow",
+            "tests/test_sandbox_and_executor.py:test_verify_proposal_entity_grounding_and_safety_invariants",
+            "tests/test_live_hardening.py:test_truncated_missing_episode_pagination_is_reported_partial",
+            "tests/test_live_hardening.py:test_workflow_dependent_step_fails_without_ledger_state",
+            "tests/test_live_hardening.py:test_dependent_steps_skip_search_when_nothing_missing",
+            "tests/test_live_hardening.py:test_dependent_steps_require_ledger_and_unique_torrent",
+            "tests/test_live_hardening.py:test_summarize_does_not_report_missing_raw_evidence_as_zero_unsafe_proposals",
+            "tests/test_live_hardening.py:test_verify_proposal_distinguishes_informational_questions_from_affirmative_writes"
+          ]
+        },
+        {
+          "name": "tv_search_missing",
+          "effect": "download",
+          "permission": "media:manage",
+          "schema_implemented": true,
+          "sandbox_adapter_implemented": true,
+          "nl_route_layer": "v2 trained tools; errors remain, not a guarantee of correct selection",
+          "programmatic_candidate_count_not_public_adapter_lineage": 558,
+          "retained_research_fixture_test_references": [
+            "tests/test_boundary.py:test_noncanonical_call_types_are_rejected",
+            "tests/test_boundary.py:test_only_host_scopes_grant_permissions_and_plans_never_execute",
+            "tests/test_boundary.py:test_scoring_separates_schema_from_meaning_and_counts_unsafe_proposals",
+            "tests/test_sandbox_and_executor.py:test_sonarr_read_pagination_and_async_command",
+            "tests/test_sandbox_and_executor.py:test_fault_injection_retries_and_transport_error_boundary",
+            "tests/test_sandbox_and_executor.py:test_session_entity_ledger_and_multi_step_workflow",
+            "tests/test_sandbox_and_executor.py:test_verify_proposal_entity_grounding_and_safety_invariants",
+            "tests/test_production_readiness.py:test_write_confirmation_flow_and_replay_protection",
+            "tests/test_production_readiness.py:test_http_server_endpoints_end_to_end",
+            "tests/test_live_hardening.py:test_confirm_reauthorizes_current_scopes_before_dispatch",
+            "tests/test_live_hardening.py:test_confirm_respects_executor_write_gate",
+            "tests/test_live_hardening.py:test_command_status_is_not_reported_as_completion",
+            "tests/test_live_hardening.py:test_mismatched_season_recovers_explicit_season_instead_of_broadening",
+            "tests/test_live_hardening.py:test_omitted_season_is_restored_from_utterance",
+            "tests/test_live_hardening.py:test_unresolvable_season_restriction_clarifies",
+            "tests/test_live_hardening.py:test_hallucinated_season_without_restriction_is_dropped",
+            "tests/test_live_hardening.py:test_omitted_unresolvable_season_clarifies_but_all_seasons_does_not",
+            "tests/test_live_hardening.py:test_teacher_labels_must_pass_semantic_verification",
+            "tests/test_live_hardening.py:test_workflow_dependent_step_fails_without_ledger_state",
+            "tests/test_live_hardening.py:test_dependent_steps_skip_search_when_nothing_missing",
+            "tests/test_live_hardening.py:test_dependent_steps_require_ledger_and_unique_torrent",
+            "tests/test_live_hardening.py:test_negated_fetch_pull_and_grab_never_survive_as_write_actions",
+            "tests/test_live_hardening.py:test_command_endpoints_validate_response_shapes_without_attribute_error",
+            "tests/test_live_hardening.py:test_summarize_does_not_report_missing_raw_evidence_as_zero_unsafe_proposals",
+            "tests/test_live_hardening.py:test_verify_proposal_distinguishes_informational_questions_from_affirmative_writes"
+          ]
+        }
+      ],
+      "live_behavior": "Live gateway series status, missing episode read, and search command dispatch; queued commands are not completed downloads.",
+      "missing_functionality": "No metadata discovery, global missing inventory, queues, history or health NL action.",
+      "runtime": "MLX Apple Silicon model only; dependency-free executor tests run without a model"
+    },
+    {
+      "service": "radarr",
+      "api_identity": "Radarr API v3",
+      "implemented_operations": [
+        {
+          "name": "movie_status",
+          "effect": "read",
+          "permission": "media:read",
+          "schema_implemented": true,
+          "sandbox_adapter_implemented": true,
+          "nl_route_layer": "v2 trained tools; errors remain, not a guarantee of correct selection",
+          "programmatic_candidate_count_not_public_adapter_lineage": 589,
+          "retained_research_fixture_test_references": [
+            "tests/test_boundary.py:test_literal_data_round_trips_without_execution",
+            "tests/test_boundary.py:test_noncanonical_call_types_are_rejected",
+            "tests/test_boundary.py:test_oversized_integer_cannot_escape_validation_or_abort_scoring",
+            "tests/test_sandbox_and_executor.py:test_400_series_sandbox_cohort_resolution",
+            "tests/test_sandbox_and_executor.py:test_remake_disambiguation_and_year_resolution",
+            "tests/test_sandbox_and_executor.py:test_verify_proposal_entity_grounding_and_safety_invariants",
+            "tests/test_sandbox_and_executor.py:test_verify_proposal_affirmative_and_negated_write_intents",
+            "tests/test_live_hardening.py:test_negated_request_submission_phrasings_never_produce_request_media",
+            "tests/test_live_hardening.py:test_verify_proposal_distinguishes_informational_questions_from_affirmative_writes"
+          ]
+        },
+        {
+          "name": "movie_search",
+          "effect": "download",
+          "permission": "media:manage",
+          "schema_implemented": true,
+          "sandbox_adapter_implemented": true,
+          "nl_route_layer": "v2 trained tools; errors remain, not a guarantee of correct selection",
+          "programmatic_candidate_count_not_public_adapter_lineage": 359,
+          "retained_research_fixture_test_references": [
+            "tests/test_sandbox_and_executor.py:test_remake_disambiguation_and_year_resolution",
+            "tests/test_sandbox_and_executor.py:test_verify_proposal_entity_grounding_and_safety_invariants",
+            "tests/test_sandbox_and_executor.py:test_executor_adapter_state_distinguishes_failed_and_unverified",
+            "tests/test_production_readiness.py:test_write_confirmation_expiration_and_shadow_mode",
+            "tests/test_live_hardening.py:test_negated_fetch_pull_and_grab_never_survive_as_write_actions",
+            "tests/test_live_hardening.py:test_confirmation_store_prunes_expired_and_bounds_pending_and_tombstones",
+            "tests/test_live_hardening.py:test_command_endpoints_validate_response_shapes_without_attribute_error",
+            "tests/test_live_hardening.py:test_verify_proposal_distinguishes_informational_questions_from_affirmative_writes"
+          ]
+        }
+      ],
+      "live_behavior": "Live gateway movie library status and MoviesSearch command dispatch.",
+      "missing_functionality": "No metadata discovery, global missing inventory, queues, history or health NL action.",
+      "runtime": "MLX Apple Silicon model only; dependency-free executor tests run without a model"
+    },
+    {
+      "service": "lidarr",
+      "api_identity": "Lidarr API v1",
+      "implemented_operations": [
+        {
+          "name": "music_status",
+          "effect": "read",
+          "permission": "media:read",
+          "schema_implemented": true,
+          "sandbox_adapter_implemented": true,
+          "nl_route_layer": "v2 trained tools; errors remain, not a guarantee of correct selection",
+          "programmatic_candidate_count_not_public_adapter_lineage": 210,
+          "retained_research_fixture_test_references": [
+            "tests/test_boundary.py:test_literal_data_round_trips_without_execution",
+            "tests/test_sandbox_and_executor.py:test_400_series_sandbox_cohort_resolution",
+            "tests/test_sandbox_and_executor.py:test_lidarr_tautulli_seer_and_extensible_services",
+            "tests/test_live_hardening.py:test_verify_proposal_distinguishes_informational_questions_from_affirmative_writes"
+          ]
+        },
+        {
+          "name": "music_search",
+          "effect": "download",
+          "permission": "media:manage",
+          "schema_implemented": true,
+          "sandbox_adapter_implemented": true,
+          "nl_route_layer": "v2 trained tools; errors remain, not a guarantee of correct selection",
+          "programmatic_candidate_count_not_public_adapter_lineage": 143,
+          "retained_research_fixture_test_references": [
+            "tests/test_sandbox_and_executor.py:test_lidarr_tautulli_seer_and_extensible_services",
+            "tests/test_live_hardening.py:test_negated_fetch_pull_and_grab_never_survive_as_write_actions",
+            "tests/test_live_hardening.py:test_ungrounded_album_on_music_search_clarifies_instead_of_broadening_to_artist",
+            "tests/test_live_hardening.py:test_command_endpoints_validate_response_shapes_without_attribute_error",
+            "tests/test_live_hardening.py:test_verify_proposal_distinguishes_informational_questions_from_affirmative_writes"
+          ]
+        }
+      ],
+      "live_behavior": "Live gateway artist/album library read and ArtistSearch/AlbumSearch dispatch.",
+      "missing_functionality": "No metadata lookup, global missing inventory, queues, history or health NL action.",
+      "runtime": "MLX Apple Silicon model only; dependency-free executor tests run without a model"
+    },
+    {
+      "service": "bazarr",
+      "api_identity": "No integration at baseline",
+      "implemented_operations": [],
+      "live_behavior": "No tool, model label, adapter, policy scope or integration fixture.",
+      "missing_functionality": "Subtitle status, wanted subtitles, subtitle management, provider health."
+    },
+    {
+      "service": "qbittorrent",
+      "api_identity": "qBittorrent semantics via QUI facade; not native WebUI v2",
+      "implemented_operations": [
+        {
+          "name": "torrent_list",
+          "effect": "read",
+          "permission": "torrents:read",
+          "schema_implemented": true,
+          "sandbox_adapter_implemented": true,
+          "nl_route_layer": "v2 trained tools; errors remain, not a guarantee of correct selection",
+          "programmatic_candidate_count_not_public_adapter_lineage": 37,
+          "retained_research_fixture_test_references": [
+            "tests/test_sandbox_and_executor.py:test_qbittorrent_v2_actions_and_safety_guards",
+            "tests/test_sandbox_and_executor.py:test_verify_proposal_entity_grounding_and_safety_invariants",
+            "tests/test_sandbox_and_executor.py:test_verify_proposal_affirmative_and_negated_write_intents",
+            "tests/test_sandbox_and_executor.py:test_qbit_multi_hash_atomic_validation",
+            "tests/test_live_hardening.py:test_dependent_steps_require_ledger_and_unique_torrent",
+            "tests/test_live_hardening.py:test_verify_proposal_distinguishes_informational_questions_from_affirmative_writes"
+          ]
+        },
+        {
+          "name": "torrent_pause",
+          "effect": "write",
+          "permission": "torrents:manage",
+          "schema_implemented": true,
+          "sandbox_adapter_implemented": true,
+          "nl_route_layer": "v2 trained tools; errors remain, not a guarantee of correct selection",
+          "programmatic_candidate_count_not_public_adapter_lineage": 15,
+          "retained_research_fixture_test_references": [
+            "tests/test_sandbox_and_executor.py:test_qbittorrent_v2_actions_and_safety_guards",
+            "tests/test_sandbox_and_executor.py:test_verify_proposal_affirmative_and_negated_write_intents",
+            "tests/test_live_hardening.py:test_live_torrent_mutations_rejected_before_token_minting",
+            "tests/test_live_hardening.py:test_service_credentials_do_not_switch_off_production_gates",
+            "tests/test_live_hardening.py:test_dependent_steps_require_ledger_and_unique_torrent",
+            "tests/test_live_hardening.py:test_negated_fetch_pull_and_grab_never_survive_as_write_actions",
+            "tests/test_live_hardening.py:test_verify_proposal_distinguishes_informational_questions_from_affirmative_writes"
+          ]
+        },
+        {
+          "name": "torrent_resume",
+          "effect": "write",
+          "permission": "torrents:manage",
+          "schema_implemented": true,
+          "sandbox_adapter_implemented": true,
+          "nl_route_layer": "v2 trained tools; errors remain, not a guarantee of correct selection",
+          "programmatic_candidate_count_not_public_adapter_lineage": 9,
+          "retained_research_fixture_test_references": [
+            "tests/test_sandbox_and_executor.py:test_qbittorrent_v2_actions_and_safety_guards",
+            "tests/test_sandbox_and_executor.py:test_verify_proposal_affirmative_and_negated_write_intents",
+            "tests/test_live_hardening.py:test_live_torrent_mutations_rejected_before_token_minting",
+            "tests/test_live_hardening.py:test_negated_fetch_pull_and_grab_never_survive_as_write_actions",
+            "tests/test_live_hardening.py:test_verify_proposal_distinguishes_informational_questions_from_affirmative_writes"
+          ]
+        }
+      ],
+      "live_behavior": "torrent_list uses QUI instance 1; pause/resume exist in SandboxAdapter but LiveGatewayAdapter explicitly rejects both before confirmation.",
+      "missing_functionality": "No verified native authentication, health, transfer metrics, or live transfer mutation path.",
+      "runtime": "MLX Apple Silicon model only; dependency-free executor tests run without a model"
+    },
+    {
+      "service": "tautulli",
+      "api_identity": "Tautulli API v2 via gateway",
+      "implemented_operations": [
+        {
+          "name": "now_playing",
+          "effect": "read",
+          "permission": "activity:read",
+          "schema_implemented": true,
+          "sandbox_adapter_implemented": true,
+          "nl_route_layer": "v2 trained tools; errors remain, not a guarantee of correct selection",
+          "programmatic_candidate_count_not_public_adapter_lineage": 12,
+          "retained_research_fixture_test_references": [
+            "tests/test_boundary.py:test_literal_data_round_trips_without_execution",
+            "tests/test_boundary.py:test_noncanonical_call_types_are_rejected",
+            "tests/test_boundary.py:test_only_host_scopes_grant_permissions_and_plans_never_execute",
+            "tests/test_sandbox_and_executor.py:test_lidarr_tautulli_seer_and_extensible_services",
+            "tests/test_sandbox_and_executor.py:test_verify_proposal_entity_grounding_and_safety_invariants",
+            "tests/test_production_readiness.py:test_live_gateway_adapter_read_only_and_audit_redaction",
+            "tests/test_production_readiness.py:test_http_server_endpoints_end_to_end",
+            "tests/test_production_readiness.py:test_sonarr_v4_statistics_and_seer_discover_alignment",
+            "tests/test_live_hardening.py:test_tautulli_http_200_application_errors_and_malformed_shapes_fail_closed"
+          ]
+        },
+        {
+          "name": "watch_history",
+          "effect": "read",
+          "permission": "activity:read",
+          "schema_implemented": true,
+          "sandbox_adapter_implemented": true,
+          "nl_route_layer": "v2 trained tools; errors remain, not a guarantee of correct selection",
+          "programmatic_candidate_count_not_public_adapter_lineage": 33,
+          "retained_research_fixture_test_references": [
+            "tests/test_sandbox_and_executor.py:test_lidarr_tautulli_seer_and_extensible_services",
+            "tests/test_sandbox_and_executor.py:test_verify_proposal_entity_grounding_and_safety_invariants",
+            "tests/test_live_hardening.py:test_tautulli_http_200_application_errors_and_malformed_shapes_fail_closed"
+          ]
+        }
+      ],
+      "live_behavior": "Current streams and watch history with HTTP-200 application-envelope validation.",
+      "missing_functionality": "No health NL action; history completeness not a general native multi-page workflow.",
+      "runtime": "MLX Apple Silicon model only; dependency-free executor tests run without a model"
+    },
+    {
+      "service": "seer",
+      "api_identity": "Compatibility name; request-portal/TMDB discovery facade",
+      "implemented_operations": [
+        {
+          "name": "seer_discover",
+          "effect": "read",
+          "permission": "media:read",
+          "schema_implemented": true,
+          "sandbox_adapter_implemented": true,
+          "nl_route_layer": "v2 trained tools; errors remain, not a guarantee of correct selection",
+          "programmatic_candidate_count_not_public_adapter_lineage": 25,
+          "retained_research_fixture_test_references": [
+            "tests/test_sandbox_and_executor.py:test_lidarr_tautulli_seer_and_extensible_services",
+            "tests/test_production_readiness.py:test_sonarr_v4_statistics_and_seer_discover_alignment",
+            "tests/test_live_hardening.py:test_discovery_never_returns_the_other_media_type"
+          ]
+        }
+      ],
+      "live_behavior": "seer_discover calls request-service discovery, not Seerr /api/v1. Estate migration records already retire Seerr reads.",
+      "missing_functionality": "Native Seerr health, search, requests and version qualification absent. Do not conflate Seer facade with Seerr.",
+      "runtime": "MLX Apple Silicon model only; dependency-free executor tests run without a model"
+    },
+    {
+      "service": "requests",
+      "api_identity": "Custom request-service API, independent of Seerr",
+      "implemented_operations": [
+        {
+          "name": "request_status",
+          "effect": "read",
+          "permission": "requests:read",
+          "schema_implemented": true,
+          "sandbox_adapter_implemented": true,
+          "nl_route_layer": "v2 trained tools; errors remain, not a guarantee of correct selection",
+          "programmatic_candidate_count_not_public_adapter_lineage": 203,
+          "retained_research_fixture_test_references": [
+            "tests/test_sandbox_and_executor.py:test_request_service_invariants_and_idempotency_conflict",
+            "tests/test_sandbox_and_executor.py:test_verify_proposal_affirmative_and_negated_write_intents",
+            "tests/test_live_hardening.py:test_request_status_does_not_pick_first_unrelated_result",
+            "tests/test_live_hardening.py:test_sandbox_request_status_resolves_full_media_identity_for_remakes"
+          ]
+        },
+        {
+          "name": "request_media",
+          "effect": "request",
+          "permission": "requests:create",
+          "schema_implemented": true,
+          "sandbox_adapter_implemented": true,
+          "nl_route_layer": "v2 trained tools; errors remain, not a guarantee of correct selection",
+          "programmatic_candidate_count_not_public_adapter_lineage": 405,
+          "retained_research_fixture_test_references": [
+            "tests/test_boundary.py:test_request_identity_comes_from_host_not_model",
+            "tests/test_sandbox_and_executor.py:test_request_service_invariants_and_idempotency_conflict",
+            "tests/test_sandbox_and_executor.py:test_verify_proposal_entity_grounding_and_safety_invariants",
+            "tests/test_sandbox_and_executor.py:test_verify_proposal_affirmative_and_negated_write_intents",
+            "tests/test_live_hardening.py:test_request_media_does_not_fall_back_to_unrelated_candidate",
+            "tests/test_live_hardening.py:test_request_media_enforces_supplied_year",
+            "tests/test_live_hardening.py:test_request_media_ambiguous_remake_clarifies_and_unique_match_posts",
+            "tests/test_live_hardening.py:test_request_media_enforces_explicit_media_type",
+            "tests/test_live_hardening.py:test_request_media_deictic_selected_media_is_preserved",
+            "tests/test_live_hardening.py:test_live_request_media_requires_gateway_owner_identity",
+            "tests/test_live_hardening.py:test_confirm_mode_does_not_mint_tokens_for_unmapped_request_callers",
+            "tests/test_live_hardening.py:test_request_service_conflict_is_an_error_not_completion",
+            "tests/test_live_hardening.py:test_service_credentials_do_not_switch_off_production_gates",
+            "tests/test_live_hardening.py:test_negated_fetch_pull_and_grab_never_survive_as_write_actions",
+            "tests/test_live_hardening.py:test_negated_request_submission_phrasings_never_produce_request_media",
+            "tests/test_live_hardening.py:test_verify_proposal_distinguishes_informational_questions_from_affirmative_writes",
+            "tests/test_live_hardening.py:test_sandbox_request_status_resolves_full_media_identity_for_remakes"
+          ]
+        }
+      ],
+      "live_behavior": "request_status exact-title lookup; request_media only for configured gateway-key owner; writes require confirmation.",
+      "missing_functionality": "No portable per-user gateway identity delegation; no admin queue or lifecycle management action.",
+      "runtime": "MLX Apple Silicon model only; dependency-free executor tests run without a model"
+    },
+    {
+      "service": "bitmagnet",
+      "api_identity": "BitAgent GraphQL facade over Bitmagnet-compatible schema",
+      "implemented_operations": [
+        {
+          "name": "bitmagnet_search",
+          "effect": "read",
+          "permission": "releases:read",
+          "schema_implemented": true,
+          "sandbox_adapter_implemented": true,
+          "nl_route_layer": "v2 trained tools; errors remain, not a guarantee of correct selection",
+          "programmatic_candidate_count_not_public_adapter_lineage": 121,
+          "retained_research_fixture_test_references": [
+            "tests/test_sandbox_and_executor.py:test_lidarr_tautulli_seer_and_extensible_services",
+            "tests/test_sandbox_and_executor.py:test_unsafe_write_counted_when_verification_poll_fails"
+          ]
+        }
+      ],
+      "live_behavior": "Catalogue search via POST /bitagent/graphql; this is a fixed read-only GraphQL query.",
+      "missing_functionality": "No native endpoint setup, health, pagination or version handshake. Native Bitmagnet is not separately qualified.",
+      "runtime": "MLX Apple Silicon model only; dependency-free executor tests run without a model"
+    },
+    {
+      "service": "armiger",
+      "api_identity": "Sandbox fixture; live implementation is a regex approximation",
+      "implemented_operations": [
+        {
+          "name": "armiger_parse",
+          "effect": "read",
+          "permission": "releases:classify",
+          "schema_implemented": true,
+          "sandbox_adapter_implemented": true,
+          "nl_route_layer": "v2 trained tools; errors remain, not a guarantee of correct selection",
+          "programmatic_candidate_count_not_public_adapter_lineage": 147,
+          "retained_research_fixture_test_references": [
+            "tests/test_sandbox_and_executor.py:test_lidarr_tautulli_seer_and_extensible_services"
+          ]
+        }
+      ],
+      "live_behavior": "Sandbox parse endpoint exists. Live execute_armiger_parse uses local regex metadata and unrelated image catalog readiness; this does not run Armiger.",
+      "missing_functionality": "Verified live Armiger model invocation is missing; release metadata correctness not established by adapter success.",
+      "runtime": "MLX Apple Silicon model only; dependency-free executor tests run without a model"
+    },
+    {
+      "service": "dh-waypoint",
+      "api_identity": "Sandbox fixture; live implementation points at commskip batches",
+      "implemented_operations": [
+        {
+          "name": "waypoint_status",
+          "effect": "read",
+          "permission": "pipeline:read",
+          "schema_implemented": true,
+          "sandbox_adapter_implemented": true,
+          "nl_route_layer": "v2 trained tools; errors remain, not a guarantee of correct selection",
+          "programmatic_candidate_count_not_public_adapter_lineage": 10,
+          "retained_research_fixture_test_references": [
+            "tests/test_sandbox_and_executor.py:test_lidarr_tautulli_seer_and_extensible_services",
+            "tests/test_production_readiness.py:test_http_server_endpoints_end_to_end"
+          ]
+        }
+      ],
+      "live_behavior": "Sandbox pipeline status exists. Live execute_waypoint_status calls a different service and labels its batches healthy.",
+      "missing_functionality": "Verified DH-Waypoint health contract and native integration are missing.",
+      "runtime": "MLX Apple Silicon model only; dependency-free executor tests run without a model"
+    }
+  ],
+  "distribution_note": "Internal source provenance; public synchronization must replace internal source commit references with the reviewed public source revision. No private URLs, credentials, host inventory or tracker identifiers are included."
+}

@@ -1,0 +1,451 @@
+{
+  "schema_version": 1,
+  "kind": "model-free explicit-service read efficiency diagnostic; distinct from neural task mix",
+  "frozen_at": "2026-11-02T05:29:22.800014+00:00",
+  "source_commit": "44c16f4c94bdf6d11cd38c3dfd151ec7df86459f",
+  "source_file_sha256": [
+    {
+      "path": "src/arrmes/__init__.py",
+      "sha256_digest": "cdedcd366964b959141748c0ba70b7c4e0422a06617893999ea4f9f87d1a13a2"
+    },
+    {
+      "path": "src/arrmes/__main__.py",
+      "sha256_digest": "6d8b7d7846a845059d7a3107143f11131f63c5511d669b44085b15ec5e3d2279"
+    },
+    {
+      "path": "src/arrmes/adapters.py",
+      "sha256_digest": "199a21e864c81438cb355d5e9c0193b42efd5bc848e033019e183be2787a666d"
+    },
+    {
+      "path": "src/arrmes/auth.py",
+      "sha256_digest": "04a5bac9f5d328ad08142e70428f4b1dc75460c8ef9fa62b55ded95ef8bb77e8"
+    },
+    {
+      "path": "src/arrmes/backends.py",
+      "sha256_digest": "963af834bd76fb4d872628a32bcf1c68c448ac5359d91016e91ed2ee8a785cbd"
+    },
+    {
+      "path": "src/arrmes/catalog.py",
+      "sha256_digest": "2ec67f3263c7eee2b4054e1d26bf81859b15507950dab0dab2d19956f796a494"
+    },
+    {
+      "path": "src/arrmes/cli.py",
+      "sha256_digest": "7e43e7a751c051b52cb0c517b49458a3551599391f1591f8d30e2f396d4f8a69"
+    },
+    {
+      "path": "src/arrmes/corpus.py",
+      "sha256_digest": "d378023367c61e4b93724890636090daa383b449c661c21412331f0c061d8425"
+    },
+    {
+      "path": "src/arrmes/evaluate.py",
+      "sha256_digest": "5db320cab4188bd777021044d110583f897d029bb3d7d688913a26a672edb5c3"
+    },
+    {
+      "path": "src/arrmes/executor.py",
+      "sha256_digest": "41b542f6493d6c178656ff6b85b1559e6bc9fb0ac12460ba16731429b6508e4d"
+    },
+    {
+      "path": "src/arrmes/explicit.py",
+      "sha256_digest": "bec0fdac157c2178b48aefbb8ba3ffe8ae2252e82bbeace188b51e3666eb9dda"
+    },
+    {
+      "path": "src/arrmes/live_adapter.py",
+      "sha256_digest": "14fd9c87374a5f3736441f5e181c29d2bb69474bb410357e60c41869187f9af1"
+    },
+    {
+      "path": "src/arrmes/model.py",
+      "sha256_digest": "a3618d05cf257ae4dd92f2c25413e8188810010aa10069eac20a9faeb2d5b81b"
+    },
+    {
+      "path": "src/arrmes/planner.py",
+      "sha256_digest": "5b67ff3a80c6810f03903f72dc93cdda2cdc94a783a1b44b589c575dc5c4cbd1"
+    },
+    {
+      "path": "src/arrmes/probe.py",
+      "sha256_digest": "473b3cbd87e8fa1e1b374ec5fcd8888750ef3e4c6a5b95d40fcf226561abbdc8"
+    },
+    {
+      "path": "src/arrmes/protocol.py",
+      "sha256_digest": "6ce079a30c5c119d6816cdd66a5368e783d7252191386811b9b5834cb0db23d9"
+    },
+    {
+      "path": "src/arrmes/sandbox/__init__.py",
+      "sha256_digest": "3d24a42f654890e59903e0eaeecfbad9086f5e016721906d166fad4e6e7be8e0"
+    },
+    {
+      "path": "src/arrmes/sandbox/isolation.py",
+      "sha256_digest": "5ae98b74892812c46be6bb8dd75ea5ebff5498ec87f27881602fd6b625db92e9"
+    },
+    {
+      "path": "src/arrmes/sandbox/sanitize.py",
+      "sha256_digest": "7c437cc32dadbc00056c53fb505ca769812ca3e1a7d54b9ca0e68b329309e7c0"
+    },
+    {
+      "path": "src/arrmes/sandbox/server.py",
+      "sha256_digest": "f5dac79768e388b3a9e1e07dc0b5f402463c87988477d72cf3419228c099d851"
+    },
+    {
+      "path": "src/arrmes/server.py",
+      "sha256_digest": "665f07911084272a0e144ec18324775a1592a23473086371a3939cfc97a9be97"
+    },
+    {
+      "path": "src/arrmes/service_router.py",
+      "sha256_digest": "a9d6f8b618ff6253d4bfef62067251188d4e2b57e977ccd0339f22394fc1a9ce"
+    },
+    {
+      "path": "src/arrmes/services/__init__.py",
+      "sha256_digest": "83031f18ee6a4cb69ab599bbb3aede1131b42f9a9b43d33ab01f9aa4930322f3"
+    },
+    {
+      "path": "src/arrmes/services/contract.py",
+      "sha256_digest": "72b7c521126c53fa3dda70f93e9b8c9c933952862fd7cb3c5de6cd1872641abd"
+    },
+    {
+      "path": "src/arrmes/services/media.py",
+      "sha256_digest": "54ee4e979012eb59d544c340e52fc81fb404e310856826865f0b6b649a729ac6"
+    },
+    {
+      "path": "src/arrmes/services/native.py",
+      "sha256_digest": "103cabb0b422bba5afb84667298346e6f4938bc23e9efb74f8f0ef85fccc1959"
+    },
+    {
+      "path": "src/arrmes/services/routing.py",
+      "sha256_digest": "e8f36f38eae880ce9a287226a83e851f2531031896b27922ca11d481bd6ec22d"
+    },
+    {
+      "path": "src/arrmes/services/transfers.py",
+      "sha256_digest": "b1c1c79830135b46981455ee74a34ccd5b21f54068a0805fe13b910270960414"
+    },
+    {
+      "path": "src/arrmes/workflows.py",
+      "sha256_digest": "5eaf0e64adf8f365376be2841a43c9493648f04f2c8740698eac8f8b0e0d68c0"
+    }
+  ],
+  "fixture_file_sha256": "07a9b07d5ceebd79e89d6181de132b16ba29db14d36e260f44cc82f4d06a023c",
+  "fixture_transform": "AST module prefix before first test_* function, removing only import pytest; fixture handlers unchanged",
+  "fixture_prefix_sha256": "5c6d3f77e3971dd1ecfd7fed02dccf6a5c4a318ae8a8545c8d18c462b8a13667",
+  "harness_sha256": "8dbcf707d052b5e8040d95948940996576c26f8c4a989754a16f83d0b47173f7",
+  "repetitions": 10,
+  "warmups": "one execute and one route per task, excluded",
+  "order": "fixed task order repeated; serial, fresh HTTP connections, no concurrent load",
+  "tasks": [
+    {
+      "id": "NO1-01",
+      "query": "Show Sonarr health",
+      "expected_proposal": {
+        "name": "service_query",
+        "arguments": {
+          "service": "sonarr",
+          "operation": "health"
+        }
+      },
+      "expected_business_fields": {
+        "source": "native_api",
+        "operation": "health",
+        "complete_listing": true,
+        "healthy": true,
+        "server_version": "4.0.20"
+      }
+    },
+    {
+      "id": "NO1-02",
+      "query": "Show Sonarr queue",
+      "expected_proposal": {
+        "name": "service_query",
+        "arguments": {
+          "service": "sonarr",
+          "operation": "queue"
+        }
+      },
+      "expected_business_fields": {
+        "source": "native_api",
+        "operation": "queue",
+        "complete_listing": true,
+        "items.0.id": 77,
+        "items.0.status": "queued"
+      }
+    },
+    {
+      "id": "NO1-03",
+      "query": "Show Sonarr missing",
+      "expected_proposal": {
+        "name": "service_query",
+        "arguments": {
+          "service": "sonarr",
+          "operation": "missing"
+        }
+      },
+      "expected_business_fields": {
+        "source": "native_api",
+        "operation": "missing",
+        "complete_listing": true,
+        "items.0.id": 77,
+        "items.0.seriesId": 8
+      }
+    },
+    {
+      "id": "NO1-04",
+      "query": "Show Radarr queue",
+      "expected_proposal": {
+        "name": "service_query",
+        "arguments": {
+          "service": "radarr",
+          "operation": "queue"
+        }
+      },
+      "expected_business_fields": {
+        "source": "native_api",
+        "operation": "queue",
+        "complete_listing": true,
+        "items.0.id": 77,
+        "items.0.title": "Fixture title"
+      }
+    },
+    {
+      "id": "NO1-05",
+      "query": "Show Radarr library",
+      "expected_proposal": {
+        "name": "service_query",
+        "arguments": {
+          "service": "radarr",
+          "operation": "library"
+        }
+      },
+      "expected_business_fields": {
+        "source": "native_api",
+        "operation": "library",
+        "complete_listing": true,
+        "items.0.id": 1,
+        "items.0.title": "Fixture title"
+      }
+    },
+    {
+      "id": "NO1-06",
+      "query": "Show Lidarr library",
+      "expected_proposal": {
+        "name": "service_query",
+        "arguments": {
+          "service": "lidarr",
+          "operation": "library"
+        }
+      },
+      "expected_business_fields": {
+        "source": "native_api",
+        "operation": "library",
+        "complete_listing": true,
+        "items.0.id": 1,
+        "items.0.artistName": "Fixture title"
+      }
+    },
+    {
+      "id": "NO1-07",
+      "query": "Show Lidarr history",
+      "expected_proposal": {
+        "name": "service_query",
+        "arguments": {
+          "service": "lidarr",
+          "operation": "history"
+        }
+      },
+      "expected_business_fields": {
+        "source": "native_api",
+        "operation": "history",
+        "complete_listing": true,
+        "items.0.id": 77,
+        "items.0.sourceTitle": "Fixture title"
+      }
+    },
+    {
+      "id": "NO1-08",
+      "query": "Show missing movie subtitles in Bazarr",
+      "expected_proposal": {
+        "name": "service_query",
+        "arguments": {
+          "service": "bazarr",
+          "operation": "missing",
+          "media_type": "movie"
+        }
+      },
+      "expected_business_fields": {
+        "source": "native_api",
+        "operation": "missing",
+        "complete_listing": true,
+        "items.0.radarrId": 4,
+        "items.0.title": "Fixture title"
+      }
+    },
+    {
+      "id": "NO1-09",
+      "query": "Show movie subtitles for \"Sintel\" in Bazarr",
+      "expected_proposal": {
+        "name": "service_query",
+        "arguments": {
+          "service": "bazarr",
+          "operation": "subtitles",
+          "media_type": "movie",
+          "query": "Sintel"
+        }
+      },
+      "expected_business_fields": {
+        "source": "native_api",
+        "operation": "subtitles",
+        "complete_listing": true,
+        "items.0.radarrId": 4,
+        "items.0.title": "Sintel"
+      }
+    },
+    {
+      "id": "NO1-10",
+      "query": "Show qBittorrent activity",
+      "expected_proposal": {
+        "name": "service_query",
+        "arguments": {
+          "service": "qbittorrent",
+          "operation": "activity"
+        }
+      },
+      "expected_business_fields": {
+        "source": "native_api",
+        "operation": "activity",
+        "complete_listing": true,
+        "transfer.dl_info_speed": 3000,
+        "transfer.connection_status": "connected"
+      }
+    },
+    {
+      "id": "NO1-11",
+      "query": "Show qBittorrent queue",
+      "expected_proposal": {
+        "name": "service_query",
+        "arguments": {
+          "service": "qbittorrent",
+          "operation": "queue"
+        }
+      },
+      "expected_business_fields": {
+        "source": "native_api",
+        "operation": "queue",
+        "complete_listing": true,
+        "items.0.hash": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+        "items.0.name": "Fixture torrent"
+      }
+    },
+    {
+      "id": "NO1-12",
+      "query": "Show Tautulli activity",
+      "expected_proposal": {
+        "name": "service_query",
+        "arguments": {
+          "service": "tautulli",
+          "operation": "activity"
+        }
+      },
+      "expected_business_fields": {
+        "source": "native_api",
+        "operation": "activity",
+        "complete_listing": true,
+        "items.0.session_key": "0",
+        "items.0.title": "Fixture movie"
+      }
+    },
+    {
+      "id": "NO1-13",
+      "query": "Show Tautulli history",
+      "expected_proposal": {
+        "name": "service_query",
+        "arguments": {
+          "service": "tautulli",
+          "operation": "history"
+        }
+      },
+      "expected_business_fields": {
+        "source": "native_api",
+        "operation": "history",
+        "complete_listing": true,
+        "items.0.row_id": 1,
+        "items.0.full_title": "Fixture movie"
+      }
+    },
+    {
+      "id": "NO1-14",
+      "query": "Look up \"Fixture title\" in Seerr",
+      "expected_proposal": {
+        "name": "service_query",
+        "arguments": {
+          "service": "seerr",
+          "operation": "search",
+          "query": "Fixture title"
+        }
+      },
+      "expected_business_fields": {
+        "source": "native_api",
+        "operation": "search",
+        "complete_listing": true,
+        "items.0.id": 66,
+        "items.0.title": "Fixture movie"
+      }
+    }
+  ],
+  "controls": [
+    {
+      "id": "missing_auth",
+      "path": "/v1/execute",
+      "payload": {
+        "query": "Show Sonarr health"
+      },
+      "credential": "none",
+      "expected_http": 401
+    },
+    {
+      "id": "invalid_auth",
+      "path": "/v1/execute",
+      "payload": {
+        "query": "Show Sonarr health"
+      },
+      "credential": "invalid",
+      "expected_http": 401
+    },
+    {
+      "id": "scope_denied",
+      "path": "/v1/execute",
+      "payload": {
+        "query": "Show Sonarr health"
+      },
+      "credential": "no_scopes",
+      "expected_http": 403,
+      "expected_terminal": "denied"
+    },
+    {
+      "id": "write_abstention",
+      "path": "/v1/execute",
+      "payload": {
+        "query": "Pause \"Fixture torrent\" in qBittorrent"
+      },
+      "credential": "reader",
+      "expected_http": 200,
+      "expected_terminal": "clarify",
+      "expected_routing": "native_only_abstention"
+    },
+    {
+      "id": "write_confirmation_denied",
+      "path": "/v1/confirm",
+      "payload": {
+        "confirm_id": "not-issued-for-this-model-free-mode"
+      },
+      "credential": "reader",
+      "expected_http": 403,
+      "expected_terminal": "denied"
+    },
+    {
+      "id": "outside_grammar",
+      "path": "/v1/execute",
+      "payload": {
+        "query": "Make me a sandwich"
+      },
+      "credential": "reader",
+      "expected_http": 200,
+      "expected_terminal": "clarify",
+      "expected_routing": "native_only_abstention"
+    }
+  ]
+}

@@ -2,9 +2,12 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from copy import deepcopy
+from datetime import datetime, timezone
 import hashlib
 import hmac
 import json
+import math
 import os
 from pathlib import Path
 import re
@@ -20,7 +23,7 @@ from arrmes import __version__
 from arrmes.adapters import AdapterObservation, SandboxAdapter, _norm
 from arrmes.catalog import V2_BY_NAME, WRITE_EFFECT_ACTIONS
 from arrmes.planner import Principal, ResolutionRequired, prepare, resolve_title
-from arrmes.protocol import Call, normalized
+from arrmes.protocol import Call, normalized, validate_call
 
 _REDACT_QUERY_RE = re.compile(r"([?&](?:apikey|api_key|token|key)=)[^&#\s]+", re.IGNORECASE)
 # Read-only POST endpoints (queries expressed as POST bodies); safe to replay.
@@ -154,7 +157,7 @@ class WriteConfirmationStore:
         max_pending_per_subject: int = 16,
         max_consumed_tombstones: int = 512,
     ) -> None:
-        if ttl_seconds <= 0:
+        if isinstance(ttl_seconds, bool) or not math.isfinite(ttl_seconds) or ttl_seconds <= 0:
             raise ValueError("ttl_seconds must be > 0")
         if max_pending_total <= 0 or max_pending_per_subject <= 0 or max_consumed_tombstones < 0:
             raise ValueError("Confirmation store capacity bounds must be positive")
@@ -167,16 +170,19 @@ class WriteConfirmationStore:
         self._lock = threading.Lock()
         self._tokens: dict[str, WriteConfirmationToken] = {}
 
-    def _sign(self, confirm_id: str, subject: str, call_name: str, arguments: dict[str, Any], expires_at: float) -> str:
+    def _sign(self, confirm_id: str, subject: str, call_name: str, arguments: dict[str, Any], expires_at: float,
+              resolved_entity: dict[str, Any]) -> str:
         payload = json.dumps(
             {
                 "confirm_id": confirm_id,
                 "subject": subject,
                 "call_name": call_name,
                 "arguments": arguments,
-                "expires_at": round(expires_at, 3),
+                "resolved_entity": resolved_entity,
+                "expires_at": expires_at,
             },
             sort_keys=True,
+            allow_nan=False,
         ).encode("utf-8")
         return hmac.new(self._secret, payload, hashlib.sha256).hexdigest()
 
@@ -184,7 +190,7 @@ class WriteConfirmationStore:
         expired_ids = [
             cid
             for cid, tok in self._tokens.items()
-            if cid != preserve_id and ts > tok.expires_at
+            if cid != preserve_id and ts >= tok.expires_at
         ]
         for cid in expired_ids:
             self._tokens.pop(cid, None)
@@ -232,18 +238,25 @@ class WriteConfirmationStore:
         resolved_entity: dict[str, Any] | None = None,
         now: float | None = None,
     ) -> WriteConfirmationToken:
+        call = validate_call(call.name, call.arguments)
+        if call.name not in WRITE_EFFECT_ACTIONS:
+            raise ValueError("Confirmation tokens are only valid for write actions")
         norm = normalized(call)
         ts = float(self._clock() if now is None else now)
+        if not math.isfinite(ts):
+            raise ValueError("Confirmation time must be finite")
         expires = ts + self.ttl_seconds
         cid = f"arrmes-confirm-{secrets.token_hex(12)}"
-        sig = self._sign(cid, principal.subject, norm["name"], norm["arguments"], expires)
+        entity = deepcopy(resolved_entity or {})
+        arguments = deepcopy(norm["arguments"])
+        sig = self._sign(cid, principal.subject, norm["name"], arguments, expires, entity)
         tok = WriteConfirmationToken(
             confirm_id=cid,
             subject=principal.subject,
             call_name=norm["name"],
-            arguments=norm["arguments"],
+            arguments=arguments,
             summary=summary,
-            resolved_entity=resolved_entity or {},
+            resolved_entity=entity,
             created_at=ts,
             expires_at=expires,
             signature=sig,
@@ -257,21 +270,23 @@ class WriteConfirmationStore:
 
     def redeem(self, confirm_id: str, principal: Principal, *, now: float | None = None) -> tuple[WriteConfirmationToken | None, str | None]:
         ts = float(self._clock() if now is None else now)
+        if not math.isfinite(ts):
+            raise ValueError("Confirmation time must be finite")
         with self._lock:
             self._prune_locked(ts, preserve_id=confirm_id)
             tok = self._tokens.get(confirm_id)
             if tok is None:
                 return None, "confirmation_not_found"
             if tok.subject != principal.subject:
-                if ts > tok.expires_at:
+                if ts >= tok.expires_at:
                     self._tokens.pop(confirm_id, None)
                 return None, "confirmation_subject_mismatch"
             if tok.consumed:
                 return None, "confirmation_already_consumed"
-            if ts > tok.expires_at:
+            if ts >= tok.expires_at:
                 self._tokens.pop(confirm_id, None)
                 return None, "confirmation_expired"
-            expected_sig = self._sign(tok.confirm_id, tok.subject, tok.call_name, tok.arguments, tok.expires_at)
+            expected_sig = self._sign(tok.confirm_id, tok.subject, tok.call_name, tok.arguments, tok.expires_at, tok.resolved_entity)
             if not hmac.compare_digest(tok.signature, expected_sig):
                 return None, "confirmation_signature_invalid"
             tok.consumed = True
@@ -372,12 +387,46 @@ class LiveGatewayAdapter(SandboxAdapter):
             request_owner_subject if request_owner_subject is not None else os.environ.get("ARRMES_REQUEST_OWNER_SUBJECT", "")
         ).strip()
         self._active_effect: str = "read"
+        # The inherited read/write transport guard uses per-execution state.
+        # Serialize the entire adapter call across principals, including confirm.
+        self._execution_lock = threading.RLock()
+        self._confirmed_entity: dict[str, Any] | None = None
         # Sandbox semantics are selected explicitly, never inferred from a loopback URL or from
         # supplied credentials, so production identity and unsupported-action gates always apply.
         if sandbox and parsed_url.hostname not in {"127.0.0.1", "localhost", "::1"}:
             raise ValueError("sandbox=True requires a loopback SandboxCluster URL")
         self._is_sandbox_backend = bool(sandbox)
         self._catalog_cache: dict[str, tuple[float, int, Any]] = {}
+
+    @staticmethod
+    def _entity_binding(name: str, args: dict[str, Any], entity: dict[str, Any]) -> dict[str, Any]:
+        if name == "tv_search_missing":
+            return {"series_id": entity.get("series_id"), "title": _norm(str(entity.get("title", ""))),
+                    "year": entity.get("year")}
+        if name == "movie_search":
+            return {"movie_id": entity.get("movie_id"), "title": _norm(str(entity.get("title", ""))),
+                    "year": entity.get("year")}
+        if name == "music_search":
+            binding = {"artist_id": entity.get("artist_id"), "artist": _norm(str(entity.get("artist", "")))}
+            if "album" in args:
+                binding["album_ids"] = sorted(a["id"] for a in entity.get("albums", []) if isinstance(a, dict) and type(a.get("id")) is int)
+            return binding
+        if name in {"torrent_pause", "torrent_resume"}:
+            return {"hash": entity.get("hash")}
+        if name == "request_media":
+            return {"tmdb_id": entity.get("tmdb_id"), "media_type": entity.get("media_type")}
+        return {}
+
+    def _guard_confirmed_entity(self, name: str, args: dict[str, Any], entity: dict[str, Any],
+                                audit: list[dict[str, Any]]) -> AdapterObservation | None:
+        if self._confirmed_entity is None:
+            return None
+        expected = self._entity_binding(name, args, self._confirmed_entity)
+        actual = self._entity_binding(name, args, entity)
+        if expected != actual:
+            return AdapterObservation("denied", V2_BY_NAME[name].service, name, 409, False,
+                                      {"error": "confirmation_entity_changed", "requires_new_confirmation": True}, audit)
+        return None
 
     def _auth_headers_for(self, service: str, *, principal: Principal | None = None) -> dict[str, str]:
         headers: dict[str, str] = {}
@@ -434,7 +483,11 @@ class LiveGatewayAdapter(SandboxAdapter):
             and method == "GET"
             and path in {"/sonarr/api/v3/series", "/radarr/api/v3/movie", "/lidarr/api/v1/artist"}
         )
-        if cacheable:
+        # Confirmation must resolve the current upstream entity, even when the
+        # preflight just populated this cache. Reusing that snapshot would hide
+        # a replaced library ID or changed title/year before mutation. Successful
+        # fresh reads can still refresh the ordinary read cache below.
+        if cacheable and self._confirmed_entity is None:
             cached = self._catalog_cache.get(path)
             if cached is not None and (time.time() - cached[0]) < 60.0:
                 audit.append({"method": method, "path": safe_path, "status": cached[1], "attempt": 0, "cached": True})
@@ -514,20 +567,40 @@ class LiveGatewayAdapter(SandboxAdapter):
             c2, payload = self._request_json("GET", f"/sonarr/api/v3/wanted/missing?{q}", headers=headers, audit=audit)
             if c2 != 200:
                 return AdapterObservation("error", "sonarr", "tv_missing", c2, False, payload, audit)
-            records = payload.get("records", [])
+            if not isinstance(payload, dict) or not isinstance(payload.get("records"), list) or not all(isinstance(r, dict) for r in payload["records"]):
+                return AdapterObservation("error", "sonarr", "tv_missing", 502, False,
+                                          {"error": "malformed_missing_response"}, audit)
+            records = payload["records"]
             if any(isinstance(r, dict) and "seriesId" in r and r.get("seriesId") != resolved["id"] for r in records):
                 c_ep, ep_list = self._request_json("GET", f"/sonarr/api/v3/episode?seriesId={resolved['id']}", headers=headers, audit=audit)
                 if c_ep == 200 and isinstance(ep_list, list):
                     inc_bool = bool(args.get("include_specials", False))
-                    all_records = [
-                        e for e in ep_list
-                        if isinstance(e, dict)
-                        and not e.get("hasFile", False)
-                        and e.get("monitored", True)
-                        and (inc_bool or int(e.get("seasonNumber", 0) or 0) > 0)
-                    ]
+                    all_records = []
+                    now_utc = datetime.now(timezone.utc)
+                    for episode in ep_list:
+                        if (not isinstance(episode, dict)
+                                or type(episode.get("seriesId")) is not int or episode["seriesId"] != resolved["id"]
+                                or type(episode.get("seasonNumber")) is not int or episode["seasonNumber"] < 0
+                                or type(episode.get("hasFile")) is not bool
+                                or type(episode.get("monitored")) is not bool):
+                            return AdapterObservation("error", "sonarr", "tv_missing", 502, False,
+                                                      {"error": "malformed_series_episode_response"}, audit)
+                        if episode["hasFile"] or not episode["monitored"] or (not inc_bool and episode["seasonNumber"] == 0):
+                            continue
+                        air_date = episode.get("airDateUtc")
+                        try:
+                            aired_at = datetime.fromisoformat(air_date.replace("Z", "+00:00")) if isinstance(air_date, str) else None
+                        except ValueError:
+                            aired_at = None
+                        if aired_at is None or aired_at.tzinfo is None:
+                            return AdapterObservation("error", "sonarr", "tv_missing", 502, False,
+                                                      {"error": "episode_air_date_unavailable"}, audit)
+                        if aired_at <= now_utc:
+                            all_records.append(episode)
                     total_records = len(all_records)
                     break
+                return AdapterObservation("error", "sonarr", "tv_missing", c_ep if c_ep != 200 else 502, False,
+                                          {"error": "series_episode_fallback_failed"}, audit)
             all_records.extend(records)
             total_records = int(payload.get("totalRecords", 0) or 0)
             if len(all_records) >= total_records or not records:
@@ -572,6 +645,10 @@ class LiveGatewayAdapter(SandboxAdapter):
                 {"slot": "reference", "reason": "series_not_uniquely_resolved", "title": args["title"]},
                 audit,
             )
+        changed = self._guard_confirmed_entity("tv_search_missing", args,
+                                               {"series_id": resolved["id"], "title": resolved["title"], "year": resolved.get("year")}, audit)
+        if changed is not None:
+            return changed
         cmd_body: dict[str, Any] = {"seriesId": resolved["id"]}
         if "season" in args:
             cmd_body["name"] = "SeasonSearch"
@@ -635,6 +712,10 @@ class LiveGatewayAdapter(SandboxAdapter):
                 },
                 audit,
             )
+        changed = self._guard_confirmed_entity("movie_search", args,
+                                               {"movie_id": resolved["id"], "title": resolved["title"], "year": resolved.get("year")}, audit)
+        if changed is not None:
+            return changed
         body = {"name": "MoviesSearch", "movieIds": [resolved["id"]]}
         c2, cmd_resp = self._request_json("POST", "/radarr/api/v3/command", headers=headers, body=body, audit=audit)
         cmd_id = _valid_command_id(cmd_resp)
@@ -672,6 +753,9 @@ class LiveGatewayAdapter(SandboxAdapter):
         status_obs = self.execute_music_status(args, principal, idempotency_key=idempotency_key, audit=audit)
         if status_obs.status != "verified_ok":
             return AdapterObservation(status_obs.status, "lidarr", "music_search", status_obs.http_status, False, status_obs.data, audit)
+        changed = self._guard_confirmed_entity("music_search", args, status_obs.data, audit)
+        if changed is not None:
+            return changed
         headers = self._auth_headers_for("lidarr", principal=principal)
         if "album" in args:
             album_ids = [al["id"] for al in status_obs.data["albums"]]
@@ -841,7 +925,8 @@ class LiveGatewayAdapter(SandboxAdapter):
             audit,
         )
 
-    def execute_request_media(self, args: dict[str, Any], principal: Principal, *, idempotency_key: str | None, audit: list[dict[str, Any]]) -> AdapterObservation:
+    def execute_request_media(self, args: dict[str, Any], principal: Principal, *, idempotency_key: str | None,
+                              audit: list[dict[str, Any]], resolve_only: bool = False) -> AdapterObservation:
         if self._is_sandbox_backend:
             return super().execute_request_media(args, principal, idempotency_key=idempotency_key, audit=audit)
         if not self.request_owner_subject or principal.subject != self.request_owner_subject:
@@ -904,9 +989,18 @@ class LiveGatewayAdapter(SandboxAdapter):
                 audit,
             )
         chosen = candidates[0]
-        tmdb_id = int(chosen["id"])
+        tmdb_id = chosen.get("id")
+        if type(tmdb_id) is not int or tmdb_id <= 0:
+            return AdapterObservation("error", "requests", "request_media", 502, False,
+                                      {"error": "invalid_tmdb_identity"}, audit)
         yr_str = str(chosen.get("year", ""))
         yr_val = int(yr_str) if yr_str.isdigit() else year_arg
+        entity = {"tmdb_id": tmdb_id, "title": chosen["title"], "media_type": mtype, "year": yr_val}
+        if resolve_only:
+            return AdapterObservation("verified_ok", "requests", "request_media", 200, True, entity, audit)
+        changed = self._guard_confirmed_entity("request_media", args, entity, audit)
+        if changed is not None:
+            return changed
         if chosen.get("status") in {"available", "requested", "downloading"}:
             return AdapterObservation(
                 "verified_ok",
@@ -969,20 +1063,16 @@ class LiveGatewayAdapter(SandboxAdapter):
             "seer_discover",
             200,
             True,
-            {"category": cat, "media_type": mtype, "slug": slug, "results": results[:20], "count": len(results)},
+            {"category": cat, "media_type": mtype, "slug": slug, "results": results[:20], "count": len(results),
+             "source": "request_portal_discovery", "native_seerr_verified": False},
             audit,
         )
 
     def execute_armiger_parse(self, args: dict[str, Any], principal: Principal, *, idempotency_key: str | None, audit: list[dict[str, Any]]) -> AdapterObservation:
         if self._is_sandbox_backend:
             return super().execute_armiger_parse(args, principal, idempotency_key=idempotency_key, audit=audit)
-        parsed = _parse_release_metadata(args["release_name"])
-        code, cat_resp = self._request_json("GET", "/image-gen/v1/catalog", audit=audit)
-        if code == 200 and isinstance(cat_resp, dict):
-            models = cat_resp.get("models", [])
-            armiger_ready = any(isinstance(m, dict) and "armiger" in str(m.get("id", "")) and m.get("ready") for m in models)
-            parsed["armiger_gateway_ready"] = armiger_ready
-        return AdapterObservation("verified_ok", "armiger", "armiger_parse", 200, True, parsed, audit)
+        return AdapterObservation("unsupported", "armiger", "armiger_parse", 501, False,
+                                  {"error": "native_armiger_integration_not_implemented"}, audit)
 
     def execute_bitmagnet_search(self, args: dict[str, Any], principal: Principal, *, idempotency_key: str | None, audit: list[dict[str, Any]]) -> AdapterObservation:
         if self._is_sandbox_backend:
@@ -1012,19 +1102,8 @@ class LiveGatewayAdapter(SandboxAdapter):
     def execute_waypoint_status(self, args: dict[str, Any], principal: Principal, *, idempotency_key: str | None, audit: list[dict[str, Any]]) -> AdapterObservation:
         if self._is_sandbox_backend:
             return super().execute_waypoint_status(args, principal, idempotency_key=idempotency_key, audit=audit)
-        code, resp = self._request_json("GET", "/commskip/api/v1/batches", audit=audit)
-        if code != 200 or not isinstance(resp, dict):
-            return AdapterObservation("error", "dh-waypoint", "waypoint_status", code, False, resp if isinstance(resp, dict) else {}, audit)
-        batches = resp.get("batches", [])
-        return AdapterObservation(
-            "verified_ok",
-            "dh-waypoint",
-            "waypoint_status",
-            200,
-            True,
-            {"status": "healthy", "batch_count": len(batches), "batches": batches[:5]},
-            audit,
-        )
+        return AdapterObservation("unsupported", "dh-waypoint", "waypoint_status", 501, False,
+                                  {"error": "native_waypoint_integration_not_implemented"}, audit)
 
     def _preflight_write_resolution(
         self,
@@ -1099,6 +1178,14 @@ class LiveGatewayAdapter(SandboxAdapter):
                         {},
                         "",
                     )
+                if not self._is_sandbox_backend:
+                    obs = self.execute_request_media(args, principal, idempotency_key=None, audit=audit, resolve_only=True)
+                    if obs.status != "verified_ok":
+                        return obs, {}, ""
+                    entity = obs.data
+                    yr = f" ({entity['year']})" if entity.get("year") is not None else ""
+                    summary = f"Submit new {entity['media_type']} request for '{entity['title']}'{yr}"
+                    return None, entity, summary
                 yr = f" ({args['year']})" if "year" in args else ""
                 summary = f"Submit new {args['media_type']} request for '{args['title']}'{yr}"
                 return None, {"title": args["title"], "media_type": args["media_type"], "year": args.get("year")}, summary
@@ -1113,6 +1200,14 @@ class LiveGatewayAdapter(SandboxAdapter):
         *,
         idempotency_key: str | None = None,
         bypass_write_gate: bool = False,
+    ) -> AdapterObservation:
+        with self._execution_lock:
+            return self._execute_locked(call, principal, idempotency_key=idempotency_key,
+                                        bypass_write_gate=bypass_write_gate)
+
+    def _execute_locked(
+        self, call: Call, principal: Principal, *, idempotency_key: str | None,
+        bypass_write_gate: bool,
     ) -> AdapterObservation:
         norm = normalized(call)
         name = norm["name"]
@@ -1188,6 +1283,13 @@ class LiveGatewayAdapter(SandboxAdapter):
         idempotency_key: str | None = None,
         now: float | None = None,
     ) -> AdapterObservation:
+        with self._execution_lock:
+            return self._confirm_write_locked(confirm_id, principal, idempotency_key=idempotency_key, now=now)
+
+    def _confirm_write_locked(
+        self, confirm_id: str, principal: Principal, *,
+        idempotency_key: str | None, now: float | None,
+    ) -> AdapterObservation:
         tok, err = self.confirmation_store.redeem(confirm_id, principal, now=now)
         if err is not None or tok is None:
             status_code = 403 if err == "confirmation_subject_mismatch" else (409 if err == "confirmation_already_consumed" else 404)
@@ -1212,4 +1314,10 @@ class LiveGatewayAdapter(SandboxAdapter):
                 data={"error": "permission_required", "confirm_id": confirm_id},
                 audit_trail=[],
             )
-        return self.execute(call, principal, idempotency_key=idempotency_key or confirm_id, bypass_write_gate=True)
+        self._confirmed_entity = tok.resolved_entity
+        try:
+            observation = self.execute(call, principal, idempotency_key=idempotency_key or confirm_id, bypass_write_gate=True)
+            observation.data = {**observation.data, "confirmed_call": normalized(call)}
+            return observation
+        finally:
+            self._confirmed_entity = None

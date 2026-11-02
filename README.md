@@ -2,7 +2,7 @@
 
 <p align="center">
   <strong>A bounded local tool-calling router and execution verifier for self-hosted media and download stacks.</strong><br>
-  Routes natural-language requests across nine self-hosted services in about a quarter of a second on local hardware, with no cloud calls and single-use confirmation for write operations.
+  Native media-service workflows, optional MLX or portable GGUF inference, and single-use confirmation for consequential writes.
 </p>
 
 <p align="center">
@@ -14,88 +14,87 @@
   <a href="https://buy.stripe.com/8x26oH2U44f65TRe574wM04"><img alt="Donate" src="https://img.shields.io/badge/donate-Stripe-635bff.svg?logo=stripe&logoColor=white"></a>
 </p>
 
-<p align="center">
-  <img src="docs/assets/arrmes-v5-speed-and-cost-comparison.png" width="900" alt="Measured local latency and accuracy of Arrmes models, and an estimated cloud API cost per thousand tasks.">
-  <br>
-  <em>Local latency and accuracy are measured on the sealed qualification suite; cloud costs are list-price estimates.</em>
-</p>
-
-Arrmes is a compact local function-calling router and deterministic policy guardrail for operators running Sonarr, Radarr, Lidarr, Tautulli, qBittorrent, Seer, media request portals, Bitmagnet, and release parsers. It pairs a 4-bit Qwen3 0.6B base with a fine-tuned LoRA adapter (about 344 MB together) and an entity-agnostic pre-dispatch verification boundary, so read queries route in roughly a quarter of a second and write operations require explicit confirmation.
+Arrmes turns media-stack requests into validated tool calls. A small local model handles the released media intents; a separate deterministic route adds native service reads. Trusted code owns service credentials, entity resolution, permissions, confirmation and execution.
 
 ## What it does
 
-**Deterministic twenty-action tool contract.** Arrmes maps natural-language utterances into twenty strictly typed operations (`arrmes.tools.v2`) spanning library status lookups, missing-episode audits, indexer searches, media requests, stream activity, watch history, torrent queue inspection, and single-item transfer control. Every proposed call is validated against strict JSON schema, argument bounds, and caller permission scopes before reaching any adapter.
+- **Native read workflows:** 29 service/operation pairs across Sonarr, Radarr, Lidarr, Bazarr, qBittorrent, Tautulli and Seerr. Inspect libraries, missing media or subtitles, metadata search, queues, history, activity and health where each service supports them. [Capabilities and exact limits](docs/capabilities.md).
+- **Direct execution of existing media intents:** the trained `tv_status`, `tv_missing`, `movie_status`, `music_status`, `now_playing` and `watch_history` actions now use native service adapters when configured. They do not require the legacy gateway.
+- **Confirmed transfer control:** list torrents and pause/resume one exact, uniquely resolved transfer through native qBittorrent 4.1+ or 5.x APIs. Confirmation binds the caller, arguments, torrent hash, service version and expiry. Mutations are never automatically retried.
+- **Bounded independent reads:** “Show Sonarr queue and Radarr history” validates every clause and scope before execution. An unavailable service produces a partial result while other independent reads continue. Compound writes remain unsupported.
+- **A preserved neural contract:** `arrmes.tools.v2` has 18 service actions plus `clarify` and `unsupported`. New native reads use `arrmes.tools.v3` and report `routing_source=explicit_service_deterministic`; they are not newly trained v6 model capabilities.
+- **Portable inference:** optional native llama.cpp/GGUF on CPU, with explicit accelerator selection; optional MLX on Apple Silicon. CPU inference installs neither CUDA nor MLX. [Runtime setup, conversion and tested platforms](docs/portable-runtime.md).
 
-**Entity-agnostic pre-dispatch verification.** Before any tool call leaves the router, `verify_proposal` confirms that extracted titles, artists, albums, and release strings are grounded either in the user utterance or in the caller's verified `SessionEntityLedger`. Unbound pronouns, missing titles, compound multi-action prompts, and destructive requests (`delete`, `wipe`, `pause all`, credential probes) are deterministically routed to structured `clarify` or `unsupported` responses with zero unsafe write executions.
+Every dispatch validates the tool, arguments, entity and caller scopes. The HTTP service requires bearer authentication and explicit confirmation for consequential writes. Execution references come from a verified per-caller ledger. Credentials are kept out of model prompts, image layers and audit responses.
 
-**Propose-and-confirm write gating.** Read-only actions enforce an HTTP `GET` transport invariant and redact upstream API tokens from audit trails. Write-effect actions first resolve the target entity via read-only lookup, then mint an HMAC-SHA256 confirmation token (`confirm_id`, default TTL 300 seconds) bound to the authenticated principal and canonical arguments; no upstream state changes until the caller redeems that token.
+## Measurements and scope
 
-**Fast local inference with no API charges.** A 4-bit base model with an fp16 rank-8 LoRA adapter and dual system/tool KV prefix caching completes warm tool-call routing in roughly 230–245 ms (measured p50 on an Apple M4 Pro) with a ~344 MB disk footprint.
+The original 230–245 ms warm p50 claim timed generation only. Prompt preparation, verification, HTTP handling and service execution must be measured separately. The original roughly 344 MB of model/adapter files is not a runtime RAM measurement; the published adapter tensors are float32. The current public adapter also differs from a retained research checkpoint with the same v6 label, so their results are recorded separately.
 
-<p align="center">
-  <img src="docs/assets/arrmes-v2-benchmarks.png" width="900" alt="Exact tool-call accuracy progression from untuned baselines to Arrmes across six held-out benchmarks.">
-</p>
+New comparisons retain raw model predictions, translated-format scores, verifier decisions and controlled fixture execution as separate tracks. See the [comparison report](docs/benchmark-comparison.md) and versioned inputs under `data/overnight-v1/`. Historical sealed-suite results are not a substitute for performance on new requests.
+
+The native adapters are validated against loopback HTTP fixtures. A separate empty-library Sonarr 4.0.20.3014 instance also passes selected read checks through a GET-only Docker transport bridge. Broader upstream versions, seeded entities, large libraries and production writes still need qualification. Native Bitmagnet integration, subtitle mutations, request lifecycle management and genuine Armiger/DH-Waypoint adapters remain gaps. The old gateway Armiger and Waypoint substitutions now return unsupported.
 
 ## Install
 
-### Apple Silicon — from source
-
-Inference uses MLX on Apple Silicon. Install the package and the MLX extra in an isolated virtual environment, then provide the base model, adapter, client registry and gateway URL (see Configuration):
+Use Python 3.12 or newer and an isolated environment:
 
 ```sh
 git clone https://github.com/spencernorton/arrmes.git
 cd arrmes
 python3 -m venv .venv
-.venv/bin/pip install -e ".[mlx,test]"
-.venv/bin/python -m arrmes.server
+.venv/bin/pip install -e ".[test]"
 ```
 
-A Linux inference runtime and container image are not provided yet.
+Install a pinned native llama.cpp runtime separately and provide a fused GGUF for CPU inference. The [runtime guide](docs/portable-runtime.md) includes Linux and native Windows instructions, optional NVIDIA configuration, reproducible CPU-only export and Linux container packaging. Docker images are built locally from this source; this repository does not claim a pre-published Arrmes container image.
 
-## Documentation
-
-- [CHANGELOG.md](CHANGELOG.md) — release history and contract changes.
-- [SECURITY.md](SECURITY.md) — trust boundary, write-confirmation invariants, and vulnerability reporting.
-- [SUPPORT.md](SUPPORT.md) — usage questions and issue routing.
-- [CONTRIBUTING.md](CONTRIBUTING.md) — development workflow, testing requirements, and scope rules.
+For Apple Silicon MLX, install `.[mlx]` and provide the pinned base and adapter directories. Keep the original release artifacts intact when exporting GGUF variants.
 
 ## Configuration
 
-Configure the HTTP server (`arrmes.server`) through environment variables:
+- `ARRMES_CLIENTS_FILE` — required bearer-digest registry. The registry alone assigns subjects and scopes; request bodies cannot override identity.
+- `ARRMES_SERVICES_FILE` — operator file containing native API roots and credentials. Native-only installations do not require a gateway.
+- `ARRMES_GATEWAY_URL` — optional legacy gateway. Existing gateway operations remain a separate integration with their documented restrictions.
+- `ARRMES_BACKEND` — `auto`, `mlx` or `llama-server`.
+- `ARRMES_BACKEND=native-only` — an optional model-free, read-only mode for the explicit service grammar. It loads no weights or inference runtime and clarifies requests outside that grammar.
+- `ARRMES_MODEL_PATH` — MLX directory or fused GGUF file; `ARRMES_ADAPTER_PATH` applies to MLX. An unfused adapter is rejected on the GGUF path.
+- `ARRMES_INFERENCE_URL` — optional explicitly configured native llama-server origin; otherwise the selected GGUF starts a managed local process.
+- `ARRMES_DEVICE` — portable backend device selection; `cpu` is the default. See the runtime guide for supported accelerator names and platform qualification.
+- `ARRMES_WRITE_MODE` — `confirm` (default), `shadow` or `disabled`. The HTTP entry point refuses direct mutations.
+- `ARRMES_BIND_HOST` / `ARRMES_PORT` — default `127.0.0.1:8095`.
+- `ARRMES_REQUEST_OWNER_SUBJECT` — the legacy gateway credential's request-owner subject. Other callers cannot submit gateway media requests.
 
-- `ARRMES_CLIENTS_FILE` — required. JSON client registry, `{"clients": [{"subject": "user:alice", "token_sha256": "<sha256 of the bearer token>", "scopes": ["media:read", ...]}]}`. Caller identity and scopes come only from this registry; request bodies may not carry them. The service refuses to start without it.
-- `ARRMES_GATEWAY_URL` — required. Base URL of the self-hosted API gateway.
-- `ARRMES_WRITE_MODE` — `confirm` (default; single-use confirmation tokens), `shadow` (log proposed writes without executing them), `disabled`, or `direct`.
-- `ARRMES_MODEL_PATH` / `ARRMES_ADAPTER_PATH` — the 4-bit base model directory and LoRA adapter directory.
-- `ARRMES_BIND_HOST` / `ARRMES_PORT` — listen address and port (default `127.0.0.1:8095`).
-- `ARRMES_REQUEST_OWNER_SUBJECT` — the one client subject allowed to submit live media requests; the request service attributes gateway submissions to the gateway credential's owner, so other callers are refused.
+After configuring a model, client registry and service registry:
 
-## Where your data lives
+```sh
+.venv/bin/python -m arrmes.server
+```
 
-- `./models/` — pinned local model weights and tokenizer files (read-only at runtime).
-- `./adapters/` — fine-tuned LoRA adapter checkpoints (read-only at runtime).
-- In-memory `SessionEntityLedger` and `WriteConfirmationStore` — ephemeral per-principal entity context (3-turn TTL) and pending confirmation tokens (300-second TTL), cleared on process restart.
+For explicit native reads alone, set `ARRMES_BACKEND=native-only` with the two registries and run the same command. No model path is needed. This mode supports requests such as “Show Sonarr queue”; it does not offer neural entity inference or transfer writes. Restart the service after changing either registry.
 
-Nothing leaves the machine: inference runs locally and service calls go only to the configured self-hosted gateway.
+## Where data lives
 
-## Contributing and support
+Models and adapters stay in operator-selected local directories. Entity ledgers and pending confirmations are ephemeral and clear on process restart. Inference receives the query, selected media context and tool descriptions. Service credentials remain in trusted adapters; service calls go to configured API roots.
 
-- Questions, setup help, and general discussion belong in [GitHub Discussions](https://github.com/spencernorton/arrmes/discussions), and reproducible defects belong in [GitHub Issues](https://github.com/spencernorton/arrmes/issues).
-- Report security issues through [GitHub private vulnerability reporting](https://github.com/spencernorton/arrmes/security/advisories/new) as described in [SECURITY.md](SECURITY.md). There is no e-mail address; that is deliberate.
-- Read [CONTRIBUTING.md](CONTRIBUTING.md) before opening a pull request; pull requests are reviewed and squash-merged here.
-- If Arrmes is useful in your stack, you can support ongoing maintenance via [Stripe](https://buy.stripe.com/8x26oH2U44f65TRe574wM04).
+## Documentation and support
+
+- [Capabilities](docs/capabilities.md), [runtime guide](docs/portable-runtime.md), [comparison report](docs/benchmark-comparison.md) and [implementation decisions](docs/implementation-decisions-2026-11-01.md).
+- [Changelog](CHANGELOG.md), [security policy](SECURITY.md), [support](SUPPORT.md) and [contributing](CONTRIBUTING.md).
+- Questions belong in [Discussions](https://github.com/spencernorton/arrmes/discussions); reproducible defects belong in [Issues](https://github.com/spencernorton/arrmes/issues).
+- Report security issues through [private vulnerability reporting](https://github.com/spencernorton/arrmes/security/advisories/new).
+- Support maintenance through [Stripe](https://buy.stripe.com/8x26oH2U44f65TRe574wM04).
 
 ## Development
 
-Run the full sandbox verification and unit test suite:
-
 ```sh
-.venv/bin/pytest -q
+.venv/bin/python -m pytest -q
 ```
+
+Core tests use no weights, CUDA or MLX. Export-specific tensor tests run when the optional conversion environment is installed. Benchmark commands and provenance are documented in the comparison report.
 
 ## Licence
 
-[MIT](LICENSE) © Spencer Norton
+[MIT](LICENSE) © Spencer Norton. Model licenses and redistribution notices are separate; preserve the pinned model's license and attribution during conversion.
 
 ---
 

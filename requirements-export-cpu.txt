@@ -1,0 +1,11 @@
+# Optional conversion environment only; do not install these for GGUF inference.
+# Install torch==2.15.0 separately from the official CPU wheel index on Linux or
+# Windows: pip install torch==2.15.0 --index-url https://download.pytorch.org/whl/cpu
+# Apple Silicon's ordinary torch==2.15.0 wheel is also CPU-only.
+numpy==2.5.4
+safetensors==0.8.0
+transformers==5.22.1
+sentencepiece==0.2.2
+PyYAML==6.0.3
+tqdm==4.70.1
+requests==2.34.2

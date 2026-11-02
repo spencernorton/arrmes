@@ -6,7 +6,7 @@ import re
 from typing import Any
 
 from jsonschema import Draft202012Validator
-from .catalog import BY_NAME, V2_BY_NAME
+from .catalog import BY_NAME, V2_BY_NAME, V3_BY_NAME
 
 
 class InvalidCall(ValueError):
@@ -28,8 +28,8 @@ def _unique(pairs):
     return result
 
 
-def validate_call(name: str, arguments: dict, *, allow_v2: bool = True) -> Call:
-    registry = V2_BY_NAME if allow_v2 else BY_NAME
+def validate_call(name: str, arguments: dict, *, allow_v2: bool = True, allow_v3: bool = True) -> Call:
+    registry = (V3_BY_NAME if allow_v3 else V2_BY_NAME) if allow_v2 else BY_NAME
     if not isinstance(name, str) or name not in registry:
         raise InvalidCall("Unknown action")
     if not isinstance(arguments, dict):
@@ -39,6 +39,12 @@ def validate_call(name: str, arguments: dict, *, allow_v2: bool = True) -> Call:
     if errors:
         # Do not repeat potentially sensitive/injected argument values in errors.
         raise InvalidCall("Arguments do not match the action schema")
+    if name == "service_query":
+        from .services import validate_service_query
+        try:
+            arguments = validate_service_query(arguments)
+        except ValueError as exc:
+            raise InvalidCall("Unsupported service read or arguments") from exc
     # jsonschema permits a mathematically integral float for integer. The wire
     # contract deliberately accepts JSON integer tokens only, and never bool IDs.
     for k, v in arguments.items():
@@ -124,7 +130,7 @@ def decode(raw: str, family: str = "functiongemma") -> Call:
         match = re.fullmatch(r"\s*<start_function_call>call:([A-Za-z_][A-Za-z_0-9]*)(\{.*\})<end_function_call>\s*", raw, re.S)
         if not match:
             raise InvalidCall("Expected exactly one complete native tool call")
-        return validate_call(match[1], _GemmaArguments(match[2]).parse())
+        return validate_call(match[1], _GemmaArguments(match[2]).parse(), allow_v3=False)
     if family == "hermes":
         match = re.fullmatch(r"\s*(?:<think>\s*</think>\s*)?<tool_call>\s*(\{.*\})\s*</tool_call>\s*", raw, re.S)
         if not match:
@@ -135,7 +141,7 @@ def decode(raw: str, family: str = "functiongemma") -> Call:
             raise InvalidCall("Malformed tool JSON") from exc
         if not isinstance(value, dict) or set(value) != {"name", "arguments"} or not isinstance(value["name"], str):
             raise InvalidCall("Invalid call envelope")
-        return validate_call(value["name"], value["arguments"])
+        return validate_call(value["name"], value["arguments"], allow_v3=False)
     raise InvalidCall("Unknown protocol family")
 
 
@@ -156,6 +162,6 @@ def encode(call: Call, family: str = "functiongemma") -> str:
 
 
 def normalized(call: Call) -> dict:
-    args = dict(V2_BY_NAME[call.name].defaults)
+    args = dict(V3_BY_NAME[call.name].defaults)
     args.update(call.arguments)
     return {"name": call.name, "arguments": args}

@@ -1,0 +1,9 @@
+#!/usr/bin/env python3
+import os,sys
+args=list(sys.argv[1:]);mount=[]
+if '--model' in args:
+ pos=args.index('--model')+1
+ mount=['--mount','type=bind,source='+os.path.realpath(args[pos])+',target=/models/model.gguf,readonly']
+ args[pos]='/models/model.gguf'
+command=['docker','run','--rm','--name','arrmes-cuda-test-'+str(os.getpid()),'--label','arrmes.test=portable-cuda-20261101','--network','host','--gpus','device=0','--user','10001:10001','--memory','2g','--cpus','2','--pids-limit','128','--read-only','--cap-drop','ALL','--security-opt','no-new-privileges','--tmpfs','/tmp',*mount,'ghcr.io/ggml-org/llama.cpp:server-cuda-b11429@sha256:883915ea20a4b350e98f7284098f4d400c21e9b366e248d397cd42d90602a84c',*args,'--batch-size','256','--ubatch-size','128']
+os.execvp('docker',command)

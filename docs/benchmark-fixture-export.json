@@ -1,0 +1,6 @@
+{
+  "kind": "Privacy-only fixture export",
+  "original_fixture_sha256": "e1775f040176a800d153138c02bd077af3a5536a11a93225911b2f47a89c8cba",
+  "public_fixture_sha256": "f2904e6ad5a9e051eff0abec77fad3604e53ebc7bc186b6324233676d9917529",
+  "change": "Synthetic per-session loopback aliases were collapsed to the documented loopback address. No task utterance, expected label, media entity, service ID, action or model prediction changed. These addresses are not inputs to model routing or scoring."
+}

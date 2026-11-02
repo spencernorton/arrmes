@@ -14,12 +14,17 @@ from typing import Any
 
 from arrmes import __version__
 from arrmes.auth import AuthenticationError, BearerTokenAuthenticator
-from arrmes.catalog import contract_hash_v2
+from arrmes.catalog import contract_hash_v2, contract_hash_v3
 from arrmes.executor import BoundedExecutor, ExecutionTrace, SessionEntityLedger
 from arrmes.live_adapter import LiveGatewayAdapter
 from arrmes.model import DeterministicBaselineModel, LocalModel
-from arrmes.planner import Principal, verify_proposal
+from arrmes.backends import create_model
+from arrmes.planner import Principal, prepare, verify_proposal
 from arrmes.protocol import Call, InvalidCall, decode, normalized
+from arrmes.service_router import ConfiguredAdapterRouter
+from arrmes.services import ServiceQueryAdapter, load_service_configs, route_service_query
+from arrmes.workflows import native_read_workflow
+from arrmes.explicit import NativeOnlyModel
 
 WRITE_MODES = frozenset({"confirm", "shadow", "direct", "disabled"})
 DEFAULT_CONNECTION_TIMEOUT_SECONDS = 10.0
@@ -95,11 +100,16 @@ class ArrmesRuntimeService:
             self.executor = executor
         else:
             gw_url = os.environ.get("ARRMES_GATEWAY_URL", "").strip()
-            if not gw_url:
-                raise ValueError("ARRMES_GATEWAY_URL must be set explicitly")
+            services_file = os.environ.get("ARRMES_SERVICES_FILE", "").strip()
+            if not gw_url and not services_file:
+                raise ValueError("ARRMES_GATEWAY_URL or ARRMES_SERVICES_FILE must be set explicitly")
             adapter_mode = "confirm" if write_mode == "disabled" else write_mode
-            adapter = LiveGatewayAdapter(gw_url, write_mode=adapter_mode)
+            adapter = LiveGatewayAdapter(gw_url, write_mode=adapter_mode) if gw_url else None
+            if services_file:
+                adapter = ConfiguredAdapterRouter(ServiceQueryAdapter(load_service_configs(services_file)), adapter,
+                                                 write_mode=write_mode)
             self.executor = BoundedExecutor(adapter, allow_writes=(write_mode != "disabled"))
+        self.native_queries_enabled = bool(getattr(self.executor.adapter, "supports_service_queries", False))
         self._lock = threading.Lock()
         self._ledgers: dict[str, SessionEntityLedger] = {}
         self._principal_locks: dict[str, threading.Lock] = {}
@@ -152,10 +162,12 @@ class ArrmesRuntimeService:
             "status": "ok",
             "service": "arrmes",
             "version": __version__,
-            "contract_version": "arrmes.tools.v2",
-            "contract_sha256": contract_hash_v2(),
+            "contract_version": "arrmes.tools.v3" if self.native_queries_enabled else "arrmes.tools.v2",
+            "contract_sha256": contract_hash_v3() if self.native_queries_enabled else contract_hash_v2(),
+            "neural_contract_version": "arrmes.tools.v2",
             "model_family": getattr(self.model, "family", "unknown"),
-            "neural_model_loaded": isinstance(self.model, LocalModel),
+            "neural_model_loaded": not isinstance(self.model, DeterministicBaselineModel),
+            "backend": getattr(self.model, "backend", "mlx" if isinstance(self.model, LocalModel) else "deterministic"),
             "write_mode": self.write_mode,
         }
 
@@ -179,26 +191,42 @@ class ArrmesRuntimeService:
             "counters": c_copy,
             "active_ledgers": len(self._ledgers),
             "latency_ms": {"count": len(lats), "p50": p50, "p95": p95},
+            "latency_scope": "Mixed in-process route/execute/confirm durations; execute starts after principal serialization. Excludes HTTP ingress and human confirmation delay.",
         }
 
     def route(self, query: str, context: dict[str, Any] | None = None) -> dict[str, Any]:
         t0 = time.perf_counter()
         if not isinstance(query, str) or not query.strip():
             raise ValueError("Non-empty 'query' string is required")
-        with self._lock:
-            inf = self.model.infer(query, context, max_tokens=64)
-        family = getattr(self.model, "family", "hermes")
-        try:
-            call = decode(inf["raw"], family=family)
-        except InvalidCall:
-            call = verify_proposal(Call("clarify", {"slot": "title"}), query, context, contract_version="v2")
+        workflow = native_read_workflow(query, max_steps=self.executor.max_steps) if self.native_queries_enabled else None
+        if isinstance(workflow, tuple):
+            elapsed_ms = (time.perf_counter() - t0) * 1000.0
+            self._record_metric("route_requests", elapsed_ms)
+            return {"proposal": None, "workflow": [normalized(call) for _, call in workflow],
+                    "verified": True, "routing_source": "explicit_service_deterministic",
+                    "latency_ms": round(elapsed_ms, 3)}
+        extension = workflow if isinstance(workflow, Call) else route_service_query(query) if self.native_queries_enabled else None
+        if extension is not None:
+            call = verify_proposal(extension, query, context, contract_version="v3")
+            source = "explicit_service_deterministic"
         else:
-            call = verify_proposal(call, query, context, contract_version="v2")
+            with self._lock:
+                inf = self.model.infer(query, context, max_tokens=64)
+            family = getattr(self.model, "family", "hermes")
+            try:
+                call = decode(inf["raw"], family=family)
+            except InvalidCall:
+                call = verify_proposal(Call("clarify", {"slot": "title"}), query, context, contract_version="v2")
+            else:
+                call = verify_proposal(call, query, context, contract_version="v2")
+            source = ("native_only_abstention" if isinstance(self.model, NativeOnlyModel) else
+                      "deterministic_v2" if isinstance(self.model, DeterministicBaselineModel) else "neural_v2")
         elapsed_ms = (time.perf_counter() - t0) * 1000.0
         self._record_metric("route_requests", elapsed_ms)
         return {
             "proposal": normalized(call),
             "verified": True,
+            "routing_source": source,
             "latency_ms": round(elapsed_ms, 3),
         }
 
@@ -227,23 +255,55 @@ class ArrmesRuntimeService:
         ledger = self._get_ledger(principal.subject)
         ledger.advance_turn()
         effective_ctx = context if context is not None else ledger.to_model_context()
-        with self._lock:
-            inf = self.model.infer(query, effective_ctx, max_tokens=64)
-        family = getattr(self.model, "family", "hermes")
-        trace = self.executor.execute_raw_proposal(
-            inf["raw"],
-            principal,
-            family=family,
-            query=query,
-            context=effective_ctx,
-            ledger=ledger,
-            idempotency_key=idempotency_key,
-        )
+        workflow = native_read_workflow(query, max_steps=self.executor.max_steps) if self.native_queries_enabled else None
+        if isinstance(workflow, tuple):
+            # Check every scope before the first network call. Independent
+            # unavailable-service failures do not prevent other permitted reads.
+            denied = next(((clause, call) for clause, call in workflow if prepare(call, principal)["status"] == "denied"), None)
+            if denied is not None:
+                trace = self.executor.execute_call(denied[1], principal, query=denied[0], ledger=ledger)
+                elapsed_ms = (time.perf_counter() - t0) * 1000.0
+                with self._lock:
+                    self._counters["execute_requests"] += 1
+                self._record_metric("denied", elapsed_ms)
+                return {**self._serialize_trace(trace, ledger, elapsed_ms), "routing_source": "explicit_service_deterministic"}
+            traces = []
+            serialized_steps = []
+            for clause, call in workflow:
+                step_start = time.perf_counter()
+                trace = self.executor.execute_call(call, principal, query=clause, ledger=ledger)
+                traces.append(trace)
+                serialized_steps.append(self._serialize_trace(trace, ledger, (time.perf_counter() - step_start) * 1000.0))
+            elapsed_ms = (time.perf_counter() - t0) * 1000.0
+            terminal = "completed" if all(trace.terminal_state == "completed" for trace in traces) else "partial"
+            with self._lock:
+                self._counters["execute_requests"] += 1
+            self._record_metric(terminal, elapsed_ms)
+            return {"terminal_state": terminal, "proposal": None,
+                    "workflow": serialized_steps,
+                    "steps_executed": sum(trace.steps_executed for trace in traces),
+                    "unsafe_write_blocked": False, "session_context": ledger.to_model_context(),
+                    "routing_source": "explicit_service_deterministic", "latency_ms": round(elapsed_ms, 3)}
+        extension = workflow if isinstance(workflow, Call) else route_service_query(query) if self.native_queries_enabled else None
+        if extension is not None:
+            trace = self.executor.execute_call(extension, principal, query=query, context=effective_ctx,
+                                               ledger=ledger, idempotency_key=idempotency_key)
+            source = "explicit_service_deterministic"
+        else:
+            with self._lock:
+                inf = self.model.infer(query, effective_ctx, max_tokens=64)
+            family = getattr(self.model, "family", "hermes")
+            trace = self.executor.execute_raw_proposal(
+                inf["raw"], principal, family=family, query=query, context=effective_ctx,
+                ledger=ledger, idempotency_key=idempotency_key,
+            )
+            source = ("native_only_abstention" if isinstance(self.model, NativeOnlyModel) else
+                      "deterministic_v2" if isinstance(self.model, DeterministicBaselineModel) else "neural_v2")
         elapsed_ms = (time.perf_counter() - t0) * 1000.0
         with self._lock:
             self._counters["execute_requests"] += 1
         self._record_metric(trace.terminal_state, elapsed_ms)
-        return self._serialize_trace(trace, ledger, elapsed_ms)
+        return {**self._serialize_trace(trace, ledger, elapsed_ms), "routing_source": source}
 
     def confirm(
         self,
@@ -407,10 +467,12 @@ def create_http_server(
                     self._send_json(200, res)
                     return
                 if self.path == "/v1/execute":
+                    # Legacy clients may still send context, but it cannot mint
+                    # trusted entity history. Execution uses only this caller's
+                    # server-owned ledger; /route remains a non-executing preview.
                     res = service.execute(
                         body.get("query", ""),
                         principal,
-                        context=body.get("context"),
                         idempotency_key=body.get("idempotency_key"),
                     )
                     status_code = 403 if res["terminal_state"] == "denied" else 200
@@ -434,26 +496,29 @@ def create_http_server(
 def _autodiscover_model_and_adapter() -> tuple[str, str | None]:
     """Locate the pinned local Qwen3 0.6B base model and latest distilled LoRA adapter if not explicitly set."""
     repo_root = Path(__file__).resolve().parents[2]
-    model_candidates = [
-        os.environ.get("ARRMES_MODEL_PATH", "").strip(),
-        str(repo_root / "models" / "qwen3-06b"),
-    ]
+    explicit_model = os.environ.get("ARRMES_MODEL_PATH", "").strip()
+    model_candidates = [explicit_model] if explicit_model else [str(repo_root / "models" / "qwen3-06b")]
     model_path = ""
     for cand in model_candidates:
-        if cand and Path(cand).is_dir():
-            model_path = cand
+        path = Path(cand).expanduser()
+        if cand and (path.is_dir() or (path.is_file() and path.suffix.lower() == ".gguf")):
+            model_path = str(path)
             break
+    if explicit_model and not model_path:
+        raise ValueError("ARRMES_MODEL_PATH must be an existing model directory or GGUF file")
 
-    adapter_candidates = [
-        os.environ.get("ARRMES_ADAPTER_PATH", "").strip(),
+    explicit_adapter = os.environ.get("ARRMES_ADAPTER_PATH", "").strip()
+    adapter_candidates = [explicit_adapter] if explicit_adapter else [
         str(repo_root / "adapters" / "qwen3-06b-distilled-v6"),
         str(repo_root / "adapters" / "qwen3-06b-distilled-v5"),
     ]
     adapter_path: str | None = None
     for cand in adapter_candidates:
-        if cand and Path(cand).is_dir():
-            adapter_path = cand
+        if cand and Path(cand).expanduser().is_dir():
+            adapter_path = str(Path(cand).expanduser())
             break
+    if explicit_adapter and not adapter_path:
+        raise ValueError("ARRMES_ADAPTER_PATH must be an existing adapter directory")
     return model_path, adapter_path
 
 
@@ -463,17 +528,40 @@ def main() -> None:
     write_mode = os.environ.get("ARRMES_WRITE_MODE", "confirm").strip() or "confirm"
     if write_mode not in WRITE_MODES:
         raise SystemExit(f"ARRMES_WRITE_MODE must be one of {sorted(WRITE_MODES)}")
+    if write_mode == "direct":
+        raise SystemExit("ARRMES_WRITE_MODE=direct is unavailable for the HTTP service; use confirm, shadow, or disabled")
 
     clients_file = os.environ.get("ARRMES_CLIENTS_FILE", "").strip()
     if not clients_file:
         raise SystemExit("ARRMES_CLIENTS_FILE is required: the service refuses to start without caller authentication")
     authenticator = BearerTokenAuthenticator.from_file(clients_file)
 
-    model_path, adapter_path = _autodiscover_model_and_adapter()
+    backend = os.environ.get("ARRMES_BACKEND", "auto")
+    if backend not in {"auto", "mlx", "llama-server", "native-only"}:
+        raise SystemExit("ARRMES_BACKEND must be auto, mlx, llama-server, or native-only")
+    model_path, adapter_path = ("", None) if backend == "native-only" else _autodiscover_model_and_adapter()
     family = os.environ.get("ARRMES_MODEL_FAMILY", "hermes")
-    if model_path:
-        mdl: Any = LocalModel(model_path, family=family, adapter=adapter_path, contract_version="v2")
-        mdl._ensure_prefix_cache()
+    endpoint = os.environ.get("ARRMES_INFERENCE_URL", "").strip() or None
+    portable = backend == "llama-server" or (backend == "auto" and (endpoint or model_path.lower().endswith(".gguf")))
+    selected_adapter = (os.environ.get("ARRMES_ADAPTER_PATH", "").strip() or None) if portable else adapter_path
+    if backend == "native-only":
+        if not os.environ.get("ARRMES_SERVICES_FILE", "").strip():
+            raise SystemExit("ARRMES_SERVICES_FILE is required for native-only mode")
+        write_mode = "disabled"
+        mdl: Any = NativeOnlyModel()
+    elif model_path or os.environ.get("ARRMES_INFERENCE_URL", "").strip():
+        mdl: Any = create_model(
+            model_path or "remote-gguf", family=family,
+            adapter=selected_adapter,
+            contract_version="v2", backend=backend,
+            endpoint=endpoint,
+            device=os.environ.get("ARRMES_DEVICE", "cpu"),
+            executable=os.environ.get("ARRMES_LLAMA_SERVER", "llama-server"),
+            context_size=int(os.environ.get("ARRMES_CONTEXT_SIZE", "4096")),
+            threads=int(os.environ["ARRMES_THREADS"]) if os.environ.get("ARRMES_THREADS") else None,
+        )
+        if hasattr(mdl, "_ensure_prefix_cache"):
+            mdl._ensure_prefix_cache()
     elif os.environ.get("ARRMES_ALLOW_BASELINE_MODEL", "").strip() == "1":
         mdl = DeterministicBaselineModel(family=family, contract_version="v2")
     else:
@@ -481,19 +569,25 @@ def main() -> None:
             "No local model found (set ARRMES_MODEL_PATH). Set ARRMES_ALLOW_BASELINE_MODEL=1 only for non-production tests."
         )
 
-    service = ArrmesRuntimeService(model=mdl, write_mode=write_mode)
-    srv = create_http_server(service, authenticator=authenticator, host=host, port=port)
-    print(
-        f"Arrmes HTTP service listening on {host}:{port} "
-        f"(model={getattr(mdl, 'path', 'baseline')}, adapter={adapter_path}, write_mode={write_mode})",
-        flush=True,
-    )
-    if hasattr(mdl, "serve_mlx_loop"):
-        t = threading.Thread(target=srv.serve_forever, name="arrmes-http", daemon=True)
-        t.start()
-        mdl.serve_mlx_loop()
-    else:
-        srv.serve_forever()
+    srv = None
+    try:
+        service = ArrmesRuntimeService(model=mdl, write_mode=write_mode)
+        srv = create_http_server(service, authenticator=authenticator, host=host, port=port)
+        print(
+            f"Arrmes HTTP service listening on {host}:{port} "
+            f"(backend={getattr(mdl, 'backend', 'mlx')}, write_mode={write_mode})", flush=True,
+        )
+        if hasattr(mdl, "serve_mlx_loop"):
+            t = threading.Thread(target=srv.serve_forever, name="arrmes-http", daemon=True)
+            t.start()
+            mdl.serve_mlx_loop()
+        else:
+            srv.serve_forever()
+    finally:
+        if srv is not None:
+            srv.server_close()
+        if hasattr(mdl, "close"):
+            mdl.close()
 
 
 if __name__ == "__main__":
