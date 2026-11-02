@@ -120,6 +120,32 @@ SERVICE_QUERY_ACTION = Action(
 V3_ACTIONS = V2_ACTIONS + (SERVICE_QUERY_ACTION,)
 V3_BY_NAME = {a.name: a for a in V3_ACTIONS}
 
+# Provider searches can refresh subtitle indexes and contact providers even
+# though Bazarr exposes them as GET. Both stages are consequential operations.
+_SUBTITLE_PROPERTIES = {
+    "media_type": choice("movie", "episode"),
+    "title": text("Exact movie or series title"),
+    "language": {"type": "string", "pattern": "^[a-z]{2}$"},
+    "forced": {"type": "boolean"},
+    "hearing_impaired": {"type": "boolean"},
+    "year": YEAR,
+    "season": {"type": "integer", "minimum": 0, "maximum": 1000},
+    "episode": {"type": "integer", "minimum": 1, "maximum": 10000},
+}
+_SUBTITLE_REQUIRED = ("media_type", "title", "language", "forced", "hearing_impaired")
+BAZARR_ACTIONS = (
+    Action("bazarr_subtitle_search", "Search subtitle providers for one exact movie or episode. Requires confirmation because this refreshes indexes and contacts providers.",
+           "bazarr", "write", "media:manage", dict(_SUBTITLE_PROPERTIES), _SUBTITLE_REQUIRED),
+    Action("bazarr_subtitle_download", "Download one caller-bound subtitle candidate returned by a confirmed provider search. Requires a new explicit confirmation.",
+           "bazarr", "write", "media:manage", {
+               **_SUBTITLE_PROPERTIES,
+               "candidate_id": {"type": "string", "pattern": "^[a-f0-9]{24}$"},
+           }, _SUBTITLE_REQUIRED + ("candidate_id",)),
+)
+V3_ACTIONS += BAZARR_ACTIONS
+V3_BY_NAME = {a.name: a for a in V3_ACTIONS}
+WRITE_EFFECT_ACTIONS_V3 = frozenset(a.name for a in V3_ACTIONS if a.effect in {"download", "request", "write"})
+
 
 def tools() -> list[dict]:
     return [a.tool() for a in ACTIONS]
@@ -155,6 +181,10 @@ def manifest_v3() -> dict:
     from .services import SUPPORTED_OPERATIONS, SERVICE_PERMISSIONS
     return {"version": CONTRACT_VERSION_V3, "neural_contract": CONTRACT_VERSION_V2,
             "neural_contract_sha256": contract_hash_v2(),
+            "explicit_write_actions": [{"tool": a.tool(), "effect": a.effect,
+                                        "permission": a.permission,
+                                        "routing": "explicit_bazarr_deterministic"}
+                                       for a in BAZARR_ACTIONS],
             "extension": {"tool": SERVICE_QUERY_ACTION.tool(), "effect": "read",
                           "routing": "explicit_service_deterministic",
                           "services": {name: {"operations": sorted(ops),

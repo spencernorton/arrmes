@@ -21,7 +21,7 @@ import urllib.request
 
 from arrmes import __version__
 from arrmes.adapters import AdapterObservation, SandboxAdapter, _norm
-from arrmes.catalog import V2_BY_NAME, WRITE_EFFECT_ACTIONS
+from arrmes.catalog import V2_BY_NAME, WRITE_EFFECT_ACTIONS, WRITE_EFFECT_ACTIONS_V3
 from arrmes.planner import Principal, ResolutionRequired, prepare, resolve_title
 from arrmes.protocol import Call, normalized, validate_call
 
@@ -239,8 +239,10 @@ class WriteConfirmationStore:
         now: float | None = None,
     ) -> WriteConfirmationToken:
         call = validate_call(call.name, call.arguments)
-        if call.name not in WRITE_EFFECT_ACTIONS:
+        if call.name not in WRITE_EFFECT_ACTIONS_V3:
             raise ValueError("Confirmation tokens are only valid for write actions")
+        # This explicit-tool registry does not change the v2 neural decoder or
+        # its frozen prompt. Every mint is schema-checked above.
         norm = normalized(call)
         ts = float(self._clock() if now is None else now)
         if not math.isfinite(ts):

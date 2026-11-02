@@ -45,6 +45,12 @@ def validate_call(name: str, arguments: dict, *, allow_v2: bool = True, allow_v3
             arguments = validate_service_query(arguments)
         except ValueError as exc:
             raise InvalidCall("Unsupported service read or arguments") from exc
+    if name in {"bazarr_subtitle_search", "bazarr_subtitle_download"}:
+        episodic = arguments["media_type"] == "episode"
+        if episodic and not {"season", "episode"} <= set(arguments):
+            raise InvalidCall("Episode subtitle operations require season and episode")
+        if not episodic and ({"season", "episode"} & set(arguments)):
+            raise InvalidCall("Movie subtitle operations cannot select an episode")
     # jsonschema permits a mathematically integral float for integer. The wire
     # contract deliberately accepts JSON integer tokens only, and never bool IDs.
     for k, v in arguments.items():
