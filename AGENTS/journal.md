@@ -1,3 +1,12 @@
+## 2026-11-02 Final scope-conservation regressions
+
+Adjacent independent probes also rejected unquoted artist/album role splitting,
+word-number episode ranges and song selectors. Album searches now require an
+explicit performer relationship; text inside the album cannot invent an artist.
+172 focused adapter/runtime/grounding/instrument checks pass. The complete source
+suite is running for the integrated 1.3.0 candidate; the version bump represents
+new confirmed native workflows, not changed model weights or accuracy acceptance.
+
 ## 2026-11-02 Independent native-write safety review
 
 Independent adversarial review found scope loss despite green fixture tests:

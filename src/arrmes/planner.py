@@ -293,6 +293,23 @@ def _context_role_matches(name: str, slot: str, selected: Any, outside: str) -> 
     return kind in {"movie", "tv"}
 
 
+def _artist_role_is_explicit(artist: str, album: str, query: str) -> bool:
+    """A token inside an album title cannot also invent its performer."""
+    text = unicodedata.normalize("NFKC", query).casefold()
+    artist, album = (unicodedata.normalize("NFKC", value).casefold() for value in (artist, album))
+    albums = list(re.finditer(r"(?<!\w)" + re.escape(album) + r"(?!\w)", text))
+    for match in re.finditer(r"(?<!\w)" + re.escape(artist) + r"(?!\w)", text):
+        if any(span.start() <= match.start() and match.end() <= span.end()
+               and (span.start(), span.end()) != (match.start(), match.end()) for span in albums):
+            continue
+        before, after = text[:match.start()], text[match.end():]
+        if re.search(r'''\b(?:by|from|artist|band|performer)\s*:?\s+(?:(?:the|artist|band|performer)\s+)?["']?\s*$''', before):
+            return True
+        if re.match(r'''^["']?(?:['’]s\b|\s+album\b)''', after):
+            return True
+    return False
+
+
 def _write_scope_fits_schema(name: str, args: dict[str, Any], query: str) -> bool:
     """Reject narrower selectors absent from the preserved write representation."""
     if name not in {"tv_search_missing", "movie_search", "music_search", "request_media"}:
@@ -306,14 +323,19 @@ def _write_scope_fits_schema(name: str, args: dict[str, Any], query: str) -> boo
     if re.search(r"\b(4k|uhd|2160p|1080p|720p|480p|hdr|hdr10|hevc|h264|h265|x264|x265|remux|bluray|web[- ]dl|web[- ]rip|lossless|flac|mp3|aac|bitrate|quality|profiles?)\b", text):
         return False
     if name == "tv_search_missing":
-        if re.search(r"\bepisode\b|\bs\d{1,4}\s*e\d{1,5}\b|\bepisodes\s*(?:#\s*)?\d+\b", text):
+        if re.search(r"\bepisode(?:\b|\d)|\bs\d{1,4}\s*e\d{1,5}\b|\b\d{1,4}x\d{1,5}\b|\bepisodes\s*(?:#\s*)?\d+\b", text):
             return False
-        if re.search(r"\b(latest|newest|oldest|first|last|next|previous|selected|random|few|some)\b", text):
+        number_words = "|".join(_SEASON_WORDS)
+        if re.search(r"\bepisodes\s+(?:(?:from|between)\s+)?(?:" + number_words + r")\b|\b(?:" + number_words + r")\s+(?:missing\s+)?episodes\b", text):
+            return False
+        if re.search(r"\b(latest|newest|oldest|first|last|next|previous|selected|random|few|some|several|couple)\b", text):
             return False
         if re.search(r"\b(?:18|19|20|21)\d{2}\b", text) or any(_TRAILING_PAREN_YEAR_RE.match(span) for span in _quoted_spans(query)):
             return False
     if name == "music_search":
-        if re.search(r"\b(tracks?|discs?|disks?|cds?|latest|newest|oldest|first|last|next|previous|selected)\b|\b(?:18|19|20|21)\d{2}\b", text):
+        if re.search(r"\b(?:tracks?|songs?|discs?|disks?|cds?)(?:\b|\d)|\b(latest|newest|oldest|first|last|next|previous|selected)\b|\b(?:18|19|20|21)\d{2}\b", text):
+            return False
+        if "album" in args and not _artist_role_is_explicit(str(args.get("artist", "")), args["album"], query):
             return False
         if "album" not in args:
             # Every album is a representable artist-wide set. A named album,

@@ -86,6 +86,7 @@ def test_one_quoted_album_cannot_supply_both_music_entity_roles():
     assert result.name == "clarify"
     explicit = Call("music_search", {"artist": "Snow Patrol", "album": "Snow Patrol"})
     assert verify_proposal(explicit, 'Download album "Snow Patrol" by "Snow Patrol" in Lidarr') == explicit
+    assert verify_proposal(call, 'Download album Snow Patrol in Lidarr').name == "clarify"
 
 
 def test_quoted_recovered_movie_year_is_a_separate_typed_qualifier():
@@ -102,8 +103,10 @@ def test_quoted_recovered_movie_year_is_a_separate_typed_qualifier():
     ("tv_search_missing", {"title": "Solar Echo", "season": 1}, 'Search for missing episode S01E02 of "Solar Echo" in Sonarr'),
     ("tv_search_missing", {"title": "Solar Echo"}, 'Download the latest missing episode of "Solar Echo" in Sonarr'),
     ("tv_search_missing", {"title": "Solar Echo"}, 'Download episodes 1 through 4 of "Solar Echo" in Sonarr'),
+    ("tv_search_missing", {"title": "Solar Echo"}, 'Download episodes two through four of "Solar Echo" in Sonarr'),
     ("music_search", {"artist": "Aster", "album": "Quiet Harbor"}, 'Download only track 2 of "Quiet Harbor" by "Aster" in Lidarr'),
     ("music_search", {"artist": "Aster", "album": "Quiet Harbor"}, 'Download disc 1 of "Quiet Harbor" by "Aster" in Lidarr'),
+    ("music_search", {"artist": "Aster", "album": "Quiet Harbor"}, 'Download only song2 of "Quiet Harbor" by "Aster" in Lidarr'),
     ("music_search", {"artist": "Aster"}, 'Download all tracks from the album "Quiet Harbor" by "Aster" in Lidarr'),
     ("music_search", {"artist": "Aster"}, 'Download every track from the album "Quiet Harbor" by "Aster" in Lidarr'),
     ("music_search", {"artist": "Aster"}, 'Download all missing tracks from the album "Quiet Harbor" by "Aster" in Lidarr'),
