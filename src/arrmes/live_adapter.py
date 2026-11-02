@@ -483,7 +483,11 @@ class LiveGatewayAdapter(SandboxAdapter):
             and method == "GET"
             and path in {"/sonarr/api/v3/series", "/radarr/api/v3/movie", "/lidarr/api/v1/artist"}
         )
-        if cacheable:
+        # Confirmation must resolve the current upstream entity, even when the
+        # preflight just populated this cache. Reusing that snapshot would hide
+        # a replaced library ID or changed title/year before mutation. Successful
+        # fresh reads can still refresh the ordinary read cache below.
+        if cacheable and self._confirmed_entity is None:
             cached = self._catalog_cache.get(path)
             if cached is not None and (time.time() - cached[0]) < 60.0:
                 audit.append({"method": method, "path": safe_path, "status": cached[1], "attempt": 0, "cached": True})
