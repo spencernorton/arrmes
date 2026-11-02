@@ -51,6 +51,28 @@ unchanged. Configuration, capability matrix, primary digests and reproduction
 commands are documented. Basic/SSO authentication and advanced Bitmagnet
 management remain gaps; the optional API key is only for an operator's proxy.
 
+## 2026-11-02 Portable model inspection and CPU generation smoke
+
+Added a standard-library GGUF metadata/plaintext inspection helper and an
+operational CPU model smoke with raw/verified calls, exact artifact/runtime
+identity and fixture execution. The exact CPU-exported public-adapter Q4 file
+passed eight checks across four documented examples on an Apple Silicon CPU;
+one activity read executed against an isolated fixture. This is not new model
+accuracy acceptance. The full core suite passed 412 tests with one optional
+export test skipped.
+
+This patch versions the application as 1.2.1 for qualification tooling only and
+retains the original Mac operational receipt after checking it contains no
+private paths or estate references. The manual workflow obtains its helper from
+the workflow ref while separately pinning the tested product source to v1.2.0.
+
+A manually dispatched Windows CPU workflow pins the official runtime ZIP,
+model SHA and v1.2.0 product source without model-framework/GPU dependencies.
+It has not executed; Windows compilation remains separate from generation.
+The model's Apache license, source notices and artifact-specific privacy review
+materials were prepared privately. The strict raw binary gate retains its
+findings; no global exception was applied and no weights were uploaded.
+
 ## 2026-11-01 Final validation of the portable/native increment
 
 Fresh confirmation catalogs fix a defect found in independent review; 16 new
