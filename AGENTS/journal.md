@@ -1,3 +1,9 @@
+## 2026-11-02 — isolate body deadlines from CI scheduling
+
+- Public macOS CI at65b8e80 passed958 tests but one80ms slow-body assertion hit the separate finite socket timeout before its expected body-deadline branch. The failure is retained; no CI rerun or accepted two-error assertion hides it.
+- Replace sleep-dependent timing with an actual loopback HTTP response and module-local elapsed-body clock. Require the precise504/deadline error after two real bytes, no third read/retry and a closed response; retain the independent real HTTP byte limit test.
+- All58 focused Bitmagnet checks pass, and the new deadline case passes25 real-HTTP repetitions. Only tests change; runtime source, model predictions and all benchmark inputs/results remain unchanged. The new public head requires its own four gates.
+
 ## 2026-11-02 — complete integrated source and reproduction checks
 
 - Combined source cb4f064 passes 959 tests with one optional export skip. Independent final review passes all61 new guard regressions; recorded-only native replays remain7/8 and4/4, retaining raw5/9 and verifier8/9 over nine neural rows. No fresh model inference or acceptance score.
