@@ -1,0 +1,45 @@
+name: Bug report
+description: Something in Arrmes does not behave as documented.
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Please remove anything private from logs and output before pasting them: API keys, bearer tokens, internal hostnames, IP addresses, and personal media titles.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened
+      description: What you did, what you expected, what happened instead.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Start `python3 -m arrmes.server` or run `.venv/bin/pytest -q`
+        2. …
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options: ["Router / model inference", "Verification boundary (verify_proposal)", "Live gateway adapter", "HTTP server / auth / write confirmation", "Sandbox cluster", "Other / not sure"]
+    validations:
+      required: true
+  - type: input
+    id: versions
+    attributes:
+      label: Versions
+      description: "Arrmes version, Python version, macOS / OS version, and MLX version"
+      placeholder: "arrmes 1.1.0, Python 3.12, macOS 15.4, mlx-lm 0.31.1"
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Log excerpt
+      description: "Relevant server or test output. Scrubbed."
+      render: text
