@@ -48,7 +48,7 @@ Three scores remain separate:
   oracle-executable operations, released Arrmes matches **28/35** frozen business
   observations. The legacy exact-call/completed-terminal metric is 30/35; two
   stricter failures retain a public-source Tautulli fixture-IP difference
-  (127.0.0.1 versus oracle 127.0.0.1), rather than silently omitting the field.
+  (original fixture addresses differed; exported public placeholders coincide), rather than silently omitting the field.
 
 The 80 cases include all 20 released tools, ambiguity, references, negated writes,
 unsafe and compound requests, unavailable services, denied scopes and adversarial

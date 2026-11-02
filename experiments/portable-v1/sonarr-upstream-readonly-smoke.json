@@ -1,0 +1,797 @@
+{
+  "schema_version": 1,
+  "recorded_at": "2026-11-02T05:44:28.883247+00:00",
+  "track": "real_upstream_sonarr_empty_library_native_only_read_smoke",
+  "qualification": "Actual Linux ARM64 Sonarr binary on macOS Docker Desktop VM; Mac ARM64 Arrmes native-only HTTP application. No inference qualification.",
+  "limits": "Empty isolated app only: health/version, queue, library and history. No seeded entities, metadata-provider search, missing-episode semantics, writes, other services or production workloads qualified.",
+  "source_root": "<local-path>",
+  "source_commit": "56c17148d6908bb96f56e05e9ecb7f5452efb698",
+  "source_file_sha256": [
+    {
+      "path": "src/arrmes/__init__.py",
+      "sha256_digest": "cdedcd366964b959141748c0ba70b7c4e0422a06617893999ea4f9f87d1a13a2"
+    },
+    {
+      "path": "src/arrmes/__main__.py",
+      "sha256_digest": "6d8b7d7846a845059d7a3107143f11131f63c5511d669b44085b15ec5e3d2279"
+    },
+    {
+      "path": "src/arrmes/adapters.py",
+      "sha256_digest": "199a21e864c81438cb355d5e9c0193b42efd5bc848e033019e183be2787a666d"
+    },
+    {
+      "path": "src/arrmes/auth.py",
+      "sha256_digest": "04a5bac9f5d328ad08142e70428f4b1dc75460c8ef9fa62b55ded95ef8bb77e8"
+    },
+    {
+      "path": "src/arrmes/backends.py",
+      "sha256_digest": "963af834bd76fb4d872628a32bcf1c68c448ac5359d91016e91ed2ee8a785cbd"
+    },
+    {
+      "path": "src/arrmes/catalog.py",
+      "sha256_digest": "2ec67f3263c7eee2b4054e1d26bf81859b15507950dab0dab2d19956f796a494"
+    },
+    {
+      "path": "src/arrmes/cli.py",
+      "sha256_digest": "7e43e7a751c051b52cb0c517b49458a3551599391f1591f8d30e2f396d4f8a69"
+    },
+    {
+      "path": "src/arrmes/corpus.py",
+      "sha256_digest": "d378023367c61e4b93724890636090daa383b449c661c21412331f0c061d8425"
+    },
+    {
+      "path": "src/arrmes/evaluate.py",
+      "sha256_digest": "5db320cab4188bd777021044d110583f897d029bb3d7d688913a26a672edb5c3"
+    },
+    {
+      "path": "src/arrmes/executor.py",
+      "sha256_digest": "41b542f6493d6c178656ff6b85b1559e6bc9fb0ac12460ba16731429b6508e4d"
+    },
+    {
+      "path": "src/arrmes/explicit.py",
+      "sha256_digest": "bec0fdac157c2178b48aefbb8ba3ffe8ae2252e82bbeace188b51e3666eb9dda"
+    },
+    {
+      "path": "src/arrmes/live_adapter.py",
+      "sha256_digest": "7d1ec5ae83082febc79bacf0800ea5858b0197cd227bef767996662f481fdc6d"
+    },
+    {
+      "path": "src/arrmes/model.py",
+      "sha256_digest": "a3618d05cf257ae4dd92f2c25413e8188810010aa10069eac20a9faeb2d5b81b"
+    },
+    {
+      "path": "src/arrmes/planner.py",
+      "sha256_digest": "5b67ff3a80c6810f03903f72dc93cdda2cdc94a783a1b44b589c575dc5c4cbd1"
+    },
+    {
+      "path": "src/arrmes/probe.py",
+      "sha256_digest": "473b3cbd87e8fa1e1b374ec5fcd8888750ef3e4c6a5b95d40fcf226561abbdc8"
+    },
+    {
+      "path": "src/arrmes/protocol.py",
+      "sha256_digest": "6ce079a30c5c119d6816cdd66a5368e783d7252191386811b9b5834cb0db23d9"
+    },
+    {
+      "path": "src/arrmes/sandbox/__init__.py",
+      "sha256_digest": "3d24a42f654890e59903e0eaeecfbad9086f5e016721906d166fad4e6e7be8e0"
+    },
+    {
+      "path": "src/arrmes/sandbox/isolation.py",
+      "sha256_digest": "5ae98b74892812c46be6bb8dd75ea5ebff5498ec87f27881602fd6b625db92e9"
+    },
+    {
+      "path": "src/arrmes/sandbox/sanitize.py",
+      "sha256_digest": "7c437cc32dadbc00056c53fb505ca769812ca3e1a7d54b9ca0e68b329309e7c0"
+    },
+    {
+      "path": "src/arrmes/sandbox/server.py",
+      "sha256_digest": "f5dac79768e388b3a9e1e07dc0b5f402463c87988477d72cf3419228c099d851"
+    },
+    {
+      "path": "src/arrmes/server.py",
+      "sha256_digest": "665f07911084272a0e144ec18324775a1592a23473086371a3939cfc97a9be97"
+    },
+    {
+      "path": "src/arrmes/service_router.py",
+      "sha256_digest": "a9d6f8b618ff6253d4bfef62067251188d4e2b57e977ccd0339f22394fc1a9ce"
+    },
+    {
+      "path": "src/arrmes/services/__init__.py",
+      "sha256_digest": "83031f18ee6a4cb69ab599bbb3aede1131b42f9a9b43d33ab01f9aa4930322f3"
+    },
+    {
+      "path": "src/arrmes/services/contract.py",
+      "sha256_digest": "72b7c521126c53fa3dda70f93e9b8c9c933952862fd7cb3c5de6cd1872641abd"
+    },
+    {
+      "path": "src/arrmes/services/media.py",
+      "sha256_digest": "54ee4e979012eb59d544c340e52fc81fb404e310856826865f0b6b649a729ac6"
+    },
+    {
+      "path": "src/arrmes/services/native.py",
+      "sha256_digest": "103cabb0b422bba5afb84667298346e6f4938bc23e9efb74f8f0ef85fccc1959"
+    },
+    {
+      "path": "src/arrmes/services/routing.py",
+      "sha256_digest": "e8f36f38eae880ce9a287226a83e851f2531031896b27922ca11d481bd6ec22d"
+    },
+    {
+      "path": "src/arrmes/services/transfers.py",
+      "sha256_digest": "b1c1c79830135b46981455ee74a34ccd5b21f54068a0805fe13b910270960414"
+    },
+    {
+      "path": "src/arrmes/workflows.py",
+      "sha256_digest": "5eaf0e64adf8f365376be2841a43c9493648f04f2c8740698eac8f8b0e0d68c0"
+    }
+  ],
+  "source_manifest_sha256": "0db26fe491d6be03e0ca56647b861358188e7dc1a92177874c892a7ff05d6ea8",
+  "script_sha256": "79d038c9dbd534648a30ec02d7982fcaf27f6ff1c8de112136a08a5e1ba2d1d3",
+  "harness_dependencies_sha256": [
+    {
+      "path": "scripts/smoke_native_only.py",
+      "sha256_digest": "f1d637b8ca0f6630fc8f5a9c46f66e40e75932a2c10fef883352f757471db87e"
+    }
+  ],
+  "invocation": [
+    "/opt/homebrew/opt/python@3.12/bin/python3.12",
+    "scripts/smoke_sonarr_upstream.py",
+    "--python",
+    "/opt/homebrew/bin/python3.12",
+    "--source-root",
+    "<local-path>",
+    "--output",
+    "experiments/portable-v1/sonarr-upstream-readonly-smoke.json"
+  ],
+  "commands": [
+    [
+      "git",
+      "-C",
+      "<local-path>",
+      "rev-parse",
+      "HEAD"
+    ],
+    [
+      "docker",
+      "info",
+      "--format",
+      "{{json .}}"
+    ],
+    [
+      "docker",
+      "context",
+      "show"
+    ],
+    [
+      "docker",
+      "image",
+      "inspect",
+      "lscr.io/linuxserver/sonarr@sha256:d3bf2056aa6439d54e1e673ae850b7fc70425b5b2b441414c4f480532f8fe8e0"
+    ],
+    [
+      "docker",
+      "stats",
+      "--no-stream",
+      "--format",
+      "{{.CPUPerc}} {{.MemUsage}}"
+    ],
+    [
+      "docker",
+      "network",
+      "create",
+      "--internal",
+      "--label",
+      "arrmes-sonarr-qualification-2a80713b48",
+      "arrmes-sonarr-qualification-2a80713b48-network"
+    ],
+    [
+      "docker",
+      "run",
+      "--detach",
+      "--name",
+      "arrmes-sonarr-qualification-2a80713b48-app",
+      "--label",
+      "arrmes-sonarr-qualification-2a80713b48",
+      "--network",
+      "arrmes-sonarr-qualification-2a80713b48-network",
+      "--cpus",
+      "1",
+      "--memory",
+      "768m",
+      "--memory-swap",
+      "768m",
+      "--pids-limit",
+      "256",
+      "--cap-drop",
+      "NET_RAW",
+      "--security-opt",
+      "no-new-privileges:true",
+      "--tmpfs",
+      "/config:rw,size=128m",
+      "--tmpfs",
+      "/tmp:rw,size=64m",
+      "--env",
+      "PUID=10001",
+      "--env",
+      "PGID=10001",
+      "--env",
+      "TZ=Etc/UTC",
+      "--entrypoint",
+      "/bin/sh",
+      "lscr.io/linuxserver/sonarr@sha256:d3bf2056aa6439d54e1e673ae850b7fc70425b5b2b441414c4f480532f8fe8e0",
+      "-c",
+      "printf '%s' '<Config><BindAddress>*</BindAddress><Port>8989</Port><EnableSsl>False</EnableSsl><LaunchBrowser>False</LaunchBrowser><ApiKey><synthetic-api-key-redacted></ApiKey><AuthenticationMethod>External</AuthenticationMethod><AuthenticationRequired>DisabledForLocalAddresses</AuthenticationRequired><AnalyticsEnabled>False</AnalyticsEnabled><UpdateMechanism>Docker</UpdateMechanism></Config>' > /config/config.xml; exec /init"
+    ],
+    [
+      "docker",
+      "inspect",
+      "arrmes-sonarr-qualification-2a80713b48-app"
+    ],
+    [
+      "docker",
+      "network",
+      "inspect",
+      "arrmes-sonarr-qualification-2a80713b48-network"
+    ],
+    [
+      "/opt/homebrew/bin/python3.12",
+      "-m",
+      "venv",
+      "<local-path>"
+    ],
+    [
+      "<local-path>",
+      "-m",
+      "pip",
+      "install",
+      "--disable-pip-version-check",
+      "jsonschema==4.26.0",
+      "attrs==26.1.0",
+      "jsonschema-specifications==2025.9.1",
+      "referencing==0.37.0",
+      "rpds-py==2026.9.1",
+      "typing_extensions==4.16.0"
+    ],
+    [
+      "<local-path>",
+      "-I",
+      "-B",
+      "<local-path>",
+      "--source-root",
+      "<local-path>",
+      "--worker-root",
+      "<local-path>",
+      "--upstream",
+      "arrmes-sonarr-qualification-2a80713b48-app",
+      "--output",
+      "<local-path>"
+    ],
+    [
+      "docker",
+      "stats",
+      "--no-stream",
+      "--format",
+      "{{json .}}",
+      "arrmes-sonarr-qualification-2a80713b48-app"
+    ],
+    [
+      "docker",
+      "inspect",
+      "arrmes-sonarr-qualification-2a80713b48-app"
+    ],
+    [
+      "docker",
+      "rm",
+      "--force",
+      "--volumes",
+      "arrmes-sonarr-qualification-2a80713b48-app"
+    ],
+    [
+      "docker",
+      "network",
+      "rm",
+      "arrmes-sonarr-qualification-2a80713b48-network"
+    ]
+  ],
+  "host": {
+    "system": "Darwin",
+    "release": "27.0.0",
+    "machine": "arm64"
+  },
+  "docker": {
+    "context": "desktop-linux",
+    "ServerVersion": "29.3.1",
+    "Architecture": "aarch64",
+    "NCPU": 14,
+    "MemTotal": 16747470848
+  },
+  "preflight_existing_container_usage_without_names": [
+    "1.40% 265.6MiB / 15.6GiB",
+    "0.01% 16.73MiB / 15.6GiB",
+    "0.00% 76.76MiB / 15.6GiB",
+    "0.00% 73.44MiB / 15.6GiB",
+    "0.00% 43.96MiB / 15.6GiB",
+    "0.00% 39.39MiB / 15.6GiB",
+    "0.00% 79.89MiB / 15.6GiB",
+    "0.01% 333.3MiB / 15.6GiB",
+    "0.00% 165.8MiB / 15.6GiB"
+  ],
+  "preflight_sample": {
+    "aggregate_cpu_percent": 1.42,
+    "summed_container_memory_bytes": 1148054405,
+    "memory_note": "Summed Docker container usage is not free VM RAM; a 3-GiB margin is required for the 768-MiB test and VM overhead."
+  },
+  "image": {
+    "reference": "lscr.io/linuxserver/sonarr@sha256:d3bf2056aa6439d54e1e673ae850b7fc70425b5b2b441414c4f480532f8fe8e0",
+    "Id": "sha256:d3bf2056aa6439d54e1e673ae850b7fc70425b5b2b441414c4f480532f8fe8e0",
+    "RepoDigests": [
+      "lscr.io/linuxserver/sonarr@sha256:d3bf2056aa6439d54e1e673ae850b7fc70425b5b2b441414c4f480532f8fe8e0"
+    ],
+    "Architecture": "arm64",
+    "Os": "linux",
+    "Size": 84902039
+  },
+  "image_cache": "Required to be present before this harness starts; retained for reproduction. The harness pulls no images.",
+  "container_budget": {
+    "cpu_limit": 1,
+    "memory_bytes": 805306368,
+    "memory_swap_bytes": 805306368,
+    "pids_limit": 256,
+    "config_tmpfs_bytes": 134217728,
+    "tmp_tmpfs_bytes": 67108864
+  },
+  "traffic": "Arrmes -> GET-only audit proxy -> docker exec curl GET -> actual Sonarr HTTP on container loopback, unchanged JSON. This is not a direct network-client qualification. Registries/keys are synthetic; Sonarr has an internal-only network and publishes no ports.",
+  "cleanup": {
+    "container_removed": true,
+    "network_removed": true,
+    "temporary_environment_removed": true,
+    "application_stopped": true,
+    "audit_proxy_stopped": true,
+    "sandbox_stopped": true,
+    "graceful_application_shutdown": true
+  },
+  "container_policy_actual": {
+    "NanoCpus": 1000000000,
+    "Memory": 805306368,
+    "MemorySwap": 805306368,
+    "PidsLimit": 256,
+    "Tmpfs": {
+      "/config": "rw,size=128m",
+      "/tmp": "rw,size=64m"
+    },
+    "CapDrop": [
+      "CAP_NET_RAW"
+    ],
+    "SecurityOpt": [
+      "no-new-privileges:true"
+    ]
+  },
+  "network_internal": true,
+  "host_port_bindings": {},
+  "container_mount_types": [],
+  "checks": {
+    "actual_sonarr_v4_api_v3_identity": true,
+    "model_free_public_package_main_loaded": true,
+    "unauthenticated_http_execution_denied": true,
+    "natural_language_health_read_completed": true,
+    "natural_language_queue_read_completed": true,
+    "natural_language_library_read_completed": true,
+    "natural_language_history_read_completed": true,
+    "wire_audit_only_successful_upstream_gets": true
+  },
+  "operations": [
+    {
+      "query": "Show Sonarr health",
+      "expected_operation": "health",
+      "response": {
+        "latency_ms": 139.523,
+        "observation": {
+          "audit_trail": [
+            {
+              "method": "GET",
+              "path": "/api/v3/system/status",
+              "status": 200
+            },
+            {
+              "method": "GET",
+              "path": "/api/v3/health",
+              "status": 200
+            }
+          ],
+          "data": {
+            "api_version": "v3",
+            "complete_listing": true,
+            "healthy": true,
+            "issues": [],
+            "items": [],
+            "operation": "health",
+            "returned_count": 0,
+            "server_version": "4.0.20.3014",
+            "source": "native_api",
+            "total_records": 0,
+            "truncated": false
+          },
+          "http_status": 200,
+          "operation": "service_query",
+          "service": "sonarr",
+          "status": "verified_ok",
+          "verified_complete": true
+        },
+        "plan": {
+          "adapter_state": "verified",
+          "arguments": {
+            "operation": "health",
+            "service": "sonarr"
+          },
+          "contract": "arrmes.tools.v3",
+          "contract_sha256": "0db4cca9588f5bdfccd703a3677e3ca5583e18eb75394202527bff3758d8079b",
+          "dry_run": false,
+          "effect": "read",
+          "executed": true,
+          "operation": "service_query",
+          "principal": "fixture:upstream-reader",
+          "requires_entity_resolution": false,
+          "requires_write_authorization": false,
+          "service": "sonarr",
+          "status": "planned"
+        },
+        "proposal": {
+          "arguments": {
+            "operation": "health",
+            "service": "sonarr"
+          },
+          "name": "service_query"
+        },
+        "routing_source": "explicit_service_deterministic",
+        "session_context": null,
+        "steps_executed": 1,
+        "terminal_state": "completed",
+        "unsafe_write_blocked": false
+      },
+      "passed": true
+    },
+    {
+      "query": "Show Sonarr queue",
+      "expected_operation": "queue",
+      "response": {
+        "latency_ms": 106.986,
+        "observation": {
+          "audit_trail": [
+            {
+              "method": "GET",
+              "path": "/api/v3/queue?page=1&pageSize=50&includeSeries=true",
+              "status": 200
+            }
+          ],
+          "data": {
+            "api_version": "v3",
+            "complete_listing": true,
+            "items": [],
+            "operation": "queue",
+            "returned_count": 0,
+            "source": "native_api",
+            "total_records": 0,
+            "truncated": false
+          },
+          "http_status": 200,
+          "operation": "service_query",
+          "service": "sonarr",
+          "status": "verified_ok",
+          "verified_complete": true
+        },
+        "plan": {
+          "adapter_state": "verified",
+          "arguments": {
+            "operation": "queue",
+            "service": "sonarr"
+          },
+          "contract": "arrmes.tools.v3",
+          "contract_sha256": "0db4cca9588f5bdfccd703a3677e3ca5583e18eb75394202527bff3758d8079b",
+          "dry_run": false,
+          "effect": "read",
+          "executed": true,
+          "operation": "service_query",
+          "principal": "fixture:upstream-reader",
+          "requires_entity_resolution": false,
+          "requires_write_authorization": false,
+          "service": "sonarr",
+          "status": "planned"
+        },
+        "proposal": {
+          "arguments": {
+            "operation": "queue",
+            "service": "sonarr"
+          },
+          "name": "service_query"
+        },
+        "routing_source": "explicit_service_deterministic",
+        "session_context": null,
+        "steps_executed": 1,
+        "terminal_state": "completed",
+        "unsafe_write_blocked": false
+      },
+      "passed": true
+    },
+    {
+      "query": "Show Sonarr library",
+      "expected_operation": "library",
+      "response": {
+        "latency_ms": 71.427,
+        "observation": {
+          "audit_trail": [
+            {
+              "method": "GET",
+              "path": "/api/v3/series",
+              "status": 200
+            }
+          ],
+          "data": {
+            "api_version": "v3",
+            "complete_listing": true,
+            "items": [],
+            "operation": "library",
+            "returned_count": 0,
+            "source": "native_api",
+            "total_records": 0,
+            "truncated": false
+          },
+          "http_status": 200,
+          "operation": "service_query",
+          "service": "sonarr",
+          "status": "verified_ok",
+          "verified_complete": true
+        },
+        "plan": {
+          "adapter_state": "verified",
+          "arguments": {
+            "operation": "library",
+            "service": "sonarr"
+          },
+          "contract": "arrmes.tools.v3",
+          "contract_sha256": "0db4cca9588f5bdfccd703a3677e3ca5583e18eb75394202527bff3758d8079b",
+          "dry_run": false,
+          "effect": "read",
+          "executed": true,
+          "operation": "service_query",
+          "principal": "fixture:upstream-reader",
+          "requires_entity_resolution": false,
+          "requires_write_authorization": false,
+          "service": "sonarr",
+          "status": "planned"
+        },
+        "proposal": {
+          "arguments": {
+            "operation": "library",
+            "service": "sonarr"
+          },
+          "name": "service_query"
+        },
+        "routing_source": "explicit_service_deterministic",
+        "session_context": null,
+        "steps_executed": 1,
+        "terminal_state": "completed",
+        "unsafe_write_blocked": false
+      },
+      "passed": true
+    },
+    {
+      "query": "Show Sonarr history",
+      "expected_operation": "history",
+      "response": {
+        "latency_ms": 73.056,
+        "observation": {
+          "audit_trail": [
+            {
+              "method": "GET",
+              "path": "/api/v3/history?page=1&pageSize=50&includeSeries=true",
+              "status": 200
+            }
+          ],
+          "data": {
+            "api_version": "v3",
+            "complete_listing": true,
+            "items": [],
+            "operation": "history",
+            "returned_count": 0,
+            "source": "native_api",
+            "total_records": 0,
+            "truncated": false
+          },
+          "http_status": 200,
+          "operation": "service_query",
+          "service": "sonarr",
+          "status": "verified_ok",
+          "verified_complete": true
+        },
+        "plan": {
+          "adapter_state": "verified",
+          "arguments": {
+            "operation": "history",
+            "service": "sonarr"
+          },
+          "contract": "arrmes.tools.v3",
+          "contract_sha256": "0db4cca9588f5bdfccd703a3677e3ca5583e18eb75394202527bff3758d8079b",
+          "dry_run": false,
+          "effect": "read",
+          "executed": true,
+          "operation": "service_query",
+          "principal": "fixture:upstream-reader",
+          "requires_entity_resolution": false,
+          "requires_write_authorization": false,
+          "service": "sonarr",
+          "status": "planned"
+        },
+        "proposal": {
+          "arguments": {
+            "operation": "history",
+            "service": "sonarr"
+          },
+          "name": "service_query"
+        },
+        "routing_source": "explicit_service_deterministic",
+        "session_context": null,
+        "steps_executed": 1,
+        "terminal_state": "completed",
+        "unsafe_write_blocked": false
+      },
+      "passed": true
+    }
+  ],
+  "wire_audit": [
+    {
+      "method": "GET",
+      "path": "/api/v3/system/status",
+      "status": 200,
+      "synthetic_api_key_header_matches": true,
+      "body_sha256": "f3359656a2046dbe196d99825b4368ba0f7bc2ccfcc15ccb044da51fbc16dfd4",
+      "bytes": 832
+    },
+    {
+      "method": "GET",
+      "path": "/api/v3/health",
+      "status": 200,
+      "synthetic_api_key_header_matches": true,
+      "body_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "bytes": 2
+    },
+    {
+      "method": "GET",
+      "path": "/api/v3/queue?page=1&pageSize=50&includeSeries=true",
+      "status": 200,
+      "synthetic_api_key_header_matches": true,
+      "body_sha256": "5420148e9ce6fc43215f5f046f5258a60c39c36a0c7be3a83cefe571f077686b",
+      "bytes": 129
+    },
+    {
+      "method": "GET",
+      "path": "/api/v3/series",
+      "status": 200,
+      "synthetic_api_key_header_matches": true,
+      "body_sha256": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945",
+      "bytes": 2
+    },
+    {
+      "method": "GET",
+      "path": "/api/v3/history?page=1&pageSize=50&includeSeries=true",
+      "status": 200,
+      "synthetic_api_key_header_matches": true,
+      "body_sha256": "9eba3d544d75d9fd9eb3ca8a76e9efe5ac2819df6a5bd8c6ba9ba69e72be7375",
+      "bytes": 125
+    }
+  ],
+  "sonarr_startup_wait_seconds": 0.9252834169892594,
+  "upstream_status_metadata": {
+    "appName": "Sonarr",
+    "instanceName": "Sonarr",
+    "version": "4.0.20.3014",
+    "packageVersion": "4.0.20.3014-ls329",
+    "packageAuthor": "[linuxserver.io](https://linuxserver.io)",
+    "osName": "alpine",
+    "osVersion": "3.24.2",
+    "runtimeName": ".NET",
+    "runtimeVersion": "6.0.13"
+  },
+  "application_command": [
+    "/private<local-path>",
+    "-I",
+    "-B",
+    "-c",
+    "import sys,runpy,importlib.abc,json\nfrom pathlib import Path\nattempts=[]\nforbidden=set(json.loads(sys.argv[3]))\nclass RejectOptional(importlib.abc.MetaPathFinder):\n def find_spec(self,fullname,*args):\n  if fullname.split('.')[0] in forbidden:\n   attempts.append(fullname)\n   raise ImportError('Optional inference import forbidden: '+fullname)\nsys.meta_path.insert(0,RejectOptional())\nsys.path.insert(0,sys.argv[1])\nfrom arrmes.sandbox import NetworkIsolationGuard\nguard=NetworkIsolationGuard(allowed_ports=set(json.loads(sys.argv[4])))\ntry:\n with guard:\n  runpy.run_module('arrmes.server',run_name='__main__')\nfinally:\n Path(sys.argv[2]).write_text(json.dumps({\n  'network':guard.evidence_summary(),\n  'forbidden_optional_import_attempts':attempts,\n  'forbidden_modules_loaded':sorted(name for name in sys.modules if name.split('.')[0] in forbidden),\n }))\n",
+    "<local-path>",
+    "<local-path>",
+    "[\"mlx\", \"mlx_lm\", \"torch\", \"transformers\", \"numpy\", \"llama_cpp\"]",
+    "[56864, 56865, 56866]"
+  ],
+  "arrmes_health": {
+    "backend": "native-only",
+    "contract_sha256": "0db4cca9588f5bdfccd703a3677e3ca5583e18eb75394202527bff3758d8079b",
+    "contract_version": "arrmes.tools.v3",
+    "model_family": "hermes",
+    "neural_contract_version": "arrmes.tools.v2",
+    "neural_model_loaded": false,
+    "service": "arrmes",
+    "status": "ok",
+    "version": "1.2.0",
+    "write_mode": "disabled"
+  },
+  "application_isolation": {
+    "network": {
+      "policy": "deny_all_non_loopback_and_unregistered_ports",
+      "allowed_ports": [
+        56864,
+        56865,
+        56866
+      ],
+      "allowed_loopback_connections": 10,
+      "blocked_outbound_attempts_count": 0,
+      "blocked_attempts": [],
+      "evidence_sha256": "184b4aa1789c3c31f191e09b3ce7a8e160d72e7319ae3c74c57e051d44089b03"
+    },
+    "forbidden_optional_import_attempts": [],
+    "forbidden_modules_loaded": []
+  },
+  "network_isolation": {
+    "policy": "deny_all_non_loopback_and_unregistered_ports",
+    "allowed_ports": [
+      56864,
+      56865,
+      56866
+    ],
+    "allowed_loopback_connections": 22,
+    "blocked_outbound_attempts_count": 0,
+    "blocked_attempts": [],
+    "evidence_sha256": "a6c2afb82b6fc6656caf848f3f307c6277dbe35210d6bfa52005fa2413b61b92"
+  },
+  "runtime": {
+    "python_executable": "/private<local-path>",
+    "python_version": "3.12.13 (main, Mar  3 2026, 12:39:30) [Clang 17.0.0 (clang-1700.6.3.2)]",
+    "installed_distributions": [
+      {
+        "name": "attrs",
+        "version": "26.1.0"
+      },
+      {
+        "name": "jsonschema",
+        "version": "4.26.0"
+      },
+      {
+        "name": "jsonschema-specifications",
+        "version": "2025.9.1"
+      },
+      {
+        "name": "pip",
+        "version": "26.0"
+      },
+      {
+        "name": "referencing",
+        "version": "0.37.0"
+      },
+      {
+        "name": "rpds-py",
+        "version": "2026.9.1"
+      },
+      {
+        "name": "typing_extensions",
+        "version": "4.16.0"
+      }
+    ]
+  },
+  "all_checks_passed": true,
+  "whole_run_seconds_before_teardown": 4.54385891702259,
+  "container_stats_sample": {
+    "BlockIO": "0B / 295kB",
+    "CPUPerc": "2.61%",
+    "Container": "arrmes-sonarr-qualification-2a80713b48-app",
+    "ID": "bffd64b487c7",
+    "MemPerc": "11.58%",
+    "MemUsage": "88.94MiB / 768MiB",
+    "Name": "arrmes-sonarr-qualification-2a80713b48-app",
+    "NetIO": "1.75kB / 126B",
+    "PIDs": "26"
+  },
+  "container_state": {
+    "Running": true,
+    "OOMKilled": false,
+    "Error": "",
+    "StartedAt": "2026-11-02T05:44:28.964670002Z"
+  }
+}

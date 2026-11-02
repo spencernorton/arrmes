@@ -19,10 +19,31 @@
       "effect": "read",
       "route_layer": "explicit-service deterministic NL, not v6 trained neural prediction",
       "execution": "ServiceQueryAdapter through BoundedExecutor",
-      "adapter_qualification": "Real loopback HTTP fixtures under NetworkIsolationGuard; actual upstream binaries and production not tested",
+      "adapter_qualification": "All six native pairs have HTTP fixture coverage; four selected empty-library reads additionally exercised on real Sonarr4.0.20.3014 via a GET-only transport bridge. No production qualification.",
       "test_reference": "tests/test_native_services.py:test_every_advertised_pair_routes_through_executor_to_native_http",
       "unavailable_behavior": "Structured service_not_configured/service_unavailable error; no fallback to another service",
-      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial"
+      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial",
+      "actual_upstream_qualification": {
+        "application": "Sonarr4.0.20.3014",
+        "platform": "LinuxARM64 on Docker Desktop VM",
+        "operations": [
+          "health",
+          "queue",
+          "library",
+          "history"
+        ],
+        "state": "empty isolated library",
+        "checks": "8/8;5 upstreamGET200",
+        "transport": "GET-only Docker exec curl bridge; directTCP untested",
+        "receipt": "experiments/portable-v1/sonarr-upstream-readonly-smoke.json",
+        "not_qualified": [
+          "seeded entity resolution",
+          "missing semantics",
+          "metadata search",
+          "writes",
+          "other versions"
+        ]
+      }
     },
     {
       "service": "radarr",

@@ -72,6 +72,16 @@ warm MLX generation within `LocalModel.infer`; it excludes template rendering,
 tokenization, cache preparation/copy, verification, execution and HTTP overhead.
 It is not complete request latency.
 
+Service API qualification is separate from inference support. A disposable
+Linux ARM64 Sonarr 4.0.20.3014 instance on the Mac Docker VM passes selected
+empty-library reads through native-only Arrmes and a GET-only Docker transport
+bridge. This does not qualify other services, seeded entities, search, missing
+media, writes or direct cross-container TCP. To reproduce on a local ARM64
+Docker Desktop context, pull the single pinned image documented in
+`scripts/smoke_sonarr_upstream.py`, then run `python scripts/smoke_sonarr_upstream.py
+--output work/sonarr-upstream-smoke.json`. The harness requires sampled resource
+headroom, uses one CPU/768 MiB, isolates networking and removes its test resources.
+
 ## CPU installation
 
 Use Python 3.12 or later. From the Arrmes checkout:
@@ -147,6 +157,47 @@ or other accelerators.
 
 ## Authenticated HTTP service
 
+For a first model-free read installation, create the client registry and a local
+curl header file in a fresh configuration directory. This generates a token
+without printing it; both new files are private and existing files are refused:
+
+```sh
+python3 - <<'PY'
+import hashlib, json, os, secrets
+token = secrets.token_urlsafe(32)
+registry = {"clients": [{"subject": "local:operator",
+    "token_sha256": hashlib.sha256(token.encode()).hexdigest(),
+    "scopes": ["media:read", "torrents:read", "activity:read"]}]}
+for path, body in [("clients.json", json.dumps(registry)),
+                   ("client-header.txt", "Authorization: Bearer " + token + "\n")]:
+    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(descriptor, "w") as output:
+        output.write(body)
+print("Created clients.json and client-header.txt")
+PY
+```
+
+Create `services.json` using the native registry example in
+[capabilities.md](capabilities.md#native-api-configuration), then start:
+
+```sh
+export ARRMES_CLIENTS_FILE="$PWD/clients.json"
+export ARRMES_SERVICES_FILE="$PWD/services.json"
+export ARRMES_BACKEND=native-only
+python -m arrmes.server
+```
+
+From a second terminal in that configuration directory:
+
+```sh
+curl --header @client-header.txt --header 'Content-Type: application/json' \
+  --data '{"query":"Show Sonarr queue"}' http://127.0.0.1:8095/v1/execute
+```
+
+The registry above grants reads only. Model-free mode forces writes off.
+For neural routing and confirmation-gated transfer control, configure a model
+backend below and deliberately grant the corresponding management scope.
+
 Set `ARRMES_BACKEND=llama-server`, `ARRMES_MODEL_PATH` to the fused GGUF,
 `ARRMES_MODEL_FAMILY=hermes`, `ARRMES_LLAMA_SERVER` to its executable,
 `ARRMES_DEVICE=cpu`, and optionally `ARRMES_THREADS`/`ARRMES_CONTEXT_SIZE`.
@@ -167,6 +218,22 @@ only runs the documented explicit-service read grammar and forces writes off.
 Requests outside that grammar clarify. The default neural backend and its
 trained media actions remain separate. Registries are read at startup; restart
 after editing them.
+
+On the measured Mac, the model-free package started in a fresh Python 3.12
+environment with only jsonschema and its small transitive dependencies. Six
+bootstrap/authentication/read/abstention checks passed while imports of MLX,
+PyTorch, Transformers, NumPy and llama-cpp-python were explicitly blocked.
+The reproducible check is `python scripts/smoke_native_only.py --output
+work/native-only-smoke.json`.
+
+A separate frozen explicit-read HTTP workload completed 140/140 expected
+business outcomes over 14 tasks with no upstream writes. Client request p50/p95
+was 1.35/1.70 ms and the isolated application process peak RSS was 47,955,968
+bytes. These synthetic loopback requests use a restricted deterministic grammar;
+their task mix differs from the neural comparison. They do not establish a
+model speedup, production latency or broad language understanding. Six access
+and abstention controls also passed. Inputs, package versions, source hashes
+and every request are in `experiments/overnight-v1/native-only-http.json`.
 
 To attach an already managed native runtime, set `ARRMES_INFERENCE_URL` to its
 HTTP(S) origin instead of launching a model child. It must implement native

@@ -223,9 +223,16 @@
     },
     {
       "path": "experiments/overnight-v1/receipt-encoding-index.json",
-      "original_sha256": "02e0a8673b6fe39c0bbb52318ca8ccf7a7977caece0ef1f240b81c77c9c0630f",
-      "public_sha256": "af325cb671265cecc9a41aee8666cf49d030820cba705c111e3681f2f53c0075",
-      "transformation": "metadata paths and fixture address placeholders; checksum maps use explicit path/digest records; inline fixture source may move to a separate attachment"
+      "original_sha256": "04b369d28e4c590349f21c302aea20bfcada67fbf3deaa75d6e3e67821e2298e",
+      "public_sha256": "04b369d28e4c590349f21c302aea20bfcada67fbf3deaa75d6e3e67821e2298e",
+      "transformation": "No privacy change; final evidence archive supports smoke harnesses, preservation README and read-only raw/input entries.",
+      "prior_versions": [
+        {
+          "original_sha256": "02e0a8673b6fe39c0bbb52318ca8ccf7a7977caece0ef1f240b81c77c9c0630f",
+          "public_sha256": "af325cb671265cecc9a41aee8666cf49d030820cba705c111e3681f2f53c0075",
+          "reason": "Tooling/addendum finalized with Sonarr evidence before integration; raw measurements unchanged."
+        }
+      ]
     },
     {
       "path": "experiments/overnight-v1/released-arrmes.json",
@@ -398,8 +405,8 @@
     {
       "path": "scripts/report_benchmark_comparison.py",
       "original_sha256": "98cba75af1ca1da57ed4ec844f3e4ba556fdebd4f6d369d00cf5bb6e3a5fb916",
-      "public_sha256": "2ed47571a728f267c83664d29f552418bf535c716a09d6e8dcfbfa05c59cdde9",
-      "transformation": "operator paths omitted; public source restoration identifies export provenance"
+      "public_sha256": "50a59753e763a3d9d77e9fc9d27ae75b4a35073140971923f54c2a6418988b22",
+      "transformation": "operator paths omitted; public source restoration identifies export provenance; wording describes original fixture-address mismatch after public placeholders coincide"
     },
     {
       "path": "scripts/replay_benchmark_verifier.py",
@@ -421,15 +428,22 @@
     },
     {
       "path": "scripts/compact_benchmark_receipts.py",
-      "original_sha256": "aa3ce8781b37cd275d1eabb17f9b342482d5fbc43feddd0f7af03c06ad58e2c2",
-      "public_sha256": "aa3ce8781b37cd275d1eabb17f9b342482d5fbc43feddd0f7af03c06ad58e2c2",
-      "transformation": "operator paths omitted; public source restoration identifies export provenance"
+      "original_sha256": "e7fc18c2765d489d0b03854de9a55f027a247b9a3c0e5fb8fb516688faf447d9",
+      "public_sha256": "e7fc18c2765d489d0b03854de9a55f027a247b9a3c0e5fb8fb516688faf447d9",
+      "transformation": "No privacy change; final evidence archive supports smoke harnesses, preservation README and read-only raw/input entries.",
+      "prior_versions": [
+        {
+          "original_sha256": "aa3ce8781b37cd275d1eabb17f9b342482d5fbc43feddd0f7af03c06ad58e2c2",
+          "public_sha256": "aa3ce8781b37cd275d1eabb17f9b342482d5fbc43feddd0f7af03c06ad58e2c2",
+          "reason": "Tooling/addendum finalized with Sonarr evidence before integration; raw measurements unchanged."
+        }
+      ]
     },
     {
       "path": "scripts/rescore_benchmark_observations.py",
       "original_sha256": "efcbcb33cfd49a5befdbf81adfc383658b53b8b979d1c1254f2b13e45281a301",
-      "public_sha256": "efcbcb33cfd49a5befdbf81adfc383658b53b8b979d1c1254f2b13e45281a301",
-      "transformation": "operator paths omitted; public source restoration identifies export provenance"
+      "public_sha256": "522eb13720d44a8d31baac96b1a6f0f05c5c7717bf56741bdebbb7e9ce1c8451",
+      "transformation": "operator paths omitted; public source restoration identifies export provenance; diagnostic output now uses separate files and refuses overwrite of source/existing receipts"
     },
     {
       "path": "scripts/benchmark_workflows.py",
@@ -452,7 +466,7 @@
     {
       "path": "reports/benchmark-overnight-v1.md",
       "original_sha256": "9ff5a84be71ba3b53a1e95a8c6a63cbe57f47eebdd9aead772795b7da8b7a8ff",
-      "public_sha256": "8865ee03f67c4afe2c61dc64eb297c80547c7d055d7e1cbe749dee63d95a1a71",
+      "public_sha256": "861edbc9a1140766f8c029a36d596f0da3e35ba2b8cb9d691f1cc854fbec76ac",
       "transformation": "local metadata omitted; links adapted for public documentation"
     },
     {
@@ -464,7 +478,7 @@
     {
       "path": "reports/benchmark-overnight-v1.html",
       "original_sha256": "fbdaddae51174bed439dbbd816d2bfea5b2855311c7eb6cbd300ad7147b0a83d",
-      "public_sha256": "f2357e6e8fad5f3a100ba1fcd99aad8f913307c42748054435e2537f1bb354e8",
+      "public_sha256": "e0ada44b910a22c90584b61b236fdb353ee877a3f9f652a62b8a29bab1187223",
       "transformation": "local metadata omitted; links adapted for public documentation"
     },
     {
@@ -472,6 +486,80 @@
       "original_sha256": "fd9ed8e74984f00277436c1c81fdefc3f3b6f39c9bb8635a064b4853b1da610b",
       "public_sha256": "fd22cf5e34e8016cb5afb8d99eb08e9048e5e8803173d082f6aac926b752f230",
       "transformation": "PNG non-image metadata removed; visible pixels preserved"
+    },
+    {
+      "path": "scripts/smoke_native_only.py",
+      "original_sha256": "f1d637b8ca0f6630fc8f5a9c46f66e40e75932a2c10fef883352f757471db87e",
+      "public_sha256": "b7ea237083a0e13667ed1e3c75f47140e32cedd622514f846646f1b204127e1a",
+      "transformation": "Local temporary paths omitted and Python checksum maps use explicit path/digest records; all frozen tasks, results and measurements unchanged. Synthetic fixture credential strings constructed from segments without changing runtime values."
+    },
+    {
+      "path": "scripts/benchmark_native_only_http.py",
+      "original_sha256": "8dbcf707d052b5e8040d95948940996576c26f8c4a989754a16f83d0b47173f7",
+      "public_sha256": "8dbcf707d052b5e8040d95948940996576c26f8c4a989754a16f83d0b47173f7",
+      "transformation": "Local temporary paths omitted and Python checksum maps use explicit path/digest records; all frozen tasks, results and measurements unchanged."
+    },
+    {
+      "path": "data/overnight-v1/native-only-http-inputs.json",
+      "original_sha256": "cf34cf9c2521884d1b6a85b0c438172e4b2dbb0b12bdfcf21503766e7d629c8f",
+      "public_sha256": "0ec91bc03b0936d6ed10a83cbe5c420b94efed0c19467a195795a3ac3939a136",
+      "transformation": "Local temporary paths omitted and Python checksum maps use explicit path/digest records; all frozen tasks, results and measurements unchanged."
+    },
+    {
+      "path": "experiments/overnight-v1/native-only-http.json",
+      "original_sha256": "3fe850838f7f19a1d164a8b45dd0eca8d5bfdc3872b5f336abea8ec704b90a0d",
+      "public_sha256": "0a56b0b3ceeac4d96221e96b6967f24bb2368ec66bb6d81b011ea1277a71eee7",
+      "transformation": "Local temporary paths omitted and Python checksum maps use explicit path/digest records; all frozen tasks, results and measurements unchanged."
+    },
+    {
+      "path": "experiments/portable-v1/native-only-bootstrap-smoke.json",
+      "original_sha256": "858a8cae9ca2d7c97257b2fa726e9a37b7befac5614dbf30ad1ea3063473640b",
+      "public_sha256": "7089e5806b8d6c1b68210e2094e721984ee0ad9fb27ebebc8f08cd92bc2359ca",
+      "transformation": "Local temporary paths omitted and Python checksum maps use explicit path/digest records; all frozen tasks, results and measurements unchanged."
+    },
+    {
+      "path": "reports/benchmark-overnight-v1-addendum.md",
+      "original_sha256": "5f1f0ec3b4714b733215ff72569ce28ab12e87abd43dcf2c8e61300b6bf1bfce",
+      "public_sha256": "17c8f089b20e486737ccbb0ba9d6ea32453a17eee14f93fdfbaacadff7a6958b",
+      "transformation": "Original fixture-address mismatch described in prose because public placeholders coincide; measurements unchanged.",
+      "prior_versions": [
+        {
+          "original_sha256": "b6c2df0f83bd2c16a0046f4001de7b2a133a1e9440f1302eeabffed5ea38b5c7",
+          "public_sha256": "66a8720d74017b95958ef26e7d35c87ac60534312c76632647788b298412981c",
+          "reason": "Tooling/addendum finalized with Sonarr evidence before integration; raw measurements unchanged."
+        }
+      ]
+    },
+    {
+      "path": "reports/benchmark-overnight-v1-addendum.html",
+      "original_sha256": "fab3d9c0ffbdbeb080880922fe5c1f44640958fe65c3cab0259837d44db159e7",
+      "public_sha256": "5b9473bcfef73f7f49716146a472f9281606b0b5cae1d7c9357531799d2f75ae",
+      "transformation": "Original fixture-address mismatch described in prose because public placeholders coincide; measurements unchanged.",
+      "prior_versions": [
+        {
+          "original_sha256": "1095fc27690e7eb87ad7df952f164eac36a310f28cc4df1bbe7397a03630b05f",
+          "public_sha256": "f8ad15b2de7bf82dc20157fe03e8589a75e92185c9ebaba520b7587d650c3cc2",
+          "reason": "Tooling/addendum finalized with Sonarr evidence before integration; raw measurements unchanged."
+        }
+      ]
+    },
+    {
+      "path": "scripts/smoke_sonarr_upstream.py",
+      "original_sha256": "79d038c9dbd534648a30ec02d7982fcaf27f6ff1c8de112136a08a5e1ba2d1d3",
+      "public_sha256": "c0150b02b4d722375cf417c97c594d3c1a1eb115e676512552f16427bfc7d9e2",
+      "transformation": "Local paths omitted; checksum maps use explicit path/digest records; synthetic fixture credential assembled from segments. Measurements, API observations and failed-attempt status unchanged."
+    },
+    {
+      "path": "experiments/portable-v1/sonarr-upstream-readonly-smoke.json",
+      "original_sha256": "7fde01354ff68d739198c39705c417f2e83ebdc520f638ef5cbff4e9080b5b62",
+      "public_sha256": "365c082e430dd20b07e5916335ad56e9315c6171a4bcd526ecae679535730e69",
+      "transformation": "Local paths omitted; checksum maps use explicit path/digest records; synthetic fixture credential assembled from segments. Measurements, API observations and failed-attempt status unchanged."
+    },
+    {
+      "path": "experiments/portable-v1/sonarr-upstream-bootstrap-attempt1.json",
+      "original_sha256": "3219e1d6df0ef266f3b12ea2d3ea830cee680f7a87cd3cb9237288f02bc1d933",
+      "public_sha256": "b7b684773571760525e0ed808b6797f04d05cc7ea6ca547ae084f479730e7834",
+      "transformation": "Local paths omitted; checksum maps use explicit path/digest records; synthetic fixture credential assembled from segments. Measurements, API observations and failed-attempt status unchanged."
     }
   ],
   "attachments": [

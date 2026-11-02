@@ -15,6 +15,18 @@ request through `BoundedExecutor` to a loopback HTTP service fixture under
 Sonarr, Radarr, Lidarr, Bazarr, qBittorrent, Tautulli or Seerr binaries. No
 production service was used for training, evaluation or mutation.
 
+An additional actual Sonarr 4.0.20.3014 ARM64 instance passes eight bounded
+bootstrap/authentication/read checks on an empty library. Arrmes package-main
+native-only HTTP executes health, queue, library and history; five actual API v3
+GETs return 200 with the correct synthetic key. A GET-only loopback proxy uses
+`docker exec curl` inside the isolated container, forwarding unchanged upstream
+JSON. This is real application-protocol evidence through a transport bridge,
+not direct cross-container TCP qualification. The first host-port setup failure
+and successful follow-up are both retained in `experiments/portable-v1/`.
+No seeded entity, missing-media semantics, discovery or write was qualified.
+All temporary containers, networks, app/proxy processes and configuration were
+removed; the pinned image cache remains for reproduction.
+
 Six existing neural v2 reads also execute directly against configured native
 services: `tv_status`, `tv_missing`, `movie_status`, `music_status`,
 `now_playing` and `watch_history`. This bridge preserves the trained tool names
@@ -223,8 +235,9 @@ local file paths, IP addresses and credential fields, including nested fields.
 
 Audited source revisions, exact content digests and retrieval times are in
 [capabilities-api-sources.json](capabilities-api-sources.json). Upstream
-application releases and API path versions are separate facts. No installed
-upstream application version was hardware-tested in this increment.
+application releases and API path versions are separate facts. The selected
+empty-library Sonarr 4.0.20.3014 check above is the only real upstream application
+version tested in this increment; the remaining service contracts use fixtures.
 
 - **Sonarr:** the pinned upstream
   [v3 OpenAPI contract](https://github.com/Sonarr/Sonarr/blob/bc54afbdd0e38bdb0fca4785fcf7d7a6af77bf9a/src/Sonarr.Api.V3/openapi.json)

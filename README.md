@@ -33,7 +33,7 @@ The original 230–245 ms warm p50 claim timed generation only. Prompt preparati
 
 New comparisons retain raw model predictions, translated-format scores, verifier decisions and controlled fixture execution as separate tracks. See the [comparison report](docs/benchmark-comparison.md) and versioned inputs under `data/overnight-v1/`. Historical sealed-suite results are not a substitute for performance on new requests.
 
-The native adapters are validated against loopback HTTP fixtures. Actual upstream application versions, large live libraries and production writes still need qualification. Native Bitmagnet integration, subtitle mutations, request lifecycle management and genuine Armiger/DH-Waypoint adapters remain gaps. The old gateway Armiger and Waypoint substitutions now return unsupported.
+The native adapters are validated against loopback HTTP fixtures. A separate empty-library Sonarr 4.0.20.3014 instance also passes selected read checks through a GET-only Docker transport bridge. Broader upstream versions, seeded entities, large libraries and production writes still need qualification. Native Bitmagnet integration, subtitle mutations, request lifecycle management and genuine Armiger/DH-Waypoint adapters remain gaps. The old gateway Armiger and Waypoint substitutions now return unsupported.
 
 ## Install
 

@@ -1,3 +1,22 @@
+## 2026-11-01 Final validation of the portable/native increment
+
+Fresh confirmation catalogs fix a defect found in independent review; 16 new
+regressions exercise real cache behavior, changed IDs/titles/years and replay.
+The full local suite passed 406 tests with one optional export skip. A later
+receipt-preservation regression and eight benchmark integrity checks also pass;
+cached rescoring now writes a separate diagnostic copy and refuses overwrites.
+All four required GitHub jobs passed on 56c1714, with final evidence additions
+checked on their own head before merge.
+
+A core-only process completed 140/140 explicit reads with six access/abstention
+controls, 1.35/1.70 ms HTTP p50/p95 and 47,955,968-byte peak RSS. This restricted
+loopback workload is separate from neural accuracy. Fresh package-main bootstrap
+passes with optional inference imports blocked. An actual Sonarr 4.0.20.3014
+ARM64 empty app also passes eight selected read/bootstrap checks through a
+GET-only Docker bridge; direct TCP, seeded entities and writes remain unqualified.
+All temporary test resources were removed. Public weights remain unchanged;
+new operations use explicit grammar, and improved v2 raw accuracy remains 63/80.
+
 ## 2026-11-01 Native workflows and portable inference
 
 Added 29 explicit native read pairs, six trained native media read bridges,

@@ -26,6 +26,13 @@ best-quality recipe. Model identity, quantization, revisions, artifact hashes,
 packages, hardware and raw outputs are retained in `experiments/overnight-v1/`.
 Separate Linux CPU and NVIDIA results use different hardware and backend settings.
 
+“Native” strict scoring here means the Arrmes wire contract: Hermes wrappers
+for Qwen/Granite and the FunctionGemma contract for that family. It is not a
+claim that every publisher's preferred tool format and decoding recipe has been
+fully integrated. Granite's serialized arguments and Qwen 1.7B's bare JSON are
+therefore also scored through the separately declared format translation.
+Publisher-default integrations remain a compatibility limitation of this study.
+
 The comparisons cover actual public Arrmes, preserved internal v6, the identical
 untuned Qwen base, FunctionGemma 270M base, Granite 350M community Q4 and publisher
 BF16, Qwen3 1.7B Q4, Qwen3 4B Instruct 2507 Q4, and the existing deterministic
@@ -151,6 +158,36 @@ process RSS and 2.22 GB peak unified-memory allocation; those overlapping counte
 must not be added or described as dedicated VRAM.
 
 ## Working integration and remaining limits
+
+A separate real Sonarr 4.0.20.3014 ARM64 binary passes selected empty-library
+health/queue/library/history reads through native-only HTTP and a GET-only
+Docker transport bridge: eight checks pass, five upstream GETs return 200, no
+mutations occur. The first host-port setup failure is preserved beside the
+successful receipt. This extends protocol evidence beyond fixtures for one
+version; it does not establish seeded-entity workflows or service-wide support.
+
+The separate optional **native-only** mode loads no weights and only supports
+the explicit service grammar. A core-only Python environment completed 140/140
+expected read outcomes over 14 frozen tasks, with 28 warmup requests excluded.
+Actual authenticated HTTP client p50/p95 was 1.35/1.70 ms; isolated application
+peak RSS was 47,955,968 bytes. Six authentication, scope and abstention controls
+passed with no upstream calls. Its distinct grammar/task mix must not be used
+to claim a speedup over the model comparison. The single measured process
+startup-to-listening sample was 123.9 ms; it is not a cold-start distribution.
+The versioned input/receipt and `scripts/benchmark_native_only_http.py` preserve
+the exact source revision, fixture transform, dependencies and per-request data.
+
+Reproduce in a fresh core environment with a separate checkout of the measured
+public revision `44c16f4c94bdf6d11cd38c3dfd151ec7df86459f` installed:
+
+```sh
+python scripts/benchmark_native_only_http.py \
+  --source-root ./work/measured-public-checkout \
+  --source-commit 44c16f4c94bdf6d11cd38c3dfd151ec7df86459f \
+  --work-dir ./work/new-native-only-run \
+  --inputs ./work/new-native-only-inputs.json \
+  --output ./work/new-native-only-results.json --repetitions 10
+```
 
 The six existing trained native read names now pass actual public-model inference
 through executor, native HTTP and independent fixture business-field checks:
@@ -285,8 +322,13 @@ python scripts/benchmark_workflows.py \
   --oracle ./work/reproduced-workflow-oracle.json \
   --label reproduced-workflows --output ./work/reproduced-workflows.json
 python scripts/rescore_benchmark_observations.py \
-  ./experiments/overnight-v1/released-arrmes.json
+  ./experiments/overnight-v1/released-arrmes.json \
+  --output-dir ./work/new-observation-rescore
 ```
+
+Rescoring writes a new diagnostic copy and refuses overwrites. Public placeholder
+transformations can alter business-field matches relative to the original private
+oracle; they do not change the recorded original result or model prediction.
 
 The report generator reads the versioned named receipts. New reproduction runs
 remain separate. `compact_benchmark_receipts.py` retains decoded JSON equality,
