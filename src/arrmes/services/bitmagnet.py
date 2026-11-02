@@ -97,7 +97,7 @@ def _post_read(native: ServiceQueryAdapter, operation: ReadOperation, variables:
     try:
         with native._opener.open(request, timeout=native.timeout_seconds) as response:
             audit.append({"method": "POST", "path": "/graphql", "status": int(response.status),
-                          "read_operation": _OPERATION_NAMES[operation], "attempt": 1})
+                          "read_operation": _OPERATION_NAMES[operation], "effect": "read", "attempt": 1})
             deadline = time.monotonic() + native.timeout_seconds
             chunks, length = [], 0
             while True:
@@ -119,13 +119,13 @@ def _post_read(native: ServiceQueryAdapter, operation: ReadOperation, variables:
         status = int(exc.code)
         exc.close()
         audit.append({"method": "POST", "path": "/graphql", "status": status,
-                      "read_operation": _OPERATION_NAMES[operation], "attempt": 1})
+                      "read_operation": _OPERATION_NAMES[operation], "effect": "read", "attempt": 1})
         code = ("upstream_authentication_failed" if status in {401, 403} else
                 "upstream_redirect_refused" if 300 <= status < 400 else "upstream_http_error")
         raise _UpstreamError(code, status) from None
     except (urllib.error.URLError, TimeoutError, OSError):
         audit.append({"method": "POST", "path": "/graphql", "status": 503,
-                      "read_operation": _OPERATION_NAMES[operation], "attempt": 1})
+                      "read_operation": _OPERATION_NAMES[operation], "effect": "read", "attempt": 1})
         raise _UpstreamError("service_unavailable", 503) from None
     if isinstance(data, dict) and "errors" in data and data["errors"] != []:
         # GraphQL can return partial data with HTTP 200. Never call it a

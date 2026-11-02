@@ -11,6 +11,9 @@ from .services import ServiceQueryAdapter, NativeTransferAdapter
 from .services.transfers import CONFIRMATION_PREFIX, TORRENT_ACTIONS
 from .services.media import NativeMediaReadAdapter
 from .services.bitmagnet import NativeBitmagnetAdapter
+from .services.bazarr_subtitles import NativeBazarrSubtitleAdapter, SUBTITLE_ACTIONS
+from .services.bazarr_subtitles import CONFIRMATION_PREFIX as BAZARR_CONFIRMATION_PREFIX
+from .services.requests import NativeRequestAdapter, CONFIRMATION_PREFIX as REQUEST_CONFIRMATION_PREFIX
 
 
 class ConfiguredAdapterRouter:
@@ -28,9 +31,15 @@ class ConfiguredAdapterRouter:
         self.transfers = NativeTransferAdapter(native, write_mode="confirm" if write_mode == "direct" else write_mode)
         self.media_reads = NativeMediaReadAdapter(native)
         self.bitmagnet_reads = NativeBitmagnetAdapter(native)
+        self.subtitles = NativeBazarrSubtitleAdapter(native, write_mode="confirm" if write_mode == "direct" else write_mode)
+        self.requests = NativeRequestAdapter(native, write_mode="confirm" if write_mode == "direct" else write_mode)
 
     def execute(self, call: Call, principal: Principal, *, idempotency_key: str | None = None) -> AdapterObservation:
         call = validate_call(call.name, call.arguments)
+        if call.name in SUBTITLE_ACTIONS:
+            return self.subtitles.execute(call, principal, idempotency_key=idempotency_key)
+        if self.requests.supports(call.name):
+            return self.requests.execute(call, principal, idempotency_key=idempotency_key)
         if call.name == "service_query":
             return self.native.execute(call, principal, idempotency_key=idempotency_key)
         if call.name in TORRENT_ACTIONS and "qbittorrent" in self.native.configs:
@@ -46,6 +55,10 @@ class ConfiguredAdapterRouter:
 
     def confirm_write(self, confirm_id: str, principal: Principal, *,
                       idempotency_key: str | None = None, now: float | None = None) -> AdapterObservation:
+        if isinstance(confirm_id, str) and confirm_id.startswith(BAZARR_CONFIRMATION_PREFIX):
+            return self.subtitles.confirm_write(confirm_id, principal, idempotency_key=idempotency_key, now=now)
+        if isinstance(confirm_id, str) and confirm_id.startswith(REQUEST_CONFIRMATION_PREFIX):
+            return self.requests.confirm_write(confirm_id, principal, idempotency_key=idempotency_key, now=now)
         if isinstance(confirm_id, str) and confirm_id.startswith(CONFIRMATION_PREFIX):
             return self.transfers.confirm_write(confirm_id, principal, idempotency_key=idempotency_key, now=now)
         if self.legacy is not None:

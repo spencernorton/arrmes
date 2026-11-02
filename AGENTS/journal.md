@@ -1,3 +1,20 @@
+## 2026-11-02 Confirmed subtitle and caller-owned request integration
+
+Integrated exact-target Bazarr provider search/candidate download and Seerr
+caller-owned movie submission/status through runtime routing, scoped execution
+and namespaced single-use confirmations. Native-only mode remains read-only by
+default; a deliberate confirmed-write opt-in enables documented explicit phrases.
+New neural vocabulary or model training is not claimed. Accepted subtitle jobs
+stay dispatched because metadata alone cannot correlate a particular download.
+
+Request status refuses qualifiers the preserved title-only schema cannot carry.
+Artist-only music writes require explicit broad/missing scope rather than losing
+an album selector. Duplicate upstream JSON keys now fail before target selection.
+Focused native runtime/service checks pass 211 tests; 29 confirmation-cache and
+write-grounding checks pass after retaining the existing explicit missing-music
+phrase. Full-suite integration will be rerun with the remaining native Arr writes.
+No production service or model artifact was modified.
+
 ## 2026-11-01 Native Bitmagnet reads
 
 Added direct native Bitmagnet indexed metadata search and health, with two

@@ -194,9 +194,15 @@ curl --header @client-header.txt --header 'Content-Type: application/json' \
   --data '{"query":"Show Sonarr queue"}' http://127.0.0.1:8095/v1/execute
 ```
 
-The registry above grants reads only. Model-free mode forces writes off.
+The registry above grants reads only. Model-free mode defaults to writes off.
+To opt into the documented explicit Bazarr/Seerr write phrases, set
+`ARRMES_NATIVE_CONFIRMED_WRITES=1` and `ARRMES_WRITE_MODE=confirm`, and deliberately
+grant `media:manage` for subtitle operations or `requests:create` for requests.
+Each consequential step still needs its own single-use confirmation. Direct
+writes are unavailable in the HTTP service. The opt-in does not add free-form
+language understanding or make unquoted neural actions available without a model.
 For neural routing and confirmation-gated transfer control, configure a model
-backend below and deliberately grant the corresponding management scope.
+backend below and deliberately grant its corresponding management scope.
 
 Set `ARRMES_BACKEND=llama-server`, `ARRMES_MODEL_PATH` to the fused GGUF,
 `ARRMES_MODEL_FAMILY=hermes`, `ARRMES_LLAMA_SERVER` to its executable,
@@ -214,7 +220,11 @@ permissions or confirmation policy.
 
 For a model-free installation, set `ARRMES_BACKEND=native-only` and configure
 both registries. No model file, MLX, CUDA or llama-server is needed. This mode
-only runs the documented explicit-service read grammar and forces writes off.
+only runs documented explicit-service grammar and defaults to writes off. The
+separate write opt-in above enables confirmed subtitle/provider searches,
+candidate downloads and movie requests using their narrow explicit phrases.
+See [Bazarr subtitles](bazarr-subtitles.md) and [caller-owned Seerr requests](native-requests.md)
+for required arguments, identity mapping and honest completion limits.
 Requests outside that grammar clarify. The default neural backend and its
 trained media actions remain separate. Registries are read at startup; restart
 after editing them.

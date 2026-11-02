@@ -380,6 +380,33 @@ def verify_proposal(
         return validate_call("unsupported", {"reason": "unsafe"})
     if _SCOPE_RE.search(q_unquoted):
         return validate_call("clarify", {"slot": "scope"})
+    if name in {"request_status", "request_media"}:
+        # The released request schema cannot carry quality/season/other-user
+        # restrictions. Do not silently discard them when choosing a provider.
+        scope_text = unicodedata.normalize("NFKC", q_unquoted).casefold()
+        literal = " ".join(unicodedata.normalize("NFKC", str(args.get("title", ""))).casefold().split())
+        if literal:
+            scope_text = re.sub(r"(?<!\w)" + re.escape(literal) + r"(?!\w)", " ENTITY ", scope_text)
+        if re.search(r"\b(4k|uhd|2160p|1080p|720p|seasons?|episodes?|quality|profile|quota|on\s+behalf)\b|\bas\s+(?!movie\b|tv\b)\w+", scope_text):
+            return validate_call("clarify", {"slot": "scope"})
+        if name == "request_status" and re.search(r"\b(?:18\d{2}|19\d{2}|20\d{2}|21\d{2}|2200|movies?|films?|tv|series)\b", scope_text):
+            return validate_call("clarify", {"slot": "scope"})
+        if name == "request_status" and isinstance(selected, dict) and _DEICTIC_RE.search(q_unquoted):
+            if any(selected.get(key) is not None for key in ("year", "media_type", "season")):
+                # The title-only v2 status call cannot retain a qualified
+                # selected entity. Ask for an unqualified unique title rather
+                # than looking up another remake after losing the qualifier.
+                return validate_call("clarify", {"slot": "scope"})
+    if name in {"bazarr_subtitle_search", "bazarr_subtitle_download"}:
+        from .services.bazarr_routing import route_bazarr_subtitle_query
+        grounded = route_bazarr_subtitle_query(query)
+        if grounded is None:
+            return validate_call("clarify", {"slot": "scope"})
+        if grounded.name in {"clarify", "unsupported"}:
+            return grounded
+        if normalized(grounded) != normalized(call):
+            return validate_call("clarify", {"slot": "scope"})
+        return validate_call(grounded.name, grounded.arguments)
     if name == "service_query":
         from .services import route_service_query
         if contract_version in {"v1", CONTRACT_VERSION}:
@@ -595,6 +622,13 @@ def verify_proposal(
         name = "music_status"
     elif name == "music_search" and ungrounded_album_dropped:
         return validate_call("clarify", {"slot": _infer_clarify_slot(query, selected)})
+    elif name == "music_search" and "album" not in args:
+        scope_text = _strip_quoted_and_releases(query)
+        artist = str(args.get("artist", ""))
+        if artist:
+            scope_text = re.sub(r"(?<!\w)" + re.escape(artist) + r"(?!\w)", " ENTITY ", scope_text, flags=re.I)
+        if not re.search(r"\b(?:all|every|entire\s+(?:artist|catalog(?:ue)?|discography)|discography|missing\s+(?:albums?|music)|artist[- ]wide)\b", scope_text, re.I):
+            return validate_call("clarify", {"slot": "scope"})
     elif name == "tv_search_missing" and not has_search_trigger:
         name = "tv_missing" if re.search(r"\b(missing|absent|gaps|holes)\b", q_unquoted, re.IGNORECASE) else "tv_status"
         args.pop("season", None)
@@ -733,6 +767,8 @@ def prepare(call: Call, principal: Principal) -> dict[str, Any]:
             "dry_run": True, "executed": False}
     permission = spec.permission
     service = spec.service
+    if call.name in {"bazarr_subtitle_search", "bazarr_subtitle_download"}:
+        base.update(contract=CONTRACT_VERSION_V3, contract_sha256=contract_hash_v3())
     if call.name == "service_query":
         from .services import SERVICE_PERMISSIONS
         service = call.arguments["service"]

@@ -106,6 +106,14 @@ root digest. Confirmation checks current scopes/mapping and repeats the complete
 fresh lookup. An upgrade, changed identity or changed target requires a new
 confirmation. Expiry and replay fail before mutation.
 
+The explicit phrase `Request movie "Fixture movie" (2020) in Seerr` reaches the
+same controller without neural inference. `Show my request status for "Fixture
+movie" in Seerr` reads the uniquely resolved, caller-owned request. An explicit
+Seerr request with no native Seerr configuration clarifies rather than falling
+back to a different portal. The model-free server defaults to read-only; its
+deliberate confirmed-write opt-in is documented in the [runtime guide](portable-runtime.md).
+These routes are deterministic application behavior, not newly trained tools.
+
 An existing own pending/approved request is a verified no-op. An own completed
 request is a no-op only when the media is still available. Failed, declined or
 multiple conflicting own requests require review; this adapter does not infer a

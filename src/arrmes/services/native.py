@@ -178,8 +178,8 @@ def _validated_rows(service: str, operation: str, rows: list[dict[str, Any]], *,
                 valid = session and _display(row)
         elif service == "seerr":
             kind = row.get("mediaType")
-            titles = ("title", "originalTitle") if kind == "movie" else ("name", "originalName")
-            valid = _id(row.get("id")) and kind in {"movie", "tv", "person"} and any(_text(row.get(key)) for key in titles)
+            titles = ("title", "originalTitle") if kind in {"movie", "collection"} else ("name", "originalName")
+            valid = _id(row.get("id")) and kind in {"movie", "tv", "person", "collection"} and any(_text(row.get(key)) for key in titles)
         if not valid:
             raise _UpstreamError(f"invalid_{service}_{operation}_record")
     return rows
@@ -284,7 +284,15 @@ class ServiceQueryAdapter:
                     decoded = raw.decode("utf-8")
                     def reject_nonfinite(_value):
                         raise ValueError("Non-finite upstream JSON number")
-                    return decoded.strip() if text else json.loads(decoded, parse_constant=reject_nonfinite)
+                    def unique_keys(pairs):
+                        value = {}
+                        for key, item in pairs:
+                            if key in value:
+                                raise ValueError("Duplicate upstream JSON key")
+                            value[key] = item
+                        return value
+                    return decoded.strip() if text else json.loads(decoded, parse_constant=reject_nonfinite,
+                                                                  object_pairs_hook=unique_keys)
                 except (ValueError, UnicodeError, RecursionError) as exc:
                     raise _UpstreamError("invalid_upstream_json") from exc
         except urllib.error.HTTPError as exc:

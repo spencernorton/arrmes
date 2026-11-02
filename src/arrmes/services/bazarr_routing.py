@@ -27,11 +27,13 @@ def route_bazarr_subtitle_query(query: str) -> Call | None:
     accepted. Compound writes and unsupported subtitle mutations never fall
     through to the released model's media-download actions.
     """
-    if not isinstance(query, str) or not query.strip() or len(query) > 2000:
+    if not isinstance(query, str) or not query.strip():
         return None
     plain = _QUOTED.sub(" ENTITY ", query)
     if not re.search(r"\bbazarr\b", plain, re.I):
         return None
+    if len(query) > 2000:
+        return Call("clarify", {"slot": "scope"})
     if not re.search(r"\b(find|search|download|grab|fetch|install|delete|remove|upload|replace|sync|manage|upgrade|update|change|edit|translate|repair|fix|refresh)\b", plain, re.I):
         return None
     if re.search(r"\b(ignore|bypass|override|credentials?|passwords?|tokens?|api\s*keys?|instructions?|system\s*prompt|shell|sudo)\b", plain, re.I):

@@ -38,6 +38,8 @@ def route_service_query(query: str) -> Call | None:
     service = next(iter(services))
     if _UNSAFE.search(plain):
         return Call("unsupported", {"reason": "unsafe"})
+    if service == "seerr" and re.search(r"\brequests?\b", plain, re.I) and not _WRITE.search(plain):
+        return None
     if service == "bitmagnet" and re.search(r"\b(import|reprocess|reclassify|classify|enqueue|purge)\b", plain, re.I):
         return Call("unsupported", {"reason": "out_of_scope"})
     if _WRITE.search(plain):

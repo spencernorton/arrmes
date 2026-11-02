@@ -249,7 +249,7 @@ def test_filtered_qbittorrent_queue_keeps_existing_v2_state_route():
     assert route_service_query("Show qBittorrent queue of paused torrents") is None
 
 
-@pytest.mark.parametrize("response,error", [((401, {"error": "SECRET"}), "service_authentication_failed"), ((404, {}), "service_api_version_or_route_unsupported"), ("not-json SECRET", "invalid_upstream_json"), ({"records": [], "totalRecords": -1}, "invalid_pagination_count")])
+@pytest.mark.parametrize("response,error", [((401, {"error": "SECRET"}), "service_authentication_failed"), ((404, {}), "service_api_version_or_route_unsupported"), ("not-json SECRET", "invalid_upstream_json"), ('{"records": [], "totalRecords": 0, "totalRecords": 1}', "invalid_upstream_json"), ('{"records": [{"id": 1, "id": 2}], "totalRecords": 1}', "invalid_upstream_json"), ({"records": [], "totalRecords": -1}, "invalid_pagination_count")])
 def test_auth_unavailable_version_and_malformed_errors_are_structured_and_redacted(response, error):
     with native_fixture(lambda *_: response) as (url, _):
         obs = ServiceQueryAdapter({"radarr": ServiceConfig(url)}).execute(Call("service_query", {"service": "radarr", "operation": "queue"}), OWNER)
