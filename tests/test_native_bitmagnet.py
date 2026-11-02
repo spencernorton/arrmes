@@ -7,7 +7,7 @@ from dataclasses import dataclass, field
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import json
 import threading
-import time
+from types import SimpleNamespace
 
 import pytest
 
@@ -20,6 +20,7 @@ from arrmes.sandbox import NetworkIsolationGuard
 from arrmes.server import ArrmesRuntimeService
 from arrmes.service_router import ConfiguredAdapterRouter
 from arrmes.services import ServiceConfig, ServiceQueryAdapter, load_service_configs, route_service_query
+import arrmes.services.bitmagnet as bitmagnet_module
 from arrmes.services.bitmagnet import NativeBitmagnetAdapter, _post_read
 
 READER = Principal("fixture-reader", frozenset({"releases:read"}))
@@ -46,7 +47,6 @@ class BitmagnetFixture:
     http_status: int = 200
     location: str | None = None
     raw_response: bytes | None = None
-    slow_body: bool = False
 
 
 @contextmanager
@@ -87,13 +87,7 @@ def bitmagnet_fixture(state=None, *, prefix="", api_key="proxy-fixture-key", **n
                 self.send_header("Location", state.location)
             self.end_headers()
             try:
-                if state.slow_body:
-                    for chunk in (raw[:1], raw[1:2], raw[2:]):
-                        self.wfile.write(chunk)
-                        self.wfile.flush()
-                        time.sleep(.06)
-                else:
-                    self.wfile.write(raw)
+                self.wfile.write(raw)
             except (BrokenPipeError, ConnectionResetError):
                 pass
 
@@ -322,12 +316,55 @@ def test_redirects_do_not_forward_proxy_credentials_or_replay_the_post():
         assert obs.data["error"] == "upstream_redirect_refused" and len(state.calls) == 1
 
 
-def test_response_bytes_and_body_deadline_are_finite():
-    with bitmagnet_fixture(max_response_bytes=32) as (native, _):
-        assert native.execute(_search_call(), READER).data["error"] == "response_limit_exceeded"
-    with bitmagnet_fixture(BitmagnetFixture(slow_body=True), timeout_seconds=.08) as (native, _):
+def test_response_bytes_are_finite():
+    with bitmagnet_fixture(max_response_bytes=32) as (native, state):
+        obs = native.execute(_search_call(), READER)
+        assert obs.status == "error" and obs.data["error"] == "response_limit_exceeded"
+        assert not obs.verified_complete and len(state.calls) == 1
+
+
+def test_body_deadline_bounds_progressing_http_reads_without_retry(monkeypatch):
+    # Real HTTP headers and body, with a controlled elapsed-body clock. Tiny
+    # wall-clock sleeps race the separate socket timeout on a busy CI host.
+    clock = SimpleNamespace(now=100.0)
+    monkeypatch.setattr(bitmagnet_module, "time", SimpleNamespace(monotonic=lambda: clock.now))
+    with bitmagnet_fixture(timeout_seconds=5) as (native, state):
+        real_opener = native._opener
+        responses, chunks, timeouts = [], [], []
+
+        class ClockedBody:
+            def __init__(self, response):
+                self.response = response
+                self.status = response.status
+
+            def __enter__(self):
+                self.response.__enter__()
+                return self
+
+            def __exit__(self, *args):
+                return self.response.__exit__(*args)
+
+            def read1(self, size):
+                chunk = self.response.read1(min(size, 1))
+                assert chunk, "The deadline must expire before the response ends"
+                chunks.append(chunk)
+                clock.now += 3.0
+                return chunk
+
+        class ClockedOpener:
+            def open(self, request, timeout):
+                timeouts.append(timeout)
+                response = real_opener.open(request, timeout=timeout)
+                responses.append(response)
+                return ClockedBody(response)
+
+        native._opener = ClockedOpener()
         obs = native.execute(_search_call(), READER)
         assert obs.status == "error" and obs.data["error"] == "upstream_read_deadline_exceeded"
+        assert obs.http_status == 504 and not obs.verified_complete
+        assert len(chunks) == 2 and all(len(chunk) == 1 for chunk in chunks)
+        assert clock.now == 106.0 and timeouts == [5]
+        assert len(state.calls) == len(responses) == 1 and responses[0].closed
 
 
 @pytest.mark.parametrize("field,value", [("totalCount", True), ("totalCount", -1),
