@@ -139,6 +139,13 @@ def test_universal_wording_never_erases_actual_episode_restrictions(restriction)
     assert result.name in {"clarify", "unsupported"}
 
 
+@pytest.mark.parametrize("restriction", ["after the pilot", "before the finale"])
+def test_relative_tail_after_a_universal_target_does_not_widen_to_the_series(restriction):
+    result = verify_proposal(Call("tv_search_missing", {"title": SERIES}),
+        f'Search Sonarr indexers for every missing episode of "{SERIES}" {restriction}.')
+    assert result.name in {"clarify", "unsupported"}
+
+
 @pytest.mark.parametrize("query", [
     f'Open a new request as me for the movie "{FILM}" from 2009.',
     f'Submit "{FILM}" (2009) as my movie request.',
