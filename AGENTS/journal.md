@@ -1,3 +1,34 @@
+## 2026-11-02 Frozen five-comparison diagnostic results
+
+Completed one prespecified pass over all 1,000 inputs for each comparison,
+with fresh processes, two development warmups, unchanged 64-token greedy
+settings and no network attempts. All native outputs and append-only journals
+are retained. Original and improved runtimes produce identical raw public-model
+outputs: 770 exact calls. The untuned base scores 396, the larger 4B reference
+782, and the deterministic router 89. Full-JSON format translation adds no
+exact calls in these runs.
+
+Proposal-boundary exact calls are 717 released, 678 improved, 439 base, 720
+reference and 105 deterministic. The stricter verifier reduces unexpected
+write proposals from ten to two on 728 non-write inputs, while damaging more
+correct raw predictions. This is a real accuracy regression, not evidence of
+improved routing quality. No executor, service write, confirmation redemption
+or unauthorized execution rate was measured. The blind control sensitivity
+remains separate from strict original scores.
+
+The recorded M4 Pro inclusive-infer p50/p95 is 316/403 ms for the improved
+public model and 605/941 ms for the larger reference. These are warm inference
+measurements, not HTTP latency or full CLI cold startup. RSS and MLX unified
+allocator peaks are separate. Clustered macro scores and intervals remain in
+the receipts. Corpus lineage, semantic holdout, malformed generation and
+guardrail limitations remain explicit; no runtime or weight was tuned.
+
+The 39 harness/frozen-input checks pass after making the source-identity unit
+fixture independent of future product changes and shallow Git clones. The
+publication scan reports no gitleaks findings, but a frozen synthetic title
+collides with an estate-name rule; exact context evidence remains private
+pending formal publication review. Frozen inputs and raw results are unchanged.
+
 ## 2026-11-02 Pre-inference direct-tool evaluation harness
 
 Added a reproducible Track A direct-model and Track B proposal-boundary harness

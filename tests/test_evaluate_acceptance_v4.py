@@ -34,8 +34,8 @@ def row(raw):
 def test_common_tool_and_policy_hashes_match_frozen_contract():
     assert bench.object_sha(catalog.tools_v2()) == bench.TOOL_SHA
     assert catalog.contract_hash_v2() == bench.CONTRACT_SHA
-    from arrmes.model import POLICY_V2
-    assert bench.hashlib.sha256(POLICY_V2.encode()).hexdigest() == bench.POLICY_SHA
+    provenance = json.loads((ROOT / "data/acceptance-v4/provenance.json").read_text())
+    assert provenance["developer_policy_utf8_sha256"] == bench.POLICY_SHA
 
 
 def test_tool_selection_is_separate_from_argument_schema(grader):
@@ -187,10 +187,31 @@ def test_frozen_inputs_keep_1000_complete_inputs_965_queries():
     assert len({row["entity_family"] for row in cases if row["entity_family"] != "av4:global"}) == 193
 
 
-def test_frozen_runtime_identity_matches_source_bytes():
-    identity = bench.source_identity(ROOT / "src", bench.FROZEN_RUNTIME)
+def test_frozen_runtime_identity_matches_source_bytes_and_rejects_tampering(tmp_path, monkeypatch):
+    # Git objects may not exist in shallow CI, and the current product source
+    # must be able to advance without rewriting a historical frozen runtime.
+    path = tmp_path / "src/arrmes/__init__.py"
+    path.parent.mkdir(parents=True)
+    original = b"# synthetic frozen source\n"
+    path.write_bytes(original)
+    def git_output(arguments, root=ROOT):
+        if arguments[:3] == ["ls-tree", "-r", "--name-only"]:
+            assert arguments[3] == bench.FROZEN_RUNTIME
+            return b"src/arrmes/__init__.py\n"
+        assert arguments == ["show", bench.FROZEN_RUNTIME + ":src/arrmes/__init__.py"]
+        return original
+    monkeypatch.setattr(bench, "git_output", git_output)
+    identity = bench.source_identity(tmp_path / "src", bench.FROZEN_RUNTIME)
     assert identity["commit"] == bench.FROZEN_RUNTIME
-    assert len(identity["files"]) >= 27
+    assert len(identity["files"]) == 1
+    path.write_bytes(original + b"# mutation\n")
+    with pytest.raises(ValueError, match="Runtime source"):
+        bench.source_identity(tmp_path / "src", bench.FROZEN_RUNTIME)
+
+
+def test_mixed_runtime_imports_are_refused_for_model_comparisons(tmp_path):
+    with pytest.raises(RuntimeError, match="fresh process"):
+        bench.runtime_modules(tmp_path)
 
 
 def test_refuses_overwriting_prior_results(tmp_path):

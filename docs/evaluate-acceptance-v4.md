@@ -24,6 +24,12 @@ denominator. A separate complete-JSON translation permits a single serialized
 argument object; it does not search substrings, remove keys, repair arguments,
 or feed translated calls to Track B.
 
+The entity diagnostics check the expected name/selector slots, conditional on
+the correct tool and a valid schema. Extra optional arguments are penalized by
+canonical argument/full-call exactness; the partial expected-slot diagnostics
+do not independently penalize extra selectors. Use full-call exactness for a
+complete target-and-scope assessment.
+
 Track B retains the unmodified runtime's processed output, then applies that
 runtime's decoder and proposal verifier. A changed or rejected error is
 separate from a corrected error. A preexisting wrong abstention is not a
