@@ -161,10 +161,22 @@ def test_request_media_class_phrase_is_not_an_account_identity():
 
 
 @pytest.mark.parametrize("identity", ["as another user", "as administrator", "as user 17",
-                                      "as an unknown account", "on behalf of a different viewer"])
+                                      "as an unknown account", "on behalf of a different viewer",
+                                      'as "Dana"', 'as "user 17"'])
 def test_foreign_or_unknown_request_identity_still_clarifies(identity):
     call = Call("request_media", {"title": FILM, "media_type": "movie"})
     assert verify_proposal(call, f'Request the movie "{FILM}" {identity}.').name == "clarify"
+
+
+@pytest.mark.parametrize("identity", ['as "Dana"', 'as "user 17"'])
+def test_quoted_foreign_identity_cannot_redirect_a_caller_owned_status_read(identity):
+    call = Call("request_status", {"title": FILM})
+    assert verify_proposal(call, f'Check my request status for "{FILM}" {identity}.').name == "clarify"
+
+
+def test_identity_words_inside_a_quoted_media_title_remain_data():
+    call = Call("request_media", {"title": "Notes as Administrator", "media_type": "movie"})
+    assert verify_proposal(call, 'Request the movie "Notes as Administrator" as me.') == call
 
 
 @pytest.mark.parametrize("performer", [
