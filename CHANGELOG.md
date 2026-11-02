@@ -5,6 +5,7 @@
 - Publish practical download/checksum/license instructions for the separately distributed experimental GGUF.
 - Retain actual hosted Windows CPU generation and fixture evidence, with exact run/source/artifact binding, original receipt reconstruction and offline verification.
 - Keep Windows CUDA, physical Windows hardware, RAM profiling and broad model accuracy explicitly unqualified.
+- Evaluate the exact public FunctionGemma v5 adapter against its identical BF16 base on the existing 80 inputs; preserve raw predictions, historical provenance gaps, license-file gaps and unsupported portable-export status separately.
 
 ## 1.3.0 — 2026-11-02
 

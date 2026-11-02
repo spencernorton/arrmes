@@ -39,6 +39,8 @@ The original 230–245 ms warm p50 claim timed generation only. Prompt preparati
 
 Comparisons retain raw predictions, translated-format scores, verifier decisions and fixture execution separately. The [new 1,000-input diagnostic](docs/benchmark-acceptance-v4.md) gets 770 raw exact calls versus 396 for the untuned base and 782 for a stronger 4B reference. Frozen improved verification regresses from 717 to 678 exact calls while reducing unexpected write proposals from ten to two. Later boundary repairs are development regressions, with no new independent acceptance claim. The [earlier 80-case comparison](docs/benchmark-comparison.md) remains a separate experiment. Historical sealed-suite results do not establish performance on new requests.
 
+A separate [public FunctionGemma adapter diagnostic](docs/functiongemma-public-diagnostic.md) now measures the fine-tune previously omitted from the base-only comparison: 63/80 raw exact versus 12/80 for its identical BF16 base. This is a known-input Apple Silicon MLX result; FunctionGemma GGUF and distribution-file corrections remain open.
+
 The native adapters are validated against loopback HTTP fixtures. Separate actual Sonarr 4.0.20.3014 and Seerr 3.5.1 instances pass selected empty-library reads and identity checks. Broader upstream versions, seeded entities, large libraries and actual service writes still need qualification. Advanced Bitmagnet/transfer management, subtitle upload/sync, broader request lifecycle and genuine Armiger/DH-Waypoint adapters remain gaps. The old gateway Armiger and Waypoint substitutions now return unsupported. New [workflow diagnostics](docs/native-workflow-evaluation.md) retain raw model failures separately from verifier recovery and explicit routing.
 
 ## Install

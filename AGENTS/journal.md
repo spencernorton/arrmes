@@ -1,3 +1,9 @@
+## 2026-11-02 — qualify the previously omitted public FunctionGemma adapter
+
+- A separately predeclared known80-input pair on original v1.1.0 source gives12→63 raw and23→68 verified calls for the same BF16 base without/with the exact public finalv5 adapter. All160 complete row trees remain unchanged. This closes an omitted measurement, not fresh acceptance or an added1,000-case run.
+- Version the public-safe metadata projection, original digests, source/harness distinction and guarded offline verifier/reproducer. Seventeen meaningful checks cover identity/tamper/failure retention; no new training or weight distribution. Old gradient evidence binds an intermediate checkpoint, and old quantized exports arev3; neither qualifies publicv5.
+- Current Gemma terms and missing distribution agreement/Notice files are explicit follow-up work. FunctionGemma GGUF conversion remains unqualified. The comparison now links the actual hosted Windows CPU proof and this separate diagnostic while retaining all frozen1,000-case results.
+
 ## 2026-11-02 — retain actual hosted Windows CPU qualification
 
 - The exact published experimental C7 model passed the single hosted Windows Server2025 AMD64 workflow41436216278: four actual model calls, eight operational checks and13 independent identity/environment/source checks. Product source is pinned v1.2.0/e76, helper/workflow v1.2.1/b937. No broad model accuracy, newer-workflow inference, owned Windows hardware, NVIDIA or memory result is claimed.

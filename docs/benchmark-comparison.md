@@ -5,6 +5,12 @@ This is the dated earlier 80-case/v1.2.0 study. The separate
 regression at frozen source e5 and the later development fixes. Neither report
 should be read as a fresh accuracy score for the latest candidate.
 
+The later [exact-public FunctionGemma pair](functiongemma-public-diagnostic.md)
+closes the original base-only omission: the actual public v5 adapter gets
+63/80 raw and 68/80 verified versus 12/23 for the same BF16 base. Its source,
+format, timing, licensing and known-input limits stay separate from the newer
+1,000-case comparison and its native Qwen configurations.
+
 The published specialist is useful on the measured media tasks, but the broad
 product and qualification claims need narrower wording. On 80 newly authored
 cases, public Arrmes gets **63/80 raw exact** and **68/80 after verification**.
