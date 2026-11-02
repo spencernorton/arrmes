@@ -11,7 +11,9 @@ ROOT = Path(__file__).resolve().parents[1]
 def test_cached_business_rescore_writes_new_copy_and_refuses_overwrite(tmp_path):
     source = tmp_path / "original" / "released-arrmes.json"
     source.parent.mkdir()
-    blob = (ROOT / "experiments/overnight-v1/released-arrmes.json").read_bytes()
+    original_data = json.loads((ROOT / "experiments/overnight-v1/released-arrmes.json").read_bytes())
+    original_data["unicode_probe"] = "映画字幕 — mañana"
+    blob = (json.dumps(original_data, ensure_ascii=False) + "\n").encode("utf-8")
     source.write_bytes(blob)
     output = tmp_path / "diagnostic"
     command = [sys.executable, str(ROOT / "scripts/rescore_benchmark_observations.py"),
@@ -20,6 +22,7 @@ def test_cached_business_rescore_writes_new_copy_and_refuses_overwrite(tmp_path)
     assert first.returncode == 0, first.stderr
     assert source.read_bytes() == blob
     result = json.loads((output / source.name).read_bytes())
+    assert result["unicode_probe"] == original_data["unicode_probe"]
     assert result["diagnostic_source_receipt_sha256"] == hashlib.sha256(blob).hexdigest()
     original = json.loads(blob)
     for before, after in zip(original["rows"], result["rows"]):

@@ -17,7 +17,7 @@ def main():
  p=argparse.ArgumentParser(description=__doc__);p.add_argument('receipts',nargs='+');p.add_argument('--oracle',default=str(ROOT/'data/overnight-v1/fixture-oracle.json'));p.add_argument('--output-dir',default=str(ROOT/'work/observation-rescores'));args=p.parse_args()
  sys.path.insert(0,str(ROOT/'src'))
  from arrmes.protocol import Call,normalized
- oracle_path=Path(args.oracle);oracle={r['id']:r for r in json.loads(oracle_path.read_text())['rows']}
+ oracle_path=Path(args.oracle);oracle={r['id']:r for r in json.loads(oracle_path.read_bytes())['rows']}
  output_dir=Path(args.output_dir).resolve()
  for name in args.receipts:
   path=Path(name);original=path.read_bytes();d=json.loads(original);rows=d.get('rows',[])
@@ -46,6 +46,6 @@ def main():
   d['diagnostic_source_receipt_sha256']=hashlib.sha256(original).hexdigest()
   d['diagnostic_note']='New cached rescore against the selected oracle. Public fixture placeholders can change business matches; original measured receipt is unchanged.'
   output_dir.mkdir(parents=True,exist_ok=True)
-  output.write_text(json.dumps(d,ensure_ascii=False,indent=2)+'\n')
+  output.write_bytes((json.dumps(d,ensure_ascii=False,indent=2)+'\n').encode('utf-8'))
   print(output.name,s['legacy_exact_call_completed_terminal_count'],s['completed_matching_workflows'])
 if __name__=='__main__':main()

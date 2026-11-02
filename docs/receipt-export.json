@@ -442,8 +442,8 @@
     {
       "path": "scripts/rescore_benchmark_observations.py",
       "original_sha256": "efcbcb33cfd49a5befdbf81adfc383658b53b8b979d1c1254f2b13e45281a301",
-      "public_sha256": "522eb13720d44a8d31baac96b1a6f0f05c5c7717bf56741bdebbb7e9ce1c8451",
-      "transformation": "operator paths omitted; public source restoration identifies export provenance; diagnostic output now uses separate files and refuses overwrite of source/existing receipts"
+      "public_sha256": "5c7936ccb1fd9b82accb7e2a89966ff8672ef8c0062a64fc40715e645d6bb56d",
+      "transformation": "operator paths omitted; public source restoration identifies export provenance; diagnostic output now uses separate files and refuses overwrite of source/existing receipts; JSON input/output uses UTF-8 bytes on every platform"
     },
     {
       "path": "scripts/benchmark_workflows.py",
