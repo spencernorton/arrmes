@@ -5,16 +5,40 @@ import argparse
 import hashlib
 import json
 from pathlib import Path
-import runpy
 
 ROOT = Path(__file__).resolve().parents[1]
 EVIDENCE = ROOT / "experiments" / "windows-cpu-v1"
+MANIFEST_SHA256 = "fd0156a4ec3a710e90f31d4d95cc25232b67fe985a218e73a77595d1dd5ba440"
+ANALYZER_SHA256 = "6b5ed341cfeb848a50accd0f7bc132b1b2c9a9af1c9c922b578f0f6588fda0b8"
 
 
-def reconstruct_receipt(directory=EVIDENCE):
+def load_payloads(directory=EVIDENCE):
+    """Relocate this known experiment; never trust new code or a new manifest."""
     directory = Path(directory)
-    ledger = json.loads((directory / "receipt-export.json").read_text())
-    encoded = (directory / "windows-cpu-model-smoke-public.json").read_bytes()
+    with (directory / "manifest.json").open("rb") as source:
+        encoded = source.read(65537)
+    if len(encoded) > 65536 or hashlib.sha256(encoded).hexdigest() != MANIFEST_SHA256:
+        raise ValueError("Evidence manifest is not the pinned Windows experiment")
+    manifest = json.loads(encoded)
+    expected = {row["file"] for row in manifest["files"]} | {"manifest.json"}
+    if {path.name for path in directory.iterdir() if path.is_file()} != expected:
+        raise ValueError("Unexpected or missing evidence payload")
+    payloads = {}
+    for row in manifest["files"]:
+        if Path(row["file"]).name != row["file"] or not 0 < row["bytes"] <= 2 << 20:
+            raise ValueError("Invalid evidence payload record")
+        with (directory / row["file"]).open("rb") as source:
+            payload = source.read(row["bytes"] + 1)
+        if len(payload) != row["bytes"] or hashlib.sha256(payload).hexdigest() != row["sha256"]:
+            raise ValueError("Evidence payload differs from its recorded digest")
+        payloads[row["file"]] = payload
+    return payloads
+
+
+def reconstruct_receipt(directory=EVIDENCE, *, payloads=None):
+    payloads = load_payloads(directory) if payloads is None else payloads
+    ledger = json.loads(payloads["receipt-export.json"])
+    encoded = payloads["windows-cpu-model-smoke-public.json"]
     if hashlib.sha256(encoded).hexdigest() != ledger["public_sha256"]:
         raise ValueError("Public receipt differs from the retained export")
     public = json.loads(encoded)
@@ -31,31 +55,26 @@ def reconstruct_receipt(directory=EVIDENCE):
     return original, raw
 
 
-def original_analyzer(directory=EVIDENCE):
-    directory = Path(directory)
-    manifest = json.loads((directory / "manifest.json").read_text())
+def original_analyzer(directory=EVIDENCE, *, payloads=None):
+    payloads = load_payloads(directory) if payloads is None else payloads
     name = "analyze_receipt_original.py"
-    expected = next(row["sha256"] for row in manifest["files"] if row["file"] == name)
-    if hashlib.sha256((directory / name).read_bytes()).hexdigest() != expected:
+    encoded = payloads[name]
+    if hashlib.sha256(encoded).hexdigest() != ANALYZER_SHA256:
         raise ValueError("Original analyzer differs from recorded source")
-    return runpy.run_path(str(directory / name))["analyze"]
+    namespace = {"__name__": "recorded_windows_analyzer", "__file__": str(Path(directory) / name)}
+    # Execute only the bytes just authenticated, without a second path read.
+    exec(compile(encoded, namespace["__file__"], "exec"), namespace)
+    return namespace["analyze"]
 
 
 def verify(directory=EVIDENCE):
-    directory = Path(directory)
-    manifest = json.loads((directory / "manifest.json").read_text())
-    for row in manifest["files"]:
-        if Path(row["file"]).name != row["file"]:
-            raise ValueError("Evidence records must name direct child files")
-        payload = (directory / row["file"]).read_bytes()
-        if len(payload) != row["bytes"] or hashlib.sha256(payload).hexdigest() != row["sha256"]:
-            raise ValueError("Evidence payload differs from its recorded digest")
-    receipt, raw = reconstruct_receipt(directory)
-    retained = json.loads((directory / "analysis-original.json").read_text())
-    result = original_analyzer(directory)(receipt, run_id=retained["run_id"],
+    payloads = load_payloads(directory)
+    receipt, raw = reconstruct_receipt(payloads=payloads)
+    retained = json.loads(payloads["analysis-original.json"])
+    result = original_analyzer(directory, payloads=payloads)(receipt, run_id=retained["run_id"],
         workflow_sha=retained["workflow_sha"],
-        source_manifest=json.loads((directory / "product-source-manifest.json").read_text()),
-        run_metadata=json.loads((directory / "api-metadata.json").read_text()))
+        source_manifest=json.loads(payloads["product-source-manifest.json"]),
+        run_metadata=json.loads(payloads["api-metadata.json"]))
     if result != {key: value for key, value in retained.items() if key != "inputs"}:
         raise ValueError("Reconstructed evidence does not reproduce the original analysis")
     return {**result, "reconstructed_receipt_sha256": hashlib.sha256(raw).hexdigest(),

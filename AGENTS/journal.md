@@ -1,3 +1,9 @@
+## 2026-11-02 — pin evidence before executing its retained analyzer
+
+- Independent review of the unpublished offline verifier caught a self-signed manifest/analyzer trust flaw. Pin both the known experiment manifest and original analyzer, authenticate bounded payload buffers once, then compile only those verified bytes. A relocated evidence directory cannot supply new code or win a read/execute race.
+- Six independent regressions reject coordinated receipt/manifest/analyzer forgery, permit relocation of authentic evidence and prove a single authenticated snapshot. All13 Windows evidence checks pass after the fix. The actual original receipt/API projection/analysis remain exact; no new generation.
+- Correct the Windows description to a bulk/wildcard refusal, rather than a clarification. Prior full984/1skip and publication313-file/52,828,382-byte zero-finding checks are retained; the final hardened candidate is validated separately before release.
+
 ## 2026-11-02 — qualify the previously omitted public FunctionGemma adapter
 
 - A separately predeclared known80-input pair on original v1.1.0 source gives12→63 raw and23→68 verified calls for the same BF16 base without/with the exact public finalv5 adapter. All160 complete row trees remain unchanged. This closes an omitted measurement, not fresh acceptance or an added1,000-case run.

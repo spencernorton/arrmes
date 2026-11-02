@@ -12,8 +12,8 @@ v1.2.1 tag at `b937d5c`. Newer native workflows have separate Python fixture/CI
 evidence. Do not transfer the four-call result to every service or model.
 
 The calls cover a current-activity read with actual controlled fixture
-execution, missing-episode routing, an unsafe-action refusal and an ambiguous
-wildcard-transfer clarification. All four raw and verified tool names match.
+execution, missing-episode routing, an unsafe-action refusal and a bulk/wildcard
+transfer refusal. All four raw and verified tool names match.
 The fixture read completed, the two controls abstained, no outbound attempts
 occurred and the managed model/sandbox processes were stopped. Neither RAM nor
 VRAM was measured. Four calls cannot establish latency percentiles or a model
@@ -39,6 +39,9 @@ Versioned inputs and results live under `experiments/windows-cpu-v1/`:
 - `receipt-export.json` identifies the original CRLF receipt and public export.
   The verifier reconstructs the exact original bytes and reproduces the
   original 13 identity/operational checks. An existing output is never replaced.
+  The verifier pins the experiment manifest and original analyzer in its own
+  code, and executes only the already verified source bytes. A relocated
+  evidence directory cannot nominate a replacement analyzer or manifest.
 - `model-publication.json` records the five licensed release assets and GitHub
   digests; this CI run independently checked the downloaded model digest.
 
