@@ -48,3 +48,8 @@ size_categories:
 ## Licence
 
 Released under the [MIT Licence](https://opensource.org/licenses/MIT) © Spencer Norton. Part of the [NorviTech Suite](https://norvitech.com) and [Arrmes `v1.4.0`](https://github.com/spencernorton/arrmes/releases/tag/v1.4.0).
+
+
+## With vs. Without Arrmes: Claude Sonnet Latency, Token Use, & Local RAM / VRAM Footprint (`v1.4.2`)
+
+![With vs. Without Arrmes: Claude Sonnet Task Completion Time, Token Usage, & Local RAM / VRAM Footprint](arrmes_v7_runtime_latency_memory_footprint.png)

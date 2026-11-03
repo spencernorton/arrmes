@@ -18,7 +18,7 @@ size_categories:
 
 **Arrmes-Bench-v2** describes synthetic tool-calling and distillation records for the `arrmes.tools.v2` vocabulary: 18 service-operation names and two control names across ten named integration domains. Candidate labels were checked against a resettable SQLite HTTP sandbox. This verifies fixture semantics, not real upstream service binaries, comprehensive live integrations or model-selected workflow completion.
 
-![Slices and Ablations](arrmes-v2-slices-and-ablations.png)
+![Arrmes v1.4 vs. Similar Open Models Accuracy Comparison](arrmes_v7_acceptance_v5_accuracy_bounds.png)
 
 The figure is historical internal-experiment evidence. The overlap audit below supersedes the original card's “leak-free” and wholly disjoint acceptance claims.
 
@@ -62,6 +62,6 @@ For zero-leakage evaluation with `0` exact query overlaps and `0` entity overlap
 
 ## Visual Benchmark & Efficiency Comparisons (`v1.4.2`)
 
-![Arrmes v1.4 vs. Similar Open Models Accuracy Comparison](figures/arrmes_v7_acceptance_v5_accuracy_bounds.png)
+![Arrmes v1.4 vs. Similar Open Models Accuracy Comparison](arrmes_v7_acceptance_v5_accuracy_bounds.png)
 
-![With vs. Without Arrmes: Claude Sonnet Task Completion Time, Token Usage, & Local RAM / VRAM Footprint](figures/arrmes_v7_runtime_latency_memory_footprint.png)
+![With vs. Without Arrmes: Claude Sonnet Task Completion Time, Token Usage, & Local RAM / VRAM Footprint](arrmes_v7_runtime_latency_memory_footprint.png)
