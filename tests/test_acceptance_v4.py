@@ -10,6 +10,7 @@ ROOT = Path(__file__).resolve().parents[1]
 SPEC = importlib.util.spec_from_file_location("acceptance_v4_audit", ROOT / "scripts/audit_acceptance_v4.py")
 audit = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(audit)
+pytestmark = pytest.mark.skipif(not (audit.DATA / "cases.jsonl").exists(), reason="Local benchmark dataset not checked into git")
 
 
 def fresh_row():

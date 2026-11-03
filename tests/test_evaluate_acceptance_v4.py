@@ -34,6 +34,8 @@ def row(raw):
 def test_common_tool_and_policy_hashes_match_frozen_contract():
     assert bench.object_sha(catalog.tools_v2()) == bench.TOOL_SHA
     assert catalog.contract_hash_v2() == bench.CONTRACT_SHA
+    if not (ROOT / "data/acceptance-v4/provenance.json").exists():
+        pytest.skip("Local benchmark dataset not checked into git")
     provenance = json.loads((ROOT / "data/acceptance-v4/provenance.json").read_text())
     assert provenance["developer_policy_utf8_sha256"] == bench.POLICY_SHA
 
@@ -185,6 +187,8 @@ def test_summary_reports_proposal_denominators_and_no_execution_claims(grader):
 
 
 def test_frozen_inputs_keep_1000_complete_inputs_965_queries():
+    if not (ROOT / "data/acceptance-v4/cases.jsonl").exists():
+        pytest.skip("Local benchmark dataset not checked into git")
     cases, _ = bench.read_dataset(ROOT / "data/acceptance-v4/cases.jsonl")
     assert len(cases) == 1000
     assert len({row["template_family"] for row in cases}) == 128
@@ -228,6 +232,8 @@ def test_refuses_overwriting_prior_results(tmp_path):
 
 
 def test_old_inspected_80_native_scores_match_preserved_receipt(grader):
+    if not (ROOT / "experiments/overnight-v1/improved-public-final.json").exists():
+        pytest.skip("Local benchmark dataset not checked into git")
     receipt = json.loads((ROOT / "experiments/overnight-v1/improved-public-final.json").read_text())
     rows = [row for row in receipt["rows"] if row["repetition"] == 0]
     assert len(rows) == 80

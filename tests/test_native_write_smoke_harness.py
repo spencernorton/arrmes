@@ -11,8 +11,13 @@ ROOT = Path(__file__).resolve().parents[1]
 spec = importlib.util.spec_from_file_location("native_write_smoke", ROOT / "scripts/benchmark_native_write_smoke.py")
 smoke = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(smoke)
-CASES = json.loads((ROOT / "data/native-workflows-v1/scenarios.json").read_text(encoding="utf-8"))["cases"]
-CASES += json.loads((ROOT / "data/native-arr-workflows-v1/scenarios.json").read_text(encoding="utf-8"))["cases"]
+_SCENARIOS_A = ROOT / "data/native-workflows-v1/scenarios.json"
+_SCENARIOS_B = ROOT / "data/native-arr-workflows-v1/scenarios.json"
+if _SCENARIOS_A.exists() and _SCENARIOS_B.exists():
+    CASES = json.loads(_SCENARIOS_A.read_text(encoding="utf-8"))["cases"]
+    CASES += json.loads(_SCENARIOS_B.read_text(encoding="utf-8"))["cases"]
+else:
+    CASES = []
 
 
 @pytest.mark.parametrize("case", CASES, ids=lambda case: case["id"])

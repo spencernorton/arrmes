@@ -3,7 +3,9 @@ import hashlib
 import json
 from pathlib import Path
 
+import pytest
 ROOT = Path(__file__).resolve().parents[1] / "experiments/native-workflows-v1"
+pytestmark = pytest.mark.skipif(not (ROOT / "SHA256SUMS.json").exists(), reason="Local benchmark dataset not checked into git")
 
 
 def test_native_evidence_manifest_and_frozen_source_bytes_are_exact():

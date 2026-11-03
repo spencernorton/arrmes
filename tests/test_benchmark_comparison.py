@@ -18,6 +18,8 @@ spec.loader.exec_module(bench)
 
 def test_frozen_case_bytes_and_distinct_queries():
     dataset=ROOT/'data/overnight-v1/routing-heldout.jsonl'
+    if not dataset.exists():
+        import pytest; pytest.skip('Local benchmark dataset not checked into git')
     manifest=json.loads(dataset.with_name('manifest.json').read_text())
     assert bench.sha256(dataset)==manifest['sha256']
     rows=[json.loads(l) for l in dataset.read_text().splitlines()]
