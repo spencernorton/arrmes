@@ -261,6 +261,7 @@ _GENERIC_DOMAIN_PLACEHOLDERS = frozenset({
     "series", "the series", "a series", "tv series", "a tv series", "the tv series",
     "show", "the show", "a show", "tv show", "a tv show", "the tv show", "shows",
     "episode", "episodes", "missing", "missing episode", "missing episodes",
+    "regular", "regular episode", "regular episodes", "missing regular episodes", "all missing episodes",
     "the missing episodes", "missing tv episodes", "tv episodes", "missing episode search",
     "torrent", "the torrent", "a torrent", "torrents", "all torrents", "active torrent", "the active torrent", "active torrents",
     "torrent transfer", "the torrent transfer", "transfer", "the transfer",
@@ -499,7 +500,7 @@ def _snap_entity_to_query(entity: str, query: str) -> str | None:
     n = len(ent_words)
     if n == 0:
         return None
-    tokens = [(m.group(0), m.start(), m.end()) for m in re.finditer(r"[A-Za-z0-9':.-]+", query)]
+    tokens = [(m.group(0), m.start(), m.end()) for m in re.finditer(r"(?:[\w':.-]+|\([A-Za-z]{2,4}\))", query)]
     best_span = None
     best_score = 0.0
     for length in range(max(1, n - 1), min(len(tokens), n + 1) + 1):
@@ -1040,16 +1041,75 @@ def verify_proposal(
     return validate_call(name, args)
 
 
+def _title_fold_key(value: str) -> str:
+    decomposed = unicodedata.normalize("NFKD", value)
+    stripped = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
+    return " ".join(unicodedata.normalize("NFKC", stripped).casefold().split())
+
+
+def resolve_title_candidates(title: str, candidates: Iterable[dict], year: int | None = None) -> list[dict]:
+    """Return candidate dicts matching title (via primary title, alternateTitles, or diacritic folding)."""
+    def key(value: str) -> str:
+        return " ".join(unicodedata.normalize("NFKC", value).casefold().split())
+
+    items = [x for x in candidates if isinstance(x, dict) and isinstance(x.get("title"), str)]
+    t_exact = key(title)
+    t_fold = _title_fold_key(title)
+
+    def alt_strings(row: dict) -> list[str]:
+        alts = row.get("alternateTitles")
+        if not isinstance(alts, list):
+            return []
+        return [
+            a["title"]
+            for a in alts
+            if isinstance(a, dict) and isinstance(a.get("title"), str) and a["title"].strip()
+        ]
+
+    def year_ok(row: dict, yr: int | None) -> bool:
+        return yr is None or row.get("year") == yr
+
+    exact_matches = [
+        x for x in items
+        if year_ok(x, year) and (
+            key(x["title"]) == t_exact
+            or any(key(a) == t_exact for a in alt_strings(x))
+        )
+    ]
+    if exact_matches:
+        return [dict(x) for x in exact_matches]
+
+    folded_matches = [
+        x for x in items
+        if year_ok(x, year) and (
+            _title_fold_key(x["title"]) == t_fold
+            or any(_title_fold_key(a) == t_fold for a in alt_strings(x))
+        )
+    ]
+    if folded_matches:
+        return [dict(x) for x in folded_matches]
+
+    if year is None:
+        m_yr = re.match(
+            r"^(.*\S)\s+(?:\((18[7-9]\d|19\d{2}|20\d{2}|21\d{2})\)|(18[7-9]\d|19\d{2}|20\d{2}|21\d{2}))$",
+            title.strip(),
+        )
+        if m_yr:
+            base_title = m_yr.group(1).strip()
+            inferred_year = int(m_yr.group(2) or m_yr.group(3))
+            return resolve_title_candidates(base_title, items, year=inferred_year)
+    return []
+
+
 def resolve_title(title: str, candidates: Iterable[dict], year: int | None = None) -> dict:
     """Resolve IDs from service-returned candidates, never from model output.
 
-    Exact normalized titles only. No first-hit fuzzy match, stale selection or
-    preference for the highest result. Remakes require a year or a user choice.
+    Exact normalized titles only (including Sonarr/Radarr alternateTitles and
+    diacritic-folded equivalence when unambiguous). No first-hit fuzzy match,
+    stale selection or preference for the highest result. Remakes or series
+    sharing an alternate title require a year or explicit disambiguation.
     """
-    def key(value):
-        return " ".join(unicodedata.normalize("NFKC", value).casefold().split())
-    matches = [x for x in candidates if isinstance(x, dict) and isinstance(x.get("title"), str)
-               and key(x["title"]) == key(title) and (year is None or x.get("year") == year)]
+    matches = resolve_title_candidates(title, candidates, year=year)
     if len(matches) != 1 or type(matches[0].get("id")) is not int or matches[0]["id"] <= 0:
         raise ResolutionRequired("A unique service identity is required")
     return dict(matches[0])

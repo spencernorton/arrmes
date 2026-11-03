@@ -8,7 +8,7 @@ from .contract import SUPPORTED_OPERATIONS, validate_service_query
 
 _SERVICES = re.compile(r"\b(sonarr|radarr|lidarr|bazarr|qbittorrent|qbt|tautulli|seerr|seer|bitmagnet)\b", re.I)
 _QUOTED = re.compile(r'"([^"\n]+)"|\'([^\'\n]+)\'')
-_WRITE = re.compile(r"\b(download|delete|remove|restart|reboot|shutdown|pause|resume|stop|start|update|upgrade|scan|sync|grab|upload|add|change|set)\b", re.I)
+_WRITE = re.compile(r"\b(download|delete|remove|restart|reboot|shutdown|pause|resume|stop|start|update|upgrade|scan|sync|grab|upload|add|change|trigger|initiate|launch|set)\b", re.I)
 _COMPOUND = re.compile(r"\b(and\s+then|then|and\s+also|after\s+that|followed\s+by)\b|[;\n]", re.I)
 _UNSAFE = re.compile(r"\b(ignore|bypass|override|credentials?|passwords?|tokens?|api\s*keys?|instructions?|system\s*prompt|sudo|shell)\b", re.I)
 _READ_WORDS = frozenset("""service entity please show list get tell me what which is are the a an my our in on for of
@@ -58,6 +58,8 @@ def route_service_query(query: str) -> Call | None:
         operations.add("library")
     if re.search(r"\b(missing|wanted)\b", plain, re.I):
         operations.add("missing")
+        if re.search(r"\b(?:in|from|within|across)\s+(?:my|our|the|your|sonarr|radarr|lidarr)?\s*(?:sonarr|radarr|lidarr)?\s*library\b", plain, re.I):
+            operations.discard("library")
     if re.search(r"\b(activity|streams|playing|transfer\s+(?:stats|statistics|speeds?)|bandwidth)\b", plain, re.I):
         operations.add("activity")
     if re.search(r"\b(look\s*up|lookup|metadata\s+search|catalog\s+search|search\s+(?:the\s+)?(?:catalog|metadata))\b", plain, re.I):
@@ -86,8 +88,12 @@ def route_service_query(query: str) -> Call | None:
     # Existing entity-specific missing queries belong to the frozen v2 route.
     if operation == "missing" and service != "bazarr" and (
         quoted
+        or re.search(r"\b(?:search|find|hunt\s+down|run\s+a\s+search)\b", plain, re.I)
         or re.search(r"\b(?:for|of)\s+(?:the|a|an|this|that)\s+(?:tv\s+)?(?:show|series|movie|film|artist|album)\b", plain, re.I)
-        or (service == "sonarr" and re.search(r"\b(?:episodes?\s+of|missing\s+(?:episodes?\s+)?(?:for|of))\s+[A-Z0-9][A-Za-z0-9:'&.-]*", query))
+        or (service == "sonarr" and (
+            re.search(r"\b(?:episodes?\s+of|missing\s+(?:(?:regular\s+)?episodes?\s+)?(?:for|of))\s+[A-Z0-9\u00C0-\u024F][\w:'&.-]*", query)
+            or re.search(r"\b(?:for\s+)?(?:(?:all|every|each)\s+)?(?:missing\s+)?(?:regular\s+)?(?!Sonarr\b|sonarr\b)[A-Z0-9\u00C0-\u024F][\w:'&.-]+\s+(?:regular\s+)?episodes?\b", query)
+        ))
     ):
         return None
     if operation == "queue" and service == "qbittorrent" and re.search(r"\b(paused|stopped|downloading|seeding|completed|stalled)\b", plain, re.I):

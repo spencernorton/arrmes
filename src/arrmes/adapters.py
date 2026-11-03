@@ -9,7 +9,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
-from arrmes.planner import Principal, ResolutionRequired, resolve_title
+from arrmes.planner import Principal, ResolutionRequired, resolve_title, resolve_title_candidates
 from arrmes.protocol import Call, normalized
 from arrmes.sandbox.isolation import NetworkIsolationGuard, SandboxIsolationViolation
 from arrmes.sandbox.sanitize import SANDBOX_AUTH_IDENTIFIERS
@@ -134,13 +134,18 @@ class SandboxAdapter:
         try:
             resolved = resolve_title(args["title"], series_list)
         except ResolutionRequired:
+            cands = [
+                {"id": c["id"], "title": c["title"], "year": c.get("year")}
+                for c in resolve_title_candidates(args["title"], series_list)
+                if type(c.get("id")) is int and c["id"] > 0 and isinstance(c.get("title"), str)
+            ]
             return AdapterObservation(
                 "clarify_required",
                 "sonarr",
                 "tv_status",
-                404,
+                409 if len(cands) > 1 else 404,
                 False,
-                {"slot": "reference", "reason": "series_not_uniquely_resolved", "title": args["title"]},
+                {"slot": "reference", "reason": "series_not_uniquely_resolved", "title": args["title"], "candidates": cands},
                 audit,
             )
         stats = resolved.get("statistics") or {}
@@ -172,13 +177,18 @@ class SandboxAdapter:
         try:
             resolved = resolve_title(args["title"], series_list)
         except ResolutionRequired:
+            cands = [
+                {"id": c["id"], "title": c["title"], "year": c.get("year")}
+                for c in resolve_title_candidates(args["title"], series_list)
+                if type(c.get("id")) is int and c["id"] > 0 and isinstance(c.get("title"), str)
+            ]
             return AdapterObservation(
                 "clarify_required",
                 "sonarr",
                 "tv_missing",
-                404,
+                409 if len(cands) > 1 else 404,
                 False,
-                {"slot": "reference", "reason": "series_not_uniquely_resolved", "title": args["title"]},
+                {"slot": "reference", "reason": "series_not_uniquely_resolved", "title": args["title"], "candidates": cands},
                 audit,
             )
         inc_spec = "true" if args.get("include_specials", False) else "false"
@@ -219,13 +229,18 @@ class SandboxAdapter:
         try:
             resolved = resolve_title(args["title"], series_list)
         except ResolutionRequired:
+            cands = [
+                {"id": c["id"], "title": c["title"], "year": c.get("year")}
+                for c in resolve_title_candidates(args["title"], series_list)
+                if type(c.get("id")) is int and c["id"] > 0 and isinstance(c.get("title"), str)
+            ]
             return AdapterObservation(
                 "clarify_required",
                 "sonarr",
                 "tv_search_missing",
-                404,
+                409 if len(cands) > 1 else 404,
                 False,
-                {"slot": "reference", "reason": "series_not_uniquely_resolved", "title": args["title"]},
+                {"slot": "reference", "reason": "series_not_uniquely_resolved", "title": args["title"], "candidates": cands},
                 audit,
             )
         cmd_body: dict[str, Any] = {"seriesId": resolved["id"]}

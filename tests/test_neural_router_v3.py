@@ -144,3 +144,16 @@ def test_neural_router_synthetic_npz_and_stdlib_fallback(tmp_path: Path, monkeyp
         "name": "tv_status",
         "arguments": {"title": "Signal in the Reedbed"},
     }
+
+
+def test_unicode_and_region_entity_extraction_and_missing_search_routing() -> None:
+    from arrmes.neural_router import _extract_unquoted_entity
+    from arrmes.services import route_service_query
+
+    assert _extract_unquoted_entity("How many Café Odyssey episodes are missing?") == "Café Odyssey"
+    assert _extract_unquoted_entity("Search Sonarr for missing Café Odyssey episodes") == "Café Odyssey"
+    assert _extract_unquoted_entity("Search all missing Café Odyssey regular episodes") == "Café Odyssey"
+    assert _extract_unquoted_entity("Which episodes of Island Horizon (US) are missing in Sonarr?") == "Island Horizon (US)"
+    assert route_service_query("Search Sonarr for missing Café Odyssey episodes in my library") is None
+    assert route_service_query("Trigger a Sonarr search for missing Café Odyssey episodes") is None
+    assert route_service_query("How many Café Odyssey episodes are missing in Sonarr?") is None
