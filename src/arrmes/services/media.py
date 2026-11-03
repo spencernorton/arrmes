@@ -6,7 +6,7 @@ from typing import Any, Callable
 import urllib.parse
 
 from arrmes.adapters import AdapterObservation
-from arrmes.planner import Principal
+from arrmes.planner import Principal, resolve_title_candidates
 from arrmes.protocol import Call, InvalidCall, normalized, validate_call
 from .native import (ServiceQueryAdapter, _UpstreamError, _id, _norm, _public_row,
                      _rows, _text, _validated_rows)
@@ -89,9 +89,10 @@ class NativeMediaReadAdapter:
         return [row for row in rows if _norm(row[key]) == _norm(title)]
 
     def _tv_status(self, args, audit) -> AdapterObservation:
-        rows = self._exact(self._catalog("sonarr", audit), args["title"])
+        rows = resolve_title_candidates(args["title"], self._catalog("sonarr", audit))
         if len(rows) != 1:
-            return _clarify("tv_status", "series_not_uniquely_resolved", audit)
+            return _clarify("tv_status", "series_not_uniquely_resolved", audit,
+                            candidates=[{"id": r["id"], "title": r["title"], "year": _optional_year(r)} for r in rows])
         row = rows[0]
         stats = row.get("statistics")
         if stats is not None and not isinstance(stats, dict):
@@ -108,9 +109,10 @@ class NativeMediaReadAdapter:
             "available": files > 0}, audit)
 
     def _tv_missing(self, args, audit) -> AdapterObservation:
-        rows = self._exact(self._catalog("sonarr", audit), args["title"])
+        rows = resolve_title_candidates(args["title"], self._catalog("sonarr", audit))
         if len(rows) != 1:
-            return _clarify("tv_missing", "series_not_uniquely_resolved", audit)
+            return _clarify("tv_missing", "series_not_uniquely_resolved", audit,
+                            candidates=[{"id": r["id"], "title": r["title"], "year": _optional_year(r)} for r in rows])
         series = rows[0]
         if type(series.get("monitored")) is not bool:
             raise _UpstreamError("invalid_series_monitoring")

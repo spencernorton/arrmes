@@ -24,7 +24,7 @@ from arrmes.adapters import AdapterObservation, SandboxAdapter, _norm
 from arrmes.catalog import V2_BY_NAME, V3_BY_NAME, WRITE_EFFECT_ACTIONS, WRITE_EFFECT_ACTIONS_V3
 from arrmes.services.contract import SERVICE_PERMISSIONS, validate_service_query
 from arrmes.services.native import _public_row
-from arrmes.planner import Principal, ResolutionRequired, prepare, resolve_title
+from arrmes.planner import Principal, ResolutionRequired, prepare, resolve_title, resolve_title_candidates
 from arrmes.protocol import Call, normalized, validate_call
 
 _REDACT_QUERY_RE = re.compile(r"([?&](?:apikey|api_key|token|key)=)[^&#\s]+", re.IGNORECASE)
@@ -559,13 +559,18 @@ class LiveGatewayAdapter(SandboxAdapter):
         try:
             resolved = resolve_title(args["title"], series_list)
         except ResolutionRequired:
+            cands = [
+                {"id": c["id"], "title": c["title"], "year": c.get("year")}
+                for c in resolve_title_candidates(args["title"], series_list)
+                if type(c.get("id")) is int and c["id"] > 0 and isinstance(c.get("title"), str)
+            ]
             return AdapterObservation(
                 "clarify_required",
                 "sonarr",
                 "tv_missing",
-                404,
+                409 if len(cands) > 1 else 404,
                 False,
-                {"slot": "reference", "reason": "series_not_uniquely_resolved", "title": args["title"]},
+                {"slot": "reference", "reason": "series_not_uniquely_resolved", "title": args["title"], "candidates": cands},
                 audit,
             )
         inc_spec = "true" if args.get("include_specials", False) else "false"
@@ -647,13 +652,18 @@ class LiveGatewayAdapter(SandboxAdapter):
         try:
             resolved = resolve_title(args["title"], series_list)
         except ResolutionRequired:
+            cands = [
+                {"id": c["id"], "title": c["title"], "year": c.get("year")}
+                for c in resolve_title_candidates(args["title"], series_list)
+                if type(c.get("id")) is int and c["id"] > 0 and isinstance(c.get("title"), str)
+            ]
             return AdapterObservation(
                 "clarify_required",
                 "sonarr",
                 "tv_search_missing",
-                404,
+                409 if len(cands) > 1 else 404,
                 False,
-                {"slot": "reference", "reason": "series_not_uniquely_resolved", "title": args["title"]},
+                {"slot": "reference", "reason": "series_not_uniquely_resolved", "title": args["title"], "candidates": cands},
                 audit,
             )
         changed = self._guard_confirmed_entity("tv_search_missing", args,

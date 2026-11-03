@@ -247,8 +247,9 @@ def _extract_unquoted_entity(query: str) -> str | None:
         return m_tor.group(1).strip(".,?!:;\"'")
     stop = r"(?:\s+(?:in|on|from|through|via|by|using|within|inside|rather|instead|without|before|after|and|or|if|unless|leaving|including|excluding|season|episodes?|movies?|series|show|film|status|already|right\s+now|please|today|this\s+week|is\s+(?:missing|in|on|available|monitored|already|currently|held|present|downloaded|complete)|are\s+(?:missing|in|on|available|monitored|already|currently|held|present|downloaded|complete)|missing|monitored|available|downloaded)\b|[?.!,;:]|\s+\((?:18|19|20|21)\d{2}\)|$)"
     for pat in (
-        rf"\b(?:for|of|about|called|titled|named|series|movie|film|show|torrent|transfer|pause|resume|request|unmonitor|monitor)\s+([A-Z0-9][A-Za-z0-9:'&.-]*(?:\s+[A-Za-z0-9:'&.-]+){{0,6}}?){stop}",
-        rf"^\s*(?:is|are|does|do|has|have)\s+([A-Z0-9][A-Za-z0-9:'&.-]*(?:\s+[A-Za-z0-9:'&.-]+){{0,5}}?)\s+(?:in|monitored|complete|missing|available|downloaded|stalled|paused|seeding|playing)\b",
+        rf"\b(?:for|of|about|called|titled|named|series|movie|film|show|torrent|transfer|pause|resume|request|unmonitor|monitor)\s+([A-Z0-9\u00C0-\u024F][\w:'&.-]*(?:\s+(?:[\w:'&.-]+|\([A-Za-z]{{2,4}}\))){{0,6}}?){stop}",
+        rf"^\s*(?:is|are|does|do|has|have)\s+([A-Z0-9\u00C0-\u024F][\w:'&.-]*(?:\s+(?:[\w:'&.-]+|\([A-Za-z]{{2,4}}\))){{0,5}}?)\s+(?:in|monitored|complete|missing|available|downloaded|stalled|paused|seeding|playing)\b",
+        rf"\b(?i:(?:how\s+many|which|what|list|show|check|find|for|search(?:\s+sonarr)?(?:\s+indexers?)?(?:\s+for)?)\s+(?:(?:all|every|each)\s+)?(?:missing\s+)?(?:regular\s+)?)([A-Z0-9\u00C0-\u024F][\w:'&.-]*(?:\s+(?:[\w:'&.-]+|\([A-Za-z]{{2,4}}\))){{0,5}}?)\s+(?i:(?:regular\s+)?episodes?(?!\s+(?:of|for)\b))\b",
     ):
         m = re.search(pat, query)
         if m:
@@ -599,7 +600,7 @@ class ArrmesNeuralRouterV3:
         if action in {"movie_status", "movie_search", "request_media"} and year_val is not None:
             args_out["year"] = year_val
 
-        if action == "tv_missing" and re.search(r"\b(?:search\s+for|initiate\s+.*search|launch\s+.*search|start\s+.*search|run\s+.*search|hunt\s+down)\b", q_unquoted, re.I) and not _NEGATED_WRITE_RE.search(q_unquoted) and not _INTERROGATIVE_OR_HYPOTHETICAL_WRITE_RE.search(q_unquoted):
+        if action == "tv_missing" and re.search(r"\b(?:search(?:\s+sonarr)?(?:\s+indexers?)?\s+(?:for\s+)?(?:(?:all|every|each)\s+)?(?:missing|season)|search\s+for|trigger\s+.*search|initiate\s+.*search|launch\s+.*search|start\s+.*search|run\s+.*search|hunt\s+down)\b", q_unquoted, re.I) and not _NEGATED_WRITE_RE.search(q_unquoted) and not _INTERROGATIVE_OR_HYPOTHETICAL_WRITE_RE.search(q_unquoted):
             action = "tv_search_missing"
             used_structural = True
         if action == "tv_missing":

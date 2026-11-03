@@ -5,7 +5,7 @@ import pytest
 from arrmes.catalog import ACTIONS, manifest
 from arrmes.evaluate import score, summarize
 from arrmes.model import messages
-from arrmes.planner import Principal, ResolutionRequired, prepare, resolve_title
+from arrmes.planner import Principal, ResolutionRequired, prepare, resolve_title, resolve_title_candidates
 from arrmes.protocol import Call, InvalidCall, decode, encode, normalized, validate_call
 
 
@@ -138,3 +138,26 @@ def test_oversized_integer_cannot_escape_validation_or_abort_scoring(family):
     with pytest.raises(InvalidCall):
         decode(raw, family)
     assert score(raw, {"name": "movie_status", "arguments": {"title": "X"}}, family)["schema_valid"] is False
+
+
+def test_resolver_supports_diacritic_folding_and_alternate_title_disambiguation():
+    series = [
+        {"id": 10, "title": "Café Odyssey", "year": 1997, "alternateTitles": [{"title": "Pocket Café"}]},
+        {
+            "id": 20,
+            "title": "Island Horizon (US)",
+            "year": 2019,
+            "alternateTitles": [{"title": "Island Horizon 2019"}, {"title": "Island Horizon"}],
+        },
+        {"id": 21, "title": "Island Horizon", "year": 2001, "alternateTitles": []},
+    ]
+    assert resolve_title("Cafe Odyssey", series)["id"] == 10
+    assert resolve_title("Café Odyssey", series)["id"] == 10
+    assert resolve_title("Pocket Cafe", series)["id"] == 10
+    assert resolve_title("Island Horizon (US)", series)["id"] == 20
+    assert resolve_title("Island Horizon 2019", series)["id"] == 20
+    assert resolve_title("Island Horizon (2001)", series)["id"] == 21
+    with pytest.raises(ResolutionRequired):
+        resolve_title("Island Horizon", series)
+    cands = resolve_title_candidates("Island Horizon", series)
+    assert [c["id"] for c in cands] == [20, 21]

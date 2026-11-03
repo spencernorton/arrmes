@@ -13,7 +13,7 @@ import urllib.parse
 import urllib.request
 
 from arrmes.adapters import AdapterObservation
-from arrmes.planner import Principal
+from arrmes.planner import Principal, resolve_title_candidates
 from arrmes.protocol import Call, InvalidCall, normalized, validate_call
 from .native import ServiceQueryAdapter, _UpstreamError, _id, _norm, _rows, _text
 
@@ -215,7 +215,13 @@ class NativeArrWriteAdapter:
         return value
 
     def _tv(self, args, audit):
-        series = self._exact(self._inventory(self._get("sonarr", "/api/v3/series", audit)), args["title"], "title")
+        rows = self._inventory(self._get("sonarr", "/api/v3/series", audit))
+        if any(not _label(r.get("title")) for r in rows):
+            raise _UpstreamError("invalid_arr_entity_name")
+        matches = resolve_title_candidates(args["title"], rows)
+        if len(matches) != 1:
+            raise _Clarify("entity_not_uniquely_resolved")
+        series = matches[0]
         if type(series.get("monitored")) is not bool:
             raise _UpstreamError("invalid_series_monitoring")
         if not series["monitored"]:
