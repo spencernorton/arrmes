@@ -2,6 +2,11 @@
 
 This document records the methodology, pre-evaluation leakage audit, statistical acceptance gates, error taxonomy attribution, and end-to-end execution results for the `acceptance-v5` benchmark suite (`seed=7007`) and the `ArrmesNeuralRouterV3` (`v7`) release.
 
+Inputs, manifests and results are hosted on [Hugging Face](https://huggingface.co/datasets/NorviTech/arrmes-bench-v5).
+The `data/` paths below describe the evaluation layout; datasets are no longer
+included in Git. See the [earlier comparison](benchmark-acceptance-v4.md) for
+the historical `acceptance-v4` results.
+
 ![Acceptance-v5 Accuracy and Statistical Bounds](figures/arrmes_v7_acceptance_v5_accuracy_bounds.png)
 
 ## 1. Evaluation Hygiene & Pre-Evaluation Leakage Audit

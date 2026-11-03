@@ -1,3 +1,9 @@
+## 2026-11-03 — Shorter README and usable setup instructions
+
+- Reduced the README from 2,315 to 338 words: plain-language overview, three example requests, installation links and a compact benchmark summary. Removed repeated internals, charts and promotional claims from the front page; reports and evidence remain available in the guides.
+- Put installation before performance evidence in the runtime guide. Replaced the README's training shortcut with a pinned router download and checksum; training inputs are no longer in Git.
+- Core suite: 923 passed, 66 skipped without optional model/data inputs. Five neural-router checks and all three README examples pass with the documented download. Checked 33 local documentation links/anchors and Python compilation. No runtime behavior changed.
+
 ## 2026-11-02 — Arrmes v7 (`ArrmesNeuralRouterV3`), Protocol v3, General Verifier Repairs, and Locked `acceptance-v5`
 
 - **Protocol v3 & Verifier Repairs**: Added `arrmes.tools.v3` (`V3_ACTIONS`, `contract_hash_v3`) while preserving `arrmes.tools.v2` hash `e34f94ec5110423f7e5dfc0309c5e8f10988f158253559f88f34d9d977a2efe8`. Repaired general entity-agnostic grounding in `src/arrmes/planner.py`; on frozen `acceptance-v4` (`1,000` cases), Released Arrmes verified accuracy rose from `678/1000` (`e5e76b8`) and `795/1000` (`v1.3.1`) to `981/1000` (`0` damaged, `0` unauthorized writes).
