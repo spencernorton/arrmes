@@ -2,7 +2,7 @@
 
 - Reduced the README from 2,315 to 338 words: plain-language overview, three example requests, installation links and a compact benchmark summary. Removed repeated internals, charts and promotional claims from the front page; reports and evidence remain available in the guides.
 - Put installation before performance evidence in the runtime guide. Replaced the README's training shortcut with a pinned router download and checksum; training inputs are no longer in Git.
-- Core suite: 923 passed, 66 skipped without optional model/data inputs. Five neural-router checks pass with the documented download. Checked 29 local documentation links/anchors and Python compilation. No runtime behavior changed.
+- Core suite: 923 passed, 66 skipped without optional model/data inputs. Five neural-router checks and all three README examples pass with the documented download. Checked 33 local documentation links/anchors and Python compilation. No runtime behavior changed.
 
 ## 2026-11-02 — Arrmes v7 (`ArrmesNeuralRouterV3`), Protocol v3, General Verifier Repairs, and Locked `acceptance-v5`
 
