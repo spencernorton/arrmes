@@ -1,14 +1,289 @@
-# Portable inference and installation
+# Installation and runtime guide
 
-Arrmes can now run a fused GGUF through a native `llama-server` on CPU without
-installing MLX, CUDA, PyTorch or Transformers into the inference environment.
-The Python application uses only its normal lightweight dependencies plus the
-standard-library HTTP client. MLX remains an optional Apple Silicon backend.
+## Routing backends
 
-**The backend is implemented and exercised; the converted model is experimental.**
-Successful loading, exact tensor conversion and safe execution do not establish
-equivalent model behavior. The exact published adapter differs materially from
-the current internal checkpoint labelled v6. Keep those variants separate.
+| Backend | Runtime | Model |
+| --- | --- | --- |
+| `neural-router` | CPU, no inference dependencies | [Arrmes neural router](https://huggingface.co/NorviTech/arrmes-neural-router-v3), 7.52 MiB |
+| `native-only` | No model; explicit service commands | None |
+| `mlx` | Apple Silicon; install `.[mlx]` | [Qwen3-0.6B](https://huggingface.co/NorviTech/arrmes-qwen3-0.6b) or [FunctionGemma-270M](https://huggingface.co/NorviTech/arrmes-functiongemma-270m) with its matching MLX base and adapter |
+| `llama-server` | Native llama.cpp on CPU or a supported accelerator | Fused GGUF; the published conversion is experimental |
+
+All backends use the same caller permissions and write-confirmation checks.
+See [measured performance](#arrmes-v7-runtime--footprint-profile-2026-11-02) and
+[platform qualification](#evidence-and-limits) for tested configurations.
+
+## Install the package
+
+From the Arrmes checkout, using Python 3.12+ on macOS or Linux:
+
+```sh
+python3 -m venv .venv
+. .venv/bin/activate
+python -m pip install -e .
+```
+
+On Windows, use the [PowerShell instructions](#native-windows).
+Next, set up the [authenticated HTTP service](#authenticated-http-service).
+That example starts with model-free reads; add a model backend when needed.
+
+## Neural router
+
+Download the published router from a pinned revision; no training is needed.
+From the checkout, on macOS or Linux:
+
+```sh
+curl --fail --location --create-dirs \
+  --output models/arrmes-neural-router-v3/router_weights.npz \
+  https://huggingface.co/NorviTech/arrmes-neural-router-v3/resolve/9d44632bb344d7517ed1f922114c1df49c0bdec2/router_weights.npz
+curl --fail --location \
+  --output models/arrmes-neural-router-v3/router_config.json \
+  https://huggingface.co/NorviTech/arrmes-neural-router-v3/resolve/9d44632bb344d7517ed1f922114c1df49c0bdec2/router_config.json
+printf '%s  %s\n' e640ead79ceee2929ccf63ec6f9d953d9cd8d85e76e011483bf336abe6235113 \
+  models/arrmes-neural-router-v3/router_weights.npz | shasum -a 256 --check
+```
+
+With the HTTP setup's client and service variables exported, stop any running
+Arrmes server and run from the checkout:
+
+```sh
+export ARRMES_BACKEND=neural-router
+export ARRMES_MODEL_PATH="$PWD/models/arrmes-neural-router-v3"
+python -m arrmes.server
+```
+
+The router works with the core package alone. NumPy is optional. Model files
+and service credentials are not included in Git.
+
+## Authenticated HTTP service
+
+For a first model-free read installation, create the client registry and a local
+curl header file in a fresh configuration directory. This generates a token
+without printing it; both new files are private and existing files are refused:
+
+```sh
+python3 - <<'PY'
+import hashlib, json, os, secrets
+token = secrets.token_urlsafe(32)
+registry = {"clients": [{"subject": "local:operator",
+    "token_sha256": hashlib.sha256(token.encode()).hexdigest(),
+    "scopes": ["media:read", "torrents:read", "activity:read", "releases:read"]}]}
+for path, body in [("clients.json", json.dumps(registry)),
+                   ("client-header.txt", "Authorization: Bearer " + token + "\n")]:
+    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(descriptor, "w") as output:
+        output.write(body)
+print("Created clients.json and client-header.txt")
+PY
+```
+
+Create `services.json` using the native registry example in
+[capabilities.md](capabilities.md#native-api-configuration), then start:
+
+```sh
+export ARRMES_CLIENTS_FILE="$PWD/clients.json"
+export ARRMES_SERVICES_FILE="$PWD/services.json"
+export ARRMES_BACKEND=native-only
+python -m arrmes.server
+```
+
+From a second terminal in that configuration directory:
+
+```sh
+curl --header @client-header.txt --header 'Content-Type: application/json' \
+  --data '{"query":"Show Sonarr queue"}' http://127.0.0.1:8095/v1/execute
+```
+
+The example grants read scopes only. Model-free mode accepts explicit service
+commands and asks for clarification outside that grammar. Both registries load
+at startup; restart after edits.
+
+To enable the documented Bazarr/Seerr writes in model-free mode, set
+`ARRMES_NATIVE_CONFIRMED_WRITES=1` and `ARRMES_WRITE_MODE=confirm`, and deliberately
+grant `media:manage` for subtitle operations or `requests:create` for requests.
+Each step requires single-use confirmation. See [subtitles](bazarr-subtitles.md)
+and [Seerr requests](native-requests.md) for required arguments and identity
+mapping. Transfer controls require a model backend and their management scope.
+
+`ARRMES_WRITE_MODE=disabled` prevents writes for every backend. The HTTP service
+rejects direct write mode.
+
+For legacy gateway actions, configure `ARRMES_GATEWAY_URL` and `GES_KEY_FILE`
+instead of native service credentials. `ARRMES_REQUEST_OWNER_SUBJECT` identifies
+the gateway credential's request owner; other callers cannot submit gateway
+media requests.
+
+To attach an already managed native runtime, set `ARRMES_INFERENCE_URL` to its
+HTTP(S) origin instead of launching a model child. It must implement native
+`/apply-template`, `/completion` and `/health`. This is not a generic
+OpenAI-compatible inference-provider client. Device/memory settings belong to
+that external process; response metadata reports `device=external`.
+Keep it on a private network: Arrmes caller authentication protects Arrmes,
+not a separately exposed llama-server port.
+
+## CPU installation
+
+Set `ARRMES_BACKEND=llama-server`, `ARRMES_MODEL_PATH` to the fused GGUF,
+`ARRMES_MODEL_FAMILY=hermes`, `ARRMES_LLAMA_SERVER` to its executable,
+`ARRMES_DEVICE=cpu`, and optionally `ARRMES_THREADS`/`ARRMES_CONTEXT_SIZE`.
+Do not pass an MLX adapter path alongside GGUF: it must already contain the
+chosen adapter, and the factory rejects an unfused extra adapter.
+
+The reviewed experimental GGUF is now a separate
+[release asset](https://github.com/spencernorton/arrmes/releases/download/v1.2.0/arrmes-qwen3-0.6b-public-8a9bcf-cpu-q4_k_m.gguf).
+It is 396,704,352 bytes, with SHA-256
+`c7d6f1eef1eb4cd0f93769dadca7e270f3c3d470cfb542240733859c7d02f255`.
+Get the accompanying MODEL-LICENSE.txt, NOTICE.txt, documentation ZIP and
+SHA256SUMS from the [same release](https://github.com/spencernorton/arrmes/releases/tag/v1.2.0).
+The model is Apache-2.0; application/tooling licenses are separate. Preserve the
+notices when redistributing. The artifact uses the actual public float32 LoRA,
+not the different retained research checkpoint. It is an experimental
+conversion with measured, non-identical predictions; it is not a new training.
+
+For example, on Linux or macOS, download to a new local file and verify it:
+
+```sh
+curl --fail --location --output arrmes-q4.gguf \
+  https://github.com/spencernorton/arrmes/releases/download/v1.2.0/arrmes-qwen3-0.6b-public-8a9bcf-cpu-q4_k_m.gguf
+printf '%s  %s\n' c7d6f1eef1eb4cd0f93769dadca7e270f3c3d470cfb542240733859c7d02f255 arrmes-q4.gguf | shasum -a 256 --check
+```
+
+Model-file size is not a RAM requirement. The [measurements](#evidence-and-limits)
+depend on backend, context and hardware; Windows memory remains unmeasured.
+
+Use Python 3.12 or later. From the Arrmes checkout:
+
+```sh
+python3 -m venv .venv
+.venv/bin/python -m pip install .
+```
+
+Install the native runtime from the pinned
+[llama.cpp b11429 release](https://github.com/ggml-org/llama.cpp/releases/tag/b11429),
+or build it with CMake and a C++ compiler. Run these commands on the intended
+Linux or macOS CPU host:
+
+```sh
+git clone --depth 1 --branch b11429 https://github.com/ggml-org/llama.cpp.git
+cmake -S llama.cpp -B llama.cpp/build -DGGML_CUDA=OFF -DGGML_METAL=OFF -DLLAMA_OPENSSL=OFF
+cmake --build llama.cpp/build --target llama-server llama-quantize -j 2
+```
+
+Point `--llama-server` to the resulting executable if it is not on `PATH`.
+Supply the separate hash-checked GGUF above, or export your own. The Hugging
+Face Arrmes repository supplies an MLX LoRA rather than an interchangeable
+native GGUF. The conversion recipe below produces revision-specific artifacts.
+
+```sh
+.venv/bin/python -m arrmes route --backend llama-server --family hermes \
+  --contract-version v2 --model /absolute/path/model-q4_k_m.gguf \
+  --llama-server /absolute/path/llama.cpp/build/bin/llama-server \
+  --device cpu --threads 4 'Which episodes of Sintel are missing?'
+```
+
+This command produces a dry-run plan. It does not connect to media services.
+`--execute-sandbox` exercises only controlled local fixtures. A managed native
+child binds to loopback, uses one slot and shuts down with the application.
+CPU is explicit (`--n-gpu-layers 0`); it does not silently require a GPU build.
+
+## Native Windows
+
+Install 64-bit Python 3.12+ and extract
+`llama-b11429-bin-win-cpu-x64.zip` from the same official release into a local
+directory. Keep its DLLs beside `llama-server.exe`. In PowerShell:
+
+```powershell
+py -3.12 -m venv .venv
+.\.venv\Scripts\python.exe -m pip install .
+.\.venv\Scripts\python.exe -m arrmes route --backend llama-server --family hermes --contract-version v2 --model C:\Arrmes\model-q4_k_m.gguf --llama-server C:\Arrmes\llama\llama-server.exe --device cpu --threads 4 "Which episodes of Sintel are missing?"
+```
+
+After downloading the separate GGUF, verify it with
+`(Get-FileHash C:\Arrmes\model-q4_k_m.gguf -Algorithm SHA256).Hash` against the
+full digest above. Keep its license and notice files. This CPU path has actual
+hosted CI generation evidence for v1.2.0, with the scope recorded above. For NVIDIA,
+use the official `llama-b11429-bin-win-cuda-12.4-x64.zip` and its matching
+`cudart-llama-bin-win-cuda-12.4-x64.zip`, then select `--device cuda`.
+The installed driver must support that runtime. Arrmes never installs or alters
+host drivers. A missing `CUDA` device produces a clear startup error.
+
+## NVIDIA and other accelerators
+
+For a native Linux CUDA build, follow the upstream
+[CUDA build instructions](https://github.com/ggml-org/llama.cpp/blob/b11429/docs/build.md#cuda)
+and set `-DGGML_CUDA=ON` in a separate build directory. Select `--device cuda`.
+The backend enumerates compiled devices and selects the matching native device;
+it refuses an unavailable accelerator rather than silently labelling CPU work
+as GPU work. `--device metal`, `vulkan`, and `sycl` use the corresponding builds.
+
+CPU and accelerator dependencies stay separate. A CPU installation does not
+download CUDA packages. Linux NVIDIA measurements are separate from unified
+Apple memory: the tested Q4 workload's maximum observed native-process VRAM
+was 1,082 MiB, sampled through NVML at roughly one-second intervals, with about
+727 MB native host RSS. Transient VRAM peaks between samples remain unmeasured.
+No VRAM measurement is claimed for Windows
+or other accelerators.
+
+## Linux containers
+
+`Dockerfile` packages the Python application without model weights or secrets.
+`compose.yaml` pairs it with the pinned upstream CPU server image. Supply
+absolute host paths in environment variables:
+
+```text
+ARRMES_GGUF_FILE=/absolute/path/model-q4_k_m.gguf
+ARRMES_CLIENTS_FILE=/absolute/path/clients.json
+ARRMES_SERVICES_FILE=/absolute/path/services.json
+ARRMES_UID=1000
+ARRMES_GID=1000
+```
+
+The default Compose example enables native service reads without a custom
+gateway. Set `ARRMES_UID`/`ARRMES_GID` to the owner of the private registry files
+(the values from `id -u`/`id -g` on that host), so the non-root application can
+read files protected with mode 0600. Defaults are 10001:10001. The inference
+port is private to the Compose network. Only Arrmes port 8095 binds
+to host loopback. Both images run without root, writable root filesystems or
+added capabilities; model and secret mounts are read-only. No startup command
+downloads a model or contacts a media service.
+
+```sh
+docker compose -f compose.yaml config --quiet
+docker compose -f compose.yaml up --build
+```
+
+On a Linux NVIDIA host with an existing working NVIDIA Container Toolkit:
+
+```sh
+docker compose -f compose.yaml -f compose.cuda.yaml up --build
+```
+
+The CUDA override pulls a separate pinned CUDA image and requests one GPU.
+The native CUDA inference image was hardware-tested; the complete CUDA Compose
+application topology was configuration-validated. These files are installation examples;
+they do not deploy to the production estate or replace its Git-backed rollout.
+
+Packaging has a material GPU cost: Docker reports approximately 7.00 GB for
+the pinned CUDA image, versus 297.7 MB for the CPU inference image and 46 MB
+for the Arrmes application image. These are image bytes, not RAM or VRAM, and
+shared Docker layers can overlap. CPU installation never pulls the CUDA image.
+
+The exact benchmark launcher is retained at
+`experiments/portable-v1/launchers/llama-server`. It runs only a temporary native
+CUDA inference container, mounts the selected GGUF read-only and forwards the
+native server flags. On the tested Linux host, the benchmark used that directory
+first on `PATH`, then ran `scripts/benchmark_comparison.py --backend llama-server
+--device cuda --threads 2 --repetitions 3` with the CPU-exported GGUF and frozen
+80-case dataset/oracle. The result records the launcher hash, image digest,
+generation settings and source hashes. The external lease/safety monitor
+recorded per-process VRAM and container host-PID RSS; Docker-client child RSS is
+retained separately and is not labelled native-model RAM.
+
+For the optional legacy gateway, also set `ARRMES_GATEWAY_URL` and
+`ARRMES_GATEWAY_KEY_FILE`, then include `-f compose.gateway.yaml` after the
+base file (and after `compose.cuda.yaml` when using both). An empty
+`{"services": {}}` registry is permitted for gateway-only use. Preserve the
+gateway-owner restriction on identity-sensitive media requests.
 
 ## Arrmes v7 Runtime & Footprint Profile (2026-11-02)
 
@@ -103,176 +378,7 @@ Docker Desktop context, pull the single pinned image documented in
 --output work/sonarr-upstream-smoke.json`. The harness requires sampled resource
 headroom, uses one CPU/768 MiB, isolates networking and removes its test resources.
 
-## CPU installation
-
-The reviewed experimental GGUF is now a separate
-[release asset](https://github.com/spencernorton/arrmes/releases/download/v1.2.0/arrmes-qwen3-0.6b-public-8a9bcf-cpu-q4_k_m.gguf).
-It is 396,704,352 bytes, with SHA-256
-`c7d6f1eef1eb4cd0f93769dadca7e270f3c3d470cfb542240733859c7d02f255`.
-Get the accompanying MODEL-LICENSE.txt, NOTICE.txt, documentation ZIP and
-SHA256SUMS from the [same release](https://github.com/spencernorton/arrmes/releases/tag/v1.2.0).
-The model is Apache-2.0; application/tooling licenses are separate. Preserve the
-notices when redistributing. The artifact uses the actual public float32 LoRA,
-not the different retained research checkpoint. It is an experimental
-conversion with measured, non-identical predictions; it is not a new training.
-
-For example, on Linux or macOS, download to a new local file and verify it:
-
-```sh
-curl --fail --location --output arrmes-q4.gguf \
-  https://github.com/spencernorton/arrmes/releases/download/v1.2.0/arrmes-qwen3-0.6b-public-8a9bcf-cpu-q4_k_m.gguf
-printf '%s  %s\n' c7d6f1eef1eb4cd0f93769dadca7e270f3c3d470cfb542240733859c7d02f255 arrmes-q4.gguf | shasum -a 256 --check
-```
-
-Model-file size is not a RAM requirement. The measurements above depend on
-backend, context and hardware; Windows memory remains unmeasured.
-
-Use Python 3.12 or later. From the Arrmes checkout:
-
-```sh
-python3 -m venv .venv
-.venv/bin/python -m pip install .
-```
-
-Install the native runtime from the pinned
-[llama.cpp b11429 release](https://github.com/ggml-org/llama.cpp/releases/tag/b11429),
-or build it with CMake and a C++ compiler. Run these commands on the intended
-Linux or macOS CPU host:
-
-```sh
-git clone --depth 1 --branch b11429 https://github.com/ggml-org/llama.cpp.git
-cmake -S llama.cpp -B llama.cpp/build -DGGML_CUDA=OFF -DGGML_METAL=OFF -DLLAMA_OPENSSL=OFF
-cmake --build llama.cpp/build --target llama-server llama-quantize -j 2
-```
-
-Point `--llama-server` to the resulting executable if it is not on `PATH`.
-Supply the separate hash-checked GGUF above, or export your own. The Hugging
-Face Arrmes repository supplies an MLX LoRA rather than an interchangeable
-native GGUF. The conversion recipe below produces revision-specific artifacts.
-
-```sh
-.venv/bin/python -m arrmes route --backend llama-server --family hermes \
-  --contract-version v2 --model /absolute/path/model-q4_k_m.gguf \
-  --llama-server /absolute/path/llama.cpp/build/bin/llama-server \
-  --device cpu --threads 4 'Which episodes of Sintel are missing?'
-```
-
-This command produces a dry-run plan. It does not connect to media services.
-`--execute-sandbox` exercises only controlled local fixtures. A managed native
-child binds to loopback, uses one slot and shuts down with the application.
-CPU is explicit (`--n-gpu-layers 0`); it does not silently require a GPU build.
-
-## Native Windows
-
-Install 64-bit Python 3.12+ and extract
-`llama-b11429-bin-win-cpu-x64.zip` from the same official release into a local
-directory. Keep its DLLs beside `llama-server.exe`. In PowerShell:
-
-```powershell
-py -3.12 -m venv .venv
-.\.venv\Scripts\python.exe -m pip install .
-.\.venv\Scripts\python.exe -m arrmes route --backend llama-server --family hermes --contract-version v2 --model C:\Arrmes\model-q4_k_m.gguf --llama-server C:\Arrmes\llama\llama-server.exe --device cpu --threads 4 "Which episodes of Sintel are missing?"
-```
-
-After downloading the separate GGUF, verify it with
-`(Get-FileHash C:\Arrmes\model-q4_k_m.gguf -Algorithm SHA256).Hash` against the
-full digest above. Keep its license and notice files. This CPU path has actual
-hosted CI generation evidence for v1.2.0, with the scope recorded above. For NVIDIA,
-use the official `llama-b11429-bin-win-cuda-12.4-x64.zip` and its matching
-`cudart-llama-bin-win-cuda-12.4-x64.zip`, then select `--device cuda`.
-The installed driver must support that runtime. Arrmes never installs or alters
-host drivers. A missing `CUDA` device produces a clear startup error.
-
-## NVIDIA and other accelerators
-
-For a native Linux CUDA build, follow the upstream
-[CUDA build instructions](https://github.com/ggml-org/llama.cpp/blob/b11429/docs/build.md#cuda)
-and set `-DGGML_CUDA=ON` in a separate build directory. Select `--device cuda`.
-The backend enumerates compiled devices and selects the matching native device;
-it refuses an unavailable accelerator rather than silently labelling CPU work
-as GPU work. `--device metal`, `vulkan`, and `sycl` use the corresponding builds.
-
-CPU and accelerator dependencies stay separate. A CPU installation does not
-download CUDA packages. Linux NVIDIA measurements are separate from unified
-Apple memory: the tested Q4 workload's maximum observed native-process VRAM
-was 1,082 MiB, sampled through NVML at roughly one-second intervals, with about
-727 MB native host RSS. Transient VRAM peaks between samples remain unmeasured.
-No VRAM measurement is claimed for Windows
-or other accelerators.
-
-## Authenticated HTTP service
-
-For a first model-free read installation, create the client registry and a local
-curl header file in a fresh configuration directory. This generates a token
-without printing it; both new files are private and existing files are refused:
-
-```sh
-python3 - <<'PY'
-import hashlib, json, os, secrets
-token = secrets.token_urlsafe(32)
-registry = {"clients": [{"subject": "local:operator",
-    "token_sha256": hashlib.sha256(token.encode()).hexdigest(),
-    "scopes": ["media:read", "torrents:read", "activity:read", "releases:read"]}]}
-for path, body in [("clients.json", json.dumps(registry)),
-                   ("client-header.txt", "Authorization: Bearer " + token + "\n")]:
-    descriptor = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-    with os.fdopen(descriptor, "w") as output:
-        output.write(body)
-print("Created clients.json and client-header.txt")
-PY
-```
-
-Create `services.json` using the native registry example in
-[capabilities.md](capabilities.md#native-api-configuration), then start:
-
-```sh
-export ARRMES_CLIENTS_FILE="$PWD/clients.json"
-export ARRMES_SERVICES_FILE="$PWD/services.json"
-export ARRMES_BACKEND=native-only
-python -m arrmes.server
-```
-
-From a second terminal in that configuration directory:
-
-```sh
-curl --header @client-header.txt --header 'Content-Type: application/json' \
-  --data '{"query":"Show Sonarr queue"}' http://127.0.0.1:8095/v1/execute
-```
-
-The registry above grants reads only. Model-free mode defaults to writes off.
-To opt into the documented explicit Bazarr/Seerr write phrases, set
-`ARRMES_NATIVE_CONFIRMED_WRITES=1` and `ARRMES_WRITE_MODE=confirm`, and deliberately
-grant `media:manage` for subtitle operations or `requests:create` for requests.
-Each consequential step still needs its own single-use confirmation. Direct
-writes are unavailable in the HTTP service. The opt-in does not add free-form
-language understanding or make unquoted neural actions available without a model.
-For neural routing and confirmation-gated transfer control, configure a model
-backend below and deliberately grant its corresponding management scope.
-
-Set `ARRMES_BACKEND=llama-server`, `ARRMES_MODEL_PATH` to the fused GGUF,
-`ARRMES_MODEL_FAMILY=hermes`, `ARRMES_LLAMA_SERVER` to its executable,
-`ARRMES_DEVICE=cpu`, and optionally `ARRMES_THREADS`/`ARRMES_CONTEXT_SIZE`.
-Do not pass an MLX adapter path alongside GGUF: it must already contain the
-chosen adapter, and the factory rejects an unfused extra adapter.
-
-`ARRMES_CLIENTS_FILE` is required and stores SHA-256 bearer-token digests, trusted
-subjects and scopes. Configure `ARRMES_SERVICES_FILE` for native reads as shown
-in [capabilities.md](capabilities.md), or the explicit legacy
-`ARRMES_GATEWAY_URL` plus `GES_KEY_FILE` for its existing actions. Start
-`python -m arrmes.server`. Writes default to explicit confirmation; setting
-`ARRMES_WRITE_MODE=disabled` refuses them. No inference backend changes caller
-permissions or confirmation policy.
-
-For a model-free installation, set `ARRMES_BACKEND=native-only` and configure
-both registries. No model file, MLX, CUDA or llama-server is needed. This mode
-only runs documented explicit-service grammar and defaults to writes off. The
-separate write opt-in above enables confirmed subtitle/provider searches,
-candidate downloads and movie requests using their narrow explicit phrases.
-See [Bazarr subtitles](bazarr-subtitles.md) and [caller-owned Seerr requests](native-requests.md)
-for required arguments, identity mapping and honest completion limits.
-Requests outside that grammar clarify. The default neural backend and its
-trained media actions remain separate. Registries are read at startup; restart
-after editing them.
+### Model-free measurements
 
 On the measured Mac, the model-free package started in a fresh Python 3.12
 environment with only jsonschema and its small transitive dependencies. Six
@@ -289,75 +395,6 @@ their task mix differs from the neural comparison. They do not establish a
 model speedup, production latency or broad language understanding. Six access
 and abstention controls also passed. Inputs, package versions, source hashes
 and every request are in `experiments/overnight-v1/native-only-http.json`.
-
-To attach an already managed native runtime, set `ARRMES_INFERENCE_URL` to its
-HTTP(S) origin instead of launching a model child. It must implement native
-`/apply-template`, `/completion` and `/health`. This is not a generic
-OpenAI-compatible inference-provider client. Device/memory settings belong to
-that external process; response metadata reports `device=external`.
-Keep it on a private network: Arrmes caller authentication protects Arrmes,
-not a separately exposed llama-server port.
-
-## Linux containers
-
-`Dockerfile` packages the Python application without model weights or secrets.
-`compose.yaml` pairs it with the pinned upstream CPU server image. Supply
-absolute host paths in environment variables:
-
-```text
-ARRMES_GGUF_FILE=/absolute/path/model-q4_k_m.gguf
-ARRMES_CLIENTS_FILE=/absolute/path/clients.json
-ARRMES_SERVICES_FILE=/absolute/path/services.json
-ARRMES_UID=1000
-ARRMES_GID=1000
-```
-
-The default Compose example enables native service reads without a custom
-gateway. Set `ARRMES_UID`/`ARRMES_GID` to the owner of the private registry files
-(the values from `id -u`/`id -g` on that host), so the non-root application can
-read files protected with mode 0600. Defaults are 10001:10001. The inference
-port is private to the Compose network. Only Arrmes port 8095 binds
-to host loopback. Both images run without root, writable root filesystems or
-added capabilities; model and secret mounts are read-only. No startup command
-downloads a model or contacts a media service.
-
-```sh
-docker compose -f compose.yaml config --quiet
-docker compose -f compose.yaml up --build
-```
-
-On a Linux NVIDIA host with an existing working NVIDIA Container Toolkit:
-
-```sh
-docker compose -f compose.yaml -f compose.cuda.yaml up --build
-```
-
-The CUDA override pulls a separate pinned CUDA image and requests one GPU.
-The native CUDA inference image was hardware-tested; the complete CUDA Compose
-application topology was configuration-validated. These files are installation examples;
-they do not deploy to the production estate or replace its Git-backed rollout.
-
-Packaging has a material GPU cost: Docker reports approximately 7.00 GB for
-the pinned CUDA image, versus 297.7 MB for the CPU inference image and 46 MB
-for the Arrmes application image. These are image bytes, not RAM or VRAM, and
-shared Docker layers can overlap. CPU installation never pulls the CUDA image.
-
-The exact benchmark launcher is retained at
-`experiments/portable-v1/launchers/llama-server`. It runs only a temporary native
-CUDA inference container, mounts the selected GGUF read-only and forwards the
-native server flags. On the tested Linux host, the benchmark used that directory
-first on `PATH`, then ran `scripts/benchmark_comparison.py --backend llama-server
---device cuda --threads 2 --repetitions 3` with the CPU-exported GGUF and frozen
-80-case dataset/oracle. The result records the launcher hash, image digest,
-generation settings and source hashes. The external lease/safety monitor
-recorded per-process VRAM and container host-PID RSS; Docker-client child RSS is
-retained separately and is not labelled native-model RAM.
-
-For the optional legacy gateway, also set `ARRMES_GATEWAY_URL` and
-`ARRMES_GATEWAY_KEY_FILE`, then include `-f compose.gateway.yaml` after the
-base file (and after `compose.cuda.yaml` when using both). An empty
-`{"services": {}}` registry is permitted for gateway-only use. Preserve the
-gateway-owner restriction on identity-sensitive media requests.
 
 ## Exact adapter export and provenance
 
