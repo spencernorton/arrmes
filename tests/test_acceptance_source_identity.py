@@ -13,6 +13,7 @@ ROOT = Path(__file__).resolve().parents[1]
 spec = spec_from_file_location("source_identity_repro", ROOT / "scripts/acceptance_source_identity.py")
 resolver = module_from_spec(spec)
 spec.loader.exec_module(resolver)
+pytestmark = pytest.mark.skipif(not (ROOT / "experiments/acceptance-v4/evaluate_acceptance_v4-frozen.py").exists(), reason="Local benchmark evidence not checked into git")
 
 
 @pytest.fixture

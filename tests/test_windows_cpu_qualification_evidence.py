@@ -10,6 +10,7 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 helper = runpy.run_path(str(ROOT / "scripts/verify_windows_cpu_qualification.py"))
 EVIDENCE = ROOT / "experiments/windows-cpu-v1"
+pytestmark = pytest.mark.skipif(not EVIDENCE.exists(), reason="Local benchmark evidence not checked into git")
 
 
 def test_public_metadata_export_reconstructs_actual_crlf_receipt_and_analysis():

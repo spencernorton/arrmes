@@ -1,9 +1,0 @@
-{
-  "schema_version": 1,
-  "stage": "plan_metadata_before_generation",
-  "error_type": "PackageNotFoundError",
-  "cause": "System Python lacked optional MLX package metadata; no model was instantiated. Plan creation uses the existing MLX venv instead.",
-  "model_load_attempts": 0,
-  "generation_calls": 0,
-  "preserved_at": "2026-11-02T11:24:28.075348+00:00"
-}

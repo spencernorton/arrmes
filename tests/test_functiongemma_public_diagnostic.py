@@ -12,6 +12,7 @@ from types import SimpleNamespace
 import pytest
 
 ROOT = Path(__file__).resolve().parents[1]
+pytestmark = pytest.mark.skipif(not (ROOT / "data/overnight-v1/routing-heldout.jsonl").exists() or not (ROOT / "experiments/functiongemma-public-v1/manifest.json").exists(), reason="Local benchmark dataset not checked into git")
 
 
 @pytest.fixture

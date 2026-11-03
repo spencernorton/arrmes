@@ -8,3 +8,6 @@ build/
 models/
 adapters/
 work/
+
+# Local evaluation and training datasets
+data/
