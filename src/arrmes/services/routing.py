@@ -84,7 +84,11 @@ def route_service_query(query: str) -> Call | None:
         # deliberately clarifies here; quoted native routes remain stricter.
         return None
     # Existing entity-specific missing queries belong to the frozen v2 route.
-    if operation == "missing" and service != "bazarr" and (quoted or re.search(r"\b(?:for|of)\s+(?:the|a|an|this|that)\s+(?:tv\s+)?(?:show|series|movie|film|artist|album)\b", plain, re.I)):
+    if operation == "missing" and service != "bazarr" and (
+        quoted
+        or re.search(r"\b(?:for|of)\s+(?:the|a|an|this|that)\s+(?:tv\s+)?(?:show|series|movie|film|artist|album)\b", plain, re.I)
+        or (service == "sonarr" and re.search(r"\b(?:episodes?\s+of|missing\s+(?:episodes?\s+)?(?:for|of))\s+[A-Z0-9][A-Za-z0-9:'&.-]*", query))
+    ):
         return None
     if operation == "queue" and service == "qbittorrent" and re.search(r"\b(paused|stopped|downloading|seeding|completed|stalled)\b", plain, re.I):
         return None

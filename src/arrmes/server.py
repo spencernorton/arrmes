@@ -14,7 +14,7 @@ from typing import Any
 
 from arrmes import __version__
 from arrmes.auth import AuthenticationError, BearerTokenAuthenticator
-from arrmes.catalog import contract_hash_v2, contract_hash_v3
+from arrmes.catalog import V2_BY_NAME, contract_hash_v2, contract_hash_v3
 from arrmes.executor import BoundedExecutor, ExecutionTrace, SessionEntityLedger
 from arrmes.live_adapter import LiveGatewayAdapter
 from arrmes.model import DeterministicBaselineModel, LocalModel
@@ -231,7 +231,7 @@ class ArrmesRuntimeService:
             except InvalidCall:
                 call = verify_proposal(Call("clarify", {"slot": "title"}), query, context, contract_version="v2")
             else:
-                call = verify_proposal(call, query, context, contract_version="v2")
+                call = verify_proposal(call, query, context, contract_version="v3" if call.name not in V2_BY_NAME else "v2")
             source = ("native_only_abstention" if isinstance(self.model, NativeOnlyModel) else
                       "deterministic_v2" if isinstance(self.model, DeterministicBaselineModel) else "neural_v2")
         elapsed_ms = (time.perf_counter() - t0) * 1000.0
@@ -511,7 +511,13 @@ def _autodiscover_model_and_adapter() -> tuple[str, str | None]:
     """Locate the pinned local Qwen3 0.6B base model and latest distilled LoRA adapter if not explicitly set."""
     repo_root = Path(__file__).resolve().parents[2]
     explicit_model = os.environ.get("ARRMES_MODEL_PATH", "").strip()
-    model_candidates = [explicit_model] if explicit_model else [str(repo_root / "models" / "qwen3-06b")]
+    backend_hint = os.environ.get("ARRMES_BACKEND", "auto").strip()
+    if explicit_model:
+        model_candidates = [explicit_model]
+    elif backend_hint == "neural-router":
+        model_candidates = [str(repo_root / "models" / "arrmes-neural-router-v3"), str(repo_root / "models" / "qwen3-06b")]
+    else:
+        model_candidates = [str(repo_root / "models" / "qwen3-06b")]
     model_path = ""
     for cand in model_candidates:
         path = Path(cand).expanduser()
@@ -568,10 +574,11 @@ def main() -> None:
             write_mode = "disabled"
         mdl: Any = NativeOnlyModel()
     elif model_path or os.environ.get("ARRMES_INFERENCE_URL", "").strip():
+        contract_ver = "v3" if os.environ.get("ARRMES_GATEWAY_V3", "").strip() == "1" else "v2"
         mdl: Any = create_model(
             model_path or "remote-gguf", family=family,
             adapter=selected_adapter,
-            contract_version="v2", backend=backend,
+            contract_version=contract_ver, backend=backend,
             endpoint=endpoint,
             device=os.environ.get("ARRMES_DEVICE", "cpu"),
             executable=os.environ.get("ARRMES_LLAMA_SERVER", "llama-server"),
