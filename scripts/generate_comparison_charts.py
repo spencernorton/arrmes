@@ -40,7 +40,7 @@ def style_axis(ax: plt.Axes) -> None:
 def save(fig: plt.Figure, output: Path, name: str) -> None:
     output.mkdir(parents=True, exist_ok=True)
     fig.savefig(output / name, dpi=180, facecolor="white",
-                metadata={"Software": "Arrmes comparison charts"})
+                metadata={"Software": None})
     plt.close(fig)
 
 
