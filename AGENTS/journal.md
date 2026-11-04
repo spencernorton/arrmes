@@ -1,3 +1,7 @@
+## 2026-11-03 — Bound CI status checks and superseded PR work
+
+Cancel superseded pull-request runs by PR number; give non-PR and reusable workflow runs separate groups so they can finish independently. Validation: actionlint, workflow structure checks and the required native pull-request checks.
+
 ## 2026-11-03 — Front-page model and runtime comparisons
 
 - Added two readable README charts generated directly from the recorded acceptance-v5 and runtime-profile JSON: raw versus verified proposals for five checkpoints on the common 200-case slice, and M4 Pro warm routing latency plus model files on disk for three local backends.
