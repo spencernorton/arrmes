@@ -525,7 +525,7 @@ class ServiceQueryAdapter:
                 raise _UpstreamError("invalid_service_status")
             return self._result("seerr", args, [], 0, False, audit, api_version="v1", server_version=payload["version"])
         rows, total, truncated = self._paged(lambda page: self._get("seerr", "/api/v1/search?" + urllib.parse.urlencode({
-            "query": args["query"], "page": page + 1}), audit), records_key="results", total_key="totalResults")
+            "query": args["query"], "page": page + 1}, quote_via=urllib.parse.quote), audit), records_key="results", total_key="totalResults")
         _validated_rows("seerr", "search", rows)
         return self._result("seerr", args, rows, total, truncated, audit, api_version="v1")
 

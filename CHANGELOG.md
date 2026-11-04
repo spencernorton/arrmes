@@ -1,5 +1,10 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- Percent-encode native Seerr search queries (`src/arrmes/services/requests.py`, `src/arrmes/services/native.py`). `urlencode` turned spaces into `+`, which Seerr 3.5.1 rejects with HTTP 400 (`Parameter 'query' must be url encoded`), so movie requests, request status reads and `service_query` Seerr searches failed for any title containing a space.
+
 ## [1.4.2] - 2026-11-02
 
 ### Added

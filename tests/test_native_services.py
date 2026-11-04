@@ -512,6 +512,17 @@ def test_seerr_search_checks_native_result_type_specific_title_without_requiring
         assert adapter.execute(call, OWNER).verified_complete
 
 
+def test_seerr_search_percent_encodes_spaces():
+    # Seerr 3.5.1 rejects reserved characters, including "+" for a space, with HTTP 400.
+    adapter, _ = _record_adapter("seerr", "search", {"id": 2, "mediaType": "tv", "name": "Fixture series"})
+    response, paths = adapter._get, []
+    adapter._get = lambda service, path, audit, **kwargs: paths.append(path) or response(service, path, audit, **kwargs)
+    call = Call("service_query", {"service": "seerr", "operation": "search", "query": "Fixture series"})
+    with NetworkIsolationGuard():
+        assert adapter.execute(call, OWNER).verified_complete
+    assert paths == ["/api/v1/search?query=Fixture%20series&page=1"]
+
+
 @pytest.mark.parametrize("row", [{"id": True, "mediaType": "movie", "title": "Fixture"},
                                    {"id": -1, "mediaType": "movie", "title": "Fixture"},
                                    {"id": 1, "mediaType": "tv", "title": "Wrong display field"},
