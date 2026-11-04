@@ -65,6 +65,19 @@ The execution tests use HTTP fixtures; qualification against actual upstream
 applications is partial. [Results and methodology](docs/benchmark-acceptance-v5.md)
 include confidence bounds and model comparisons.
 
+![Raw and verified accuracy for five Arrmes generative checkpoints on the same 200-case acceptance-v5 slice](docs/figures/arrmes-model-accuracy-comparison.png)
+
+Five generative checkpoints on the same 100 positive and 100 negative cases.
+[Recorded scores](experiments/acceptance-v5/summary.json) separate raw model
+output from verified proposals; these are separate from the full neural-router
+results above.
+
+![Warm routing latency and model size for the neural router, FunctionGemma and Qwen3 on Apple M4 Pro](docs/figures/arrmes-local-runtime-comparison.png)
+
+[Recorded Apple M4 Pro profiles](experiments/runtime-profile-v7.json): warm
+routing plus verification, excluding service and network time. Disk size is
+separate from runtime memory; sample counts and axis scales are labeled.
+
 ## Documentation
 
 - [Supported services and configuration](docs/capabilities.md)
