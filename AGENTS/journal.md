@@ -1,3 +1,9 @@
+## 2026-11-03 — Front-page model and runtime comparisons
+
+- Added two readable README charts generated directly from the recorded acceptance-v5 and runtime-profile JSON: raw versus verified proposals for five checkpoints on the common 200-case slice, and M4 Pro warm routing latency plus model files on disk for three local backends.
+- Kept the generative slice separate from full-suite neural-router results. Chart labels retain quantization, sample counts, p50/p95, logarithmic latency scale and the proposal-versus-execution boundary. No new inference, training or benchmark rescoring.
+- Prepared matching figures for the three Hugging Face model cards and the Arrmes organization-profile section; corrected existing model-card image paths to their actual figures directory. Publication and exact-head CI are verified separately.
+
 ## 2026-11-03 — Shorter README and usable setup instructions
 
 - Reduced the README from 2,315 to 338 words: plain-language overview, three example requests, installation links and a compact benchmark summary. Removed repeated internals, charts and promotional claims from the front page; reports and evidence remain available in the guides.
