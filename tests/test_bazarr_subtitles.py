@@ -167,6 +167,14 @@ def test_missing_or_malformed_process_start_time_is_refused(start_time):
         assert not provider_gets(state)
 
 
+def test_overflowing_process_start_time_is_refused():
+    # 1e400 parses to inf rather than hitting the NaN/Infinity literal guard.
+    with bazarr_fixture() as (native, state):
+        state.faults["/api/system/status"] = (200, b'{"data": {"bazarr_version": "1.6.2", "start_time": 1e400}}')
+        result = NativeBazarrSubtitleAdapter(native).execute(Call("bazarr_subtitle_search", deepcopy(MOVIE_ARGS)), OWNER)
+        assert result.status == "error" and result.data["error"] == "invalid_bazarr_process_identity"
+        assert not provider_gets(state)
+
 @pytest.mark.parametrize("arguments", [MOVIE_ARGS, EPISODE_ARGS])
 def test_two_confirmations_exact_entity_and_form_then_observed_metadata_stays_dispatched(arguments):
     with bazarr_fixture() as (native, state):

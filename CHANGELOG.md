@@ -1,10 +1,17 @@
 # Changelog
 
-## [Unreleased]
+## [1.4.4] - 2026-11-05
 
 ### Fixed
 - Percent-encode native Seerr search queries (`src/arrmes/services/requests.py`, `src/arrmes/services/native.py`). `urlencode` turned spaces into `+`, which Seerr 3.5.1 rejects with HTTP 400 (`Parameter 'query' must be url encoded`), so movie requests, request status reads and `service_query` Seerr searches failed for any title containing a space.
-- Accept Bazarr's numeric process start time (`src/arrmes/services/bazarr_subtitles.py`). Bazarr 1.6.2 reports `start_time` as `time.time()` epoch seconds, which the adapter rejected as `invalid_bazarr_process_identity`, so every subtitle search failed against a real Bazarr. Text values are still accepted; missing, boolean and non-positive values are still refused.
+- Accept Bazarr's numeric process start time (`src/arrmes/services/bazarr_subtitles.py`). Bazarr 1.6.2 reports `start_time` as `time.time()` epoch seconds, which the adapter rejected as `invalid_bazarr_process_identity`, so every subtitle search failed against a real Bazarr. Text values are still accepted; missing, boolean, non-positive and non-finite values are refused (an overflowing number such as `1e400` parses to `inf`).
+
+## [1.4.3] - 2026-11-03
+
+### Changed
+- Title resolution folds diacritics and uses Sonarr/Radarr `alternateTitles` to disambiguate, returning a candidate list when a title matches more than one library entry.
+- Unquoted entity extraction and span snapping keep Unicode letters and parenthesized region qualifiers such as `(US)` and `(UK)`.
+- Entity-scoped missing-episode queries and indexer search triggers route through the v2 media and write actions instead of the global v3 `service_query` route.
 
 ## [1.4.2] - 2026-11-02
 
