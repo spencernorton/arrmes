@@ -93,7 +93,7 @@ def _start_time(value: Any) -> bool:
     # Bazarr sets its process start time with time.time() (bazarr/init.py), so /api/system/status
     # reports epoch seconds such as 1793829434.0899186.
     if isinstance(value, (int, float)) and not isinstance(value, bool):
-        return value > 0
+        return math.isfinite(value) and value > 0
     return _text(value, 120)
 
 
