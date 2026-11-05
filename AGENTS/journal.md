@@ -1,3 +1,9 @@
+## 2026-11-05 — v1.4.4: Seerr query encoding and Bazarr start time
+
+- Released the first outside contribution (PR16, squash 969e670): native Seerr searches percent-encode the query, because Seerr's API validator rejects the `+` that `urlencode` uses for spaces, and the Bazarr subtitle adapter accepts the numeric `start_time` that Bazarr 1.6.2 reports. Multi-word Seerr searches and every Bazarr subtitle search failed before.
+- Validation: 932 passed, 66 skipped locally on the PR head; reverting the three source files fails 112 tests in the touched suites. All four required checks passed on exact head 87cac4a. The macOS job was re-run once after it was cancelled without ever getting a runner. The contributor reports real Seerr 3.5.1 and Bazarr 1.6.2 runs; that is their evidence, not repeated here.
+- Version 1.4.3 → 1.4.4. Backfilled the missing 1.4.3 changelog entry from PR11.
+
 ## 2026-11-03 — Bound CI status checks and superseded PR work
 
 Cancel superseded pull-request runs by PR number; give non-PR and reusable workflow runs separate groups so they can finish independently. Validation: actionlint, workflow structure checks and the required native pull-request checks.
