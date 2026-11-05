@@ -72,7 +72,7 @@ def request_fixture(state=None, *, mapping=None, mode="confirm", store=None, **n
 
         def identity(self, method):
             parsed = urllib.parse.urlsplit(self.path)
-            call = {"method": method, "path": parsed.path, "query": urllib.parse.parse_qs(parsed.query), "headers": {key.lower(): value for key, value in self.headers.items()}}
+            call = {"method": method, "path": parsed.path, "query": urllib.parse.parse_qs(parsed.query), "raw_query": parsed.query, "headers": {key.lower(): value for key, value in self.headers.items()}}
             state.calls.append(call)
             if self.headers.get("X-Api-Key") != "fixture-key":
                 self.respond(401, {})
@@ -93,6 +93,9 @@ def request_fixture(state=None, *, mapping=None, mode="confirm", store=None, **n
             if path == "/api/v1/status":
                 self.respond(200, {"version": state.version, "path": "/private/fixture/config"});return
             if path == "/api/v1/search":
+                if "+" in call["raw_query"]:
+                    # Seerr 3.5.1 rejects reserved characters, including "+" for a space.
+                    self.respond(400, {"message": "Parameter 'query' must be url encoded. Its value may not contain reserved characters."});return
                 page = int(query["page"][0]);start = (page - 1) * state.search_size
                 self.respond(200, {"page": page, "totalPages": math.ceil(len(state.search) / state.search_size),
                     "totalResults": len(state.search), "results": deepcopy(state.search[start:start + state.search_size])});return

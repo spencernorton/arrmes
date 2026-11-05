@@ -180,7 +180,7 @@ class NativeRequestAdapter:
     def _resolve(self, args, context, audit):
         matches, seen, first_total, first_pages, complete = [], set(), None, None, False
         for page in range(1, self.native.max_pages + 1):
-            payload = self._http("GET", "/api/v1/search?" + urllib.parse.urlencode({"query": args["title"], "page": page}), context, audit)
+            payload = self._http("GET", "/api/v1/search?" + urllib.parse.urlencode({"query": args["title"], "page": page}, quote_via=urllib.parse.quote), context, audit)
             if not isinstance(payload, dict) or payload.get("page") != page or type(payload.get("page")) is not int:
                 raise _UpstreamError("invalid_seerr_search_page")
             rows = _rows(payload.get("results"))

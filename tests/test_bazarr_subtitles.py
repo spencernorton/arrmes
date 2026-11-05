@@ -31,7 +31,8 @@ EPISODE_ARGS = {"media_type": "episode", "title": "Fixture series", "year": 2020
 @dataclass
 class BazarrFixture:
     version: str = "1.6.2"
-    start_time: str = "2026-01-01T00:00:00Z"
+    # Bazarr 1.6.2 reports time.time() from bazarr/init.py.
+    start_time: float = 1767225600.0899186
     movies: list = field(default_factory=lambda: [{"radarrId": 4, "title": "Fixture movie", "year": "2020",
         "path": "/fixture/private/movie.mkv", "profileId": 1, "subtitles": []}])
     series: list = field(default_factory=lambda: [{"sonarrSeriesId": 8, "title": "Fixture series", "year": "2020", "profileId": 1}])
@@ -149,6 +150,23 @@ def pending_download(adapter, args=None):
     return pending, call
 
 
+@pytest.mark.parametrize("start_time", [1767225600.0899186, 1767225600, "2026-01-01T00:00:00Z"])
+def test_numeric_or_text_process_start_time_identifies_bazarr(start_time):
+    with bazarr_fixture() as (native, state):
+        state.start_time = start_time
+        pending = NativeBazarrSubtitleAdapter(native).execute(Call("bazarr_subtitle_search", deepcopy(MOVIE_ARGS)), OWNER)
+        assert pending.status == "confirmation_required", pending
+
+
+@pytest.mark.parametrize("start_time", [None, True, 0, -1.0, ""])
+def test_missing_or_malformed_process_start_time_is_refused(start_time):
+    with bazarr_fixture() as (native, state):
+        state.start_time = start_time
+        result = NativeBazarrSubtitleAdapter(native).execute(Call("bazarr_subtitle_search", deepcopy(MOVIE_ARGS)), OWNER)
+        assert result.status == "error" and result.data["error"] == "invalid_bazarr_process_identity"
+        assert not provider_gets(state)
+
+
 @pytest.mark.parametrize("arguments", [MOVIE_ARGS, EPISODE_ARGS])
 def test_two_confirmations_exact_entity_and_form_then_observed_metadata_stays_dispatched(arguments):
     with bazarr_fixture() as (native, state):
@@ -232,7 +250,7 @@ def test_fresh_confirmation_recheck_refuses_changed_target_service_or_profile(mu
         adapter = NativeBazarrSubtitleAdapter(native)
         pending, _ = pending_download(adapter)
         if mutation == "version":state.version = "1.6.3"
-        elif mutation == "restart":state.start_time = "2026-01-02T00:00:00Z"
+        elif mutation == "restart":state.start_time = 1767312000.5
         elif mutation == "movie_id":state.movies[0]["radarrId"] = 99
         elif mutation == "title":state.movies[0]["title"] = "Different movie"
         elif mutation == "year":state.movies[0]["year"] = "1980"

@@ -89,6 +89,14 @@ def _text(value: Any, maximum: int = 200) -> bool:
     return isinstance(value, str) and bool(value.strip()) and len(value) <= maximum and not any(ord(c) < 32 or ord(c) == 127 for c in value)
 
 
+def _start_time(value: Any) -> bool:
+    # Bazarr sets its process start time with time.time() (bazarr/init.py), so /api/system/status
+    # reports epoch seconds such as 1793829434.0899186.
+    if isinstance(value, (int, float)) and not isinstance(value, bool):
+        return value > 0
+    return _text(value, 120)
+
+
 def _obs(status: str, operation: str, code: int, data: dict[str, Any], audit, *, complete: bool = False):
     return AdapterObservation(status, "bazarr", operation, code, complete, data, audit)
 
@@ -161,7 +169,7 @@ class NativeBazarrSubtitleAdapter:
         version = status.get("bazarr_version") if isinstance(status, dict) else None
         if not isinstance(version, str) or version not in {SUPPORTED_VERSION, "v" + SUPPORTED_VERSION}:
             raise _UpstreamError("unsupported_bazarr_version", 501)
-        if not _text(status.get("start_time"), 120):
+        if not _start_time(status.get("start_time")):
             raise _UpstreamError("invalid_bazarr_process_identity")
         languages = self.native._get("bazarr", "/api/system/languages", audit)
         if not isinstance(languages, list) or len(languages) > 500 or any(not isinstance(r, dict) for r in languages):

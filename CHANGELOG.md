@@ -1,5 +1,11 @@
 # Changelog
 
+## [Unreleased]
+
+### Fixed
+- Percent-encode native Seerr search queries (`src/arrmes/services/requests.py`, `src/arrmes/services/native.py`). `urlencode` turned spaces into `+`, which Seerr 3.5.1 rejects with HTTP 400 (`Parameter 'query' must be url encoded`), so movie requests, request status reads and `service_query` Seerr searches failed for any title containing a space.
+- Accept Bazarr's numeric process start time (`src/arrmes/services/bazarr_subtitles.py`). Bazarr 1.6.2 reports `start_time` as `time.time()` epoch seconds, which the adapter rejected as `invalid_bazarr_process_identity`, so every subtitle search failed against a real Bazarr. Text values are still accepted; missing, boolean and non-positive values are still refused.
+
 ## [1.4.2] - 2026-11-02
 
 ### Added
