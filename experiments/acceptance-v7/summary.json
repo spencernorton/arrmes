@@ -1,0 +1,3019 @@
+{
+  "suite_id": "acceptance-v7",
+  "evaluated_at": "2026-11-07",
+  "manifest": {
+    "suite_id": "acceptance-v7",
+    "locked_at": "2026-11-07",
+    "bootstrap_seed": 9009,
+    "bootstrap_replicates": 2000,
+    "positive_jsonl_sha256": "f07774983d3e61b1bd1e5c55a35b1e5c8618cc6e6d95663eadbdca90978cbf52",
+    "negative_jsonl_sha256": "5f58d213d55f44ed3f9638944583141af9047d5aef9436e5ca4d358f72a99c04",
+    "bootstrap_matrix_sha256": "1cbf0058642bb3c690ba38b5504cde2ed90c19c1e2f82cc65c94c39b37279d1b",
+    "leakage_audit": {
+      "prior_split_counts": {
+        "train-v9": 10649,
+        "train-v8": 6476,
+        "train-v7": 5827,
+        "dev-v6-pos": 1260,
+        "dev-v6-neg": 1200,
+        "acceptance-v6-pos": 1380,
+        "acceptance-v6-neg": 1200,
+        "dev-v5-pos": 2520,
+        "dev-v5-neg": 2400,
+        "acceptance-v4": 1000,
+        "overnight-v1": 80
+      },
+      "positive_cases": 1380,
+      "positive_clusters": 276,
+      "negative_cases": 1200,
+      "negative_clusters": 240,
+      "negative_families_covered": 35,
+      "av7_unique_entities_checked": 151,
+      "prior_unique_template_skeletons": 1729,
+      "av7_unique_template_skeletons": 899,
+      "exact_query_overlap_count": 0,
+      "entity_overlap_count": 0,
+      "template_skeleton_overlap_count": 0,
+      "passes_zero_leakage_gate": true
+    }
+  },
+  "models": {
+    "arrmes_neural_router_v3_contract_v3": {
+      "positive_v2_1000": {
+        "total_cases": 1060,
+        "total_clusters": 212,
+        "track_a_direct_model": {
+          "native_format_valid": 1060,
+          "native_format_rate": 1.0,
+          "function_exact": 1060,
+          "function_accuracy": 1.0,
+          "arguments_exact": 1060,
+          "arguments_accuracy": 1.0,
+          "joint_exact": 1060,
+          "joint_accuracy": 1.0,
+          "wilson_95_lower": 0.996389,
+          "wilson_95_upper": 1.0,
+          "cluster_bootstrap_95_lower": 1.0,
+          "passes_99_gate": true
+        },
+        "track_b_complete_system": {
+          "verified_format_valid": 1060,
+          "verified_function_exact": 1060,
+          "verified_arguments_exact": 1060,
+          "verified_joint_exact": 1060,
+          "verified_joint_accuracy": 1.0,
+          "wilson_95_lower": 0.996389,
+          "wilson_95_upper": 1.0,
+          "cluster_bootstrap_95_lower": 1.0,
+          "passes_99_gate": true,
+          "repaired_by_verifier": 0,
+          "damaged_by_verifier": 0,
+          "unnecessary_refusals_or_clarifications": 0,
+          "raw_unsafe_write_proposals": 0,
+          "verified_unauthorized_writes": 0,
+          "non_write_opportunities": 700,
+          "unauthorized_write_clopper_pearson": {
+            "one_sided_95_upper": 0.00427047,
+            "two_sided_95_upper": 0.00525597
+          },
+          "structural_guard_frequency": 0.0236,
+          "routing_source_breakdown": {
+            "neural_router_mlp": 1060
+          }
+        },
+        "latency_ms": {
+          "warm_p50_ms": 0.595,
+          "warm_p95_ms": 0.891,
+          "mean_ms": 0.632
+        },
+        "per_family_verified_accuracy": {
+          "armiger_parse": {
+            "total": 50,
+            "exact": 50,
+            "accuracy": 1.0
+          },
+          "bitmagnet_search": {
+            "total": 50,
+            "exact": 50,
+            "accuracy": 1.0
+          },
+          "movie_search": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "movie_search_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "movie_status": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "movie_status_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "movie_status_override": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "music_search": {
+            "total": 50,
+            "exact": 50,
+            "accuracy": 1.0
+          },
+          "music_status": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "now_playing": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          },
+          "request_media": {
+            "total": 70,
+            "exact": 70,
+            "accuracy": 1.0
+          },
+          "request_media_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "request_status": {
+            "total": 50,
+            "exact": 50,
+            "accuracy": 1.0
+          },
+          "request_status_contrast": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "seer_discover": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "torrent_list_query": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "torrent_list_state": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "torrent_pause": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          },
+          "torrent_resume": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          },
+          "tv_missing": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "tv_missing_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "tv_search_missing_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "tv_search_missing_season": {
+            "total": 35,
+            "exact": 35,
+            "accuracy": 1.0
+          },
+          "tv_search_missing_series": {
+            "total": 35,
+            "exact": 35,
+            "accuracy": 1.0
+          },
+          "tv_status": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "tv_status_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "tv_status_override": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "watch_history_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "watch_history_global": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "watch_history_titled": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          },
+          "waypoint_status": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          }
+        }
+      },
+      "positive_v3_all_1320": {
+        "total_cases": 1380,
+        "total_clusters": 276,
+        "track_a_direct_model": {
+          "native_format_valid": 1380,
+          "native_format_rate": 1.0,
+          "function_exact": 1380,
+          "function_accuracy": 1.0,
+          "arguments_exact": 1380,
+          "arguments_accuracy": 1.0,
+          "joint_exact": 1380,
+          "joint_accuracy": 1.0,
+          "wilson_95_lower": 0.997224,
+          "wilson_95_upper": 1.0,
+          "cluster_bootstrap_95_lower": 1.0,
+          "passes_99_gate": true
+        },
+        "track_b_complete_system": {
+          "verified_format_valid": 1380,
+          "verified_function_exact": 1380,
+          "verified_arguments_exact": 1380,
+          "verified_joint_exact": 1380,
+          "verified_joint_accuracy": 1.0,
+          "wilson_95_lower": 0.997224,
+          "wilson_95_upper": 1.0,
+          "cluster_bootstrap_95_lower": 1.0,
+          "passes_99_gate": true,
+          "repaired_by_verifier": 0,
+          "damaged_by_verifier": 0,
+          "unnecessary_refusals_or_clarifications": 0,
+          "raw_unsafe_write_proposals": 0,
+          "verified_unauthorized_writes": 0,
+          "non_write_opportunities": 1000,
+          "unauthorized_write_clopper_pearson": {
+            "one_sided_95_upper": 0.00299125,
+            "two_sided_95_upper": 0.00368208
+          },
+          "structural_guard_frequency": 0.0275,
+          "routing_source_breakdown": {
+            "neural_router_mlp": 1367,
+            "explicit_service_query_deterministic": 13
+          }
+        },
+        "latency_ms": {
+          "warm_p50_ms": 0.563,
+          "warm_p95_ms": 0.878,
+          "mean_ms": 0.591
+        },
+        "per_family_verified_accuracy": {
+          "armiger_parse": {
+            "total": 50,
+            "exact": 50,
+            "accuracy": 1.0
+          },
+          "bazarr_subtitle_download_episode": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "bazarr_subtitle_download_movie": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "bazarr_subtitle_search_episode": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "bazarr_subtitle_search_movie": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "bitmagnet_search": {
+            "total": 50,
+            "exact": 50,
+            "accuracy": 1.0
+          },
+          "movie_search": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "movie_search_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "movie_status": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "movie_status_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "movie_status_override": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "music_search": {
+            "total": 50,
+            "exact": 50,
+            "accuracy": 1.0
+          },
+          "music_status": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "now_playing": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          },
+          "request_media": {
+            "total": 70,
+            "exact": 70,
+            "accuracy": 1.0
+          },
+          "request_media_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "request_status": {
+            "total": 50,
+            "exact": 50,
+            "accuracy": 1.0
+          },
+          "request_status_contrast": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "seer_discover": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "service_query_bazarr_missing_movie": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_bazarr_missing_tv": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_bazarr_subtitles_movie": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_bazarr_subtitles_tv": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_lidarr_calendar": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_lidarr_health": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_lidarr_history": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_lidarr_indexers": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_lidarr_library": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_lidarr_missing": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_lidarr_quality_profiles": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_lidarr_queue": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_lidarr_search": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_lidarr_wanted": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_prowlarr_bitmagnet_search": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_prowlarr_history_and_bazarr_health": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_prowlarr_indexers_and_prowlarr_applications": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_qbittorrent_health_and_qbittorrent_activity": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_qbittorrent_queue_and_tautulli_health": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_radarr_calendar": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_radarr_health": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_radarr_history": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_radarr_indexers": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_radarr_library": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_radarr_missing": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_radarr_quality_profiles": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_radarr_queue": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_radarr_search": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_radarr_wanted": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_readarr_calendar": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_readarr_health": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_readarr_history": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_readarr_indexers": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_readarr_library": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_readarr_missing": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_readarr_quality_profiles": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_readarr_queue": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_readarr_wanted": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_readarr_whisparr_unquoted_search": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_seerr_health_and_bitmagnet_health": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_seerr_search": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_sonarr_calendar": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_sonarr_health": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_sonarr_history": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_sonarr_indexers": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_sonarr_library": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_sonarr_missing": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_sonarr_quality_profiles": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_sonarr_queue": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_sonarr_search": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_sonarr_wanted": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_tautulli_activity_and_tautulli_history": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_whisparr_calendar_and_whisparr_quality_profiles": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_whisparr_health": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_whisparr_history": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_whisparr_indexers_and_prowlarr_health": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_whisparr_library": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_whisparr_missing": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_whisparr_queue": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "service_query_whisparr_wanted": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "torrent_list_query": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "torrent_list_state": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "torrent_pause": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          },
+          "torrent_resume": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          },
+          "tv_missing": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "tv_missing_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "tv_search_missing_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "tv_search_missing_season": {
+            "total": 35,
+            "exact": 35,
+            "accuracy": 1.0
+          },
+          "tv_search_missing_series": {
+            "total": 35,
+            "exact": 35,
+            "accuracy": 1.0
+          },
+          "tv_status": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "tv_status_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "tv_status_override": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "watch_history_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "watch_history_global": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "watch_history_titled": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          },
+          "waypoint_status": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          }
+        }
+      },
+      "negative_all_1200": {
+        "total_cases": 1200,
+        "total_clusters": 240,
+        "track_a_direct_model": {
+          "native_format_valid": 1200,
+          "native_format_rate": 1.0,
+          "function_exact": 1200,
+          "function_accuracy": 1.0,
+          "arguments_exact": 1200,
+          "arguments_accuracy": 1.0,
+          "joint_exact": 1200,
+          "joint_accuracy": 1.0,
+          "wilson_95_lower": 0.996809,
+          "wilson_95_upper": 1.0,
+          "cluster_bootstrap_95_lower": 1.0,
+          "passes_99_gate": true
+        },
+        "track_b_complete_system": {
+          "verified_format_valid": 1200,
+          "verified_function_exact": 1200,
+          "verified_arguments_exact": 1200,
+          "verified_joint_exact": 1200,
+          "verified_joint_accuracy": 1.0,
+          "wilson_95_lower": 0.996809,
+          "wilson_95_upper": 1.0,
+          "cluster_bootstrap_95_lower": 1.0,
+          "passes_99_gate": true,
+          "repaired_by_verifier": 0,
+          "damaged_by_verifier": 0,
+          "unnecessary_refusals_or_clarifications": 0,
+          "raw_unsafe_write_proposals": 0,
+          "verified_unauthorized_writes": 0,
+          "non_write_opportunities": 1200,
+          "unauthorized_write_clopper_pearson": {
+            "one_sided_95_upper": 0.00249333,
+            "two_sided_95_upper": 0.00306935
+          },
+          "structural_guard_frequency": 0.1,
+          "routing_source_breakdown": {
+            "neural_router_mlp": 1200
+          }
+        },
+        "latency_ms": {
+          "warm_p50_ms": 0.392,
+          "warm_p95_ms": 0.588,
+          "mean_ms": 0.405
+        },
+        "per_family_verified_accuracy": {
+          "AV7N-001": {
+            "total": 85,
+            "exact": 85,
+            "accuracy": 1.0
+          },
+          "AV7N-002": {
+            "total": 15,
+            "exact": 15,
+            "accuracy": 1.0
+          },
+          "AV7N-003": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "AV7N-004": {
+            "total": 20,
+            "exact": 20,
+            "accuracy": 1.0
+          },
+          "AV7N-005": {
+            "total": 20,
+            "exact": 20,
+            "accuracy": 1.0
+          },
+          "AV7N-006": {
+            "total": 55,
+            "exact": 55,
+            "accuracy": 1.0
+          },
+          "AV7N-007": {
+            "total": 25,
+            "exact": 25,
+            "accuracy": 1.0
+          },
+          "AV7N-008": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-009": {
+            "total": 20,
+            "exact": 20,
+            "accuracy": 1.0
+          },
+          "AV7N-010": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "AV7N-011": {
+            "total": 25,
+            "exact": 25,
+            "accuracy": 1.0
+          },
+          "AV7N-012": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-013": {
+            "total": 20,
+            "exact": 20,
+            "accuracy": 1.0
+          },
+          "AV7N-014": {
+            "total": 35,
+            "exact": 35,
+            "accuracy": 1.0
+          },
+          "AV7N-015": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-016": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-017": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-018": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-019": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-020": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-021": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-022": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-023": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-024": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-025": {
+            "total": 45,
+            "exact": 45,
+            "accuracy": 1.0
+          },
+          "AV7N-026": {
+            "total": 45,
+            "exact": 45,
+            "accuracy": 1.0
+          },
+          "AV7N-027": {
+            "total": 45,
+            "exact": 45,
+            "accuracy": 1.0
+          },
+          "AV7N-028": {
+            "total": 45,
+            "exact": 45,
+            "accuracy": 1.0
+          },
+          "AV7N-029": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          },
+          "AV7N-030": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          },
+          "AV7N-031": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-032": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-033": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-034": {
+            "total": 20,
+            "exact": 20,
+            "accuracy": 1.0
+          },
+          "AV7N-035": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          }
+        }
+      }
+    },
+    "arrmes_neural_router_v3_contract_v2": {
+      "positive_v2_1000": {
+        "total_cases": 1060,
+        "total_clusters": 212,
+        "track_a_direct_model": {
+          "native_format_valid": 1060,
+          "native_format_rate": 1.0,
+          "function_exact": 1060,
+          "function_accuracy": 1.0,
+          "arguments_exact": 1060,
+          "arguments_accuracy": 1.0,
+          "joint_exact": 1060,
+          "joint_accuracy": 1.0,
+          "wilson_95_lower": 0.996389,
+          "wilson_95_upper": 1.0,
+          "cluster_bootstrap_95_lower": 1.0,
+          "passes_99_gate": true
+        },
+        "track_b_complete_system": {
+          "verified_format_valid": 1060,
+          "verified_function_exact": 1060,
+          "verified_arguments_exact": 1060,
+          "verified_joint_exact": 1060,
+          "verified_joint_accuracy": 1.0,
+          "wilson_95_lower": 0.996389,
+          "wilson_95_upper": 1.0,
+          "cluster_bootstrap_95_lower": 1.0,
+          "passes_99_gate": true,
+          "repaired_by_verifier": 0,
+          "damaged_by_verifier": 0,
+          "unnecessary_refusals_or_clarifications": 0,
+          "raw_unsafe_write_proposals": 0,
+          "verified_unauthorized_writes": 0,
+          "non_write_opportunities": 700,
+          "unauthorized_write_clopper_pearson": {
+            "one_sided_95_upper": 0.00427047,
+            "two_sided_95_upper": 0.00525597
+          },
+          "structural_guard_frequency": 0.0236,
+          "routing_source_breakdown": {
+            "neural_router_mlp": 1060
+          }
+        },
+        "latency_ms": {
+          "warm_p50_ms": 0.603,
+          "warm_p95_ms": 0.949,
+          "mean_ms": 0.639
+        },
+        "per_family_verified_accuracy": {
+          "armiger_parse": {
+            "total": 50,
+            "exact": 50,
+            "accuracy": 1.0
+          },
+          "bitmagnet_search": {
+            "total": 50,
+            "exact": 50,
+            "accuracy": 1.0
+          },
+          "movie_search": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "movie_search_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "movie_status": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "movie_status_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "movie_status_override": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "music_search": {
+            "total": 50,
+            "exact": 50,
+            "accuracy": 1.0
+          },
+          "music_status": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "now_playing": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          },
+          "request_media": {
+            "total": 70,
+            "exact": 70,
+            "accuracy": 1.0
+          },
+          "request_media_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "request_status": {
+            "total": 50,
+            "exact": 50,
+            "accuracy": 1.0
+          },
+          "request_status_contrast": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "seer_discover": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "torrent_list_query": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "torrent_list_state": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "torrent_pause": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          },
+          "torrent_resume": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          },
+          "tv_missing": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "tv_missing_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "tv_search_missing_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "tv_search_missing_season": {
+            "total": 35,
+            "exact": 35,
+            "accuracy": 1.0
+          },
+          "tv_search_missing_series": {
+            "total": 35,
+            "exact": 35,
+            "accuracy": 1.0
+          },
+          "tv_status": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "tv_status_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "tv_status_override": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "watch_history_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "watch_history_global": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "watch_history_titled": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          },
+          "waypoint_status": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          }
+        }
+      },
+      "positive_v3_all_1320": {
+        "total_cases": 1380,
+        "total_clusters": 276,
+        "track_a_direct_model": {
+          "native_format_valid": 1380,
+          "native_format_rate": 1.0,
+          "function_exact": 1060,
+          "function_accuracy": 0.768116,
+          "arguments_exact": 1060,
+          "arguments_accuracy": 0.768116,
+          "joint_exact": 1060,
+          "joint_accuracy": 0.768116,
+          "wilson_95_lower": 0.745123,
+          "wilson_95_upper": 0.78962,
+          "cluster_bootstrap_95_lower": 0.721014,
+          "passes_99_gate": false
+        },
+        "track_b_complete_system": {
+          "verified_format_valid": 1380,
+          "verified_function_exact": 1060,
+          "verified_arguments_exact": 1060,
+          "verified_joint_exact": 1060,
+          "verified_joint_accuracy": 0.768116,
+          "wilson_95_lower": 0.745123,
+          "wilson_95_upper": 0.78962,
+          "cluster_bootstrap_95_lower": 0.721014,
+          "passes_99_gate": false,
+          "repaired_by_verifier": 0,
+          "damaged_by_verifier": 0,
+          "unnecessary_refusals_or_clarifications": 84,
+          "raw_unsafe_write_proposals": 8,
+          "verified_unauthorized_writes": 3,
+          "non_write_opportunities": 1000,
+          "unauthorized_write_clopper_pearson": {
+            "one_sided_95_upper": 0.00878301,
+            "two_sided_95_upper": 0.00878301
+          },
+          "structural_guard_frequency": 0.2406,
+          "routing_source_breakdown": {
+            "neural_router_mlp": 1380
+          }
+        },
+        "latency_ms": {
+          "warm_p50_ms": 0.57,
+          "warm_p95_ms": 0.924,
+          "mean_ms": 0.593
+        },
+        "per_family_verified_accuracy": {
+          "armiger_parse": {
+            "total": 50,
+            "exact": 50,
+            "accuracy": 1.0
+          },
+          "bazarr_subtitle_download_episode": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "bazarr_subtitle_download_movie": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "bazarr_subtitle_search_episode": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "bazarr_subtitle_search_movie": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "bitmagnet_search": {
+            "total": 50,
+            "exact": 50,
+            "accuracy": 1.0
+          },
+          "movie_search": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "movie_search_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "movie_status": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "movie_status_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "movie_status_override": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "music_search": {
+            "total": 50,
+            "exact": 50,
+            "accuracy": 1.0
+          },
+          "music_status": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "now_playing": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          },
+          "request_media": {
+            "total": 70,
+            "exact": 70,
+            "accuracy": 1.0
+          },
+          "request_media_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "request_status": {
+            "total": 50,
+            "exact": 50,
+            "accuracy": 1.0
+          },
+          "request_status_contrast": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "seer_discover": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "service_query_bazarr_missing_movie": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_bazarr_missing_tv": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_bazarr_subtitles_movie": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_bazarr_subtitles_tv": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_lidarr_calendar": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_lidarr_health": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_lidarr_history": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_lidarr_indexers": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_lidarr_library": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_lidarr_missing": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_lidarr_quality_profiles": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_lidarr_queue": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_lidarr_search": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_lidarr_wanted": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_prowlarr_bitmagnet_search": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_prowlarr_history_and_bazarr_health": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_prowlarr_indexers_and_prowlarr_applications": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_qbittorrent_health_and_qbittorrent_activity": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_qbittorrent_queue_and_tautulli_health": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_radarr_calendar": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_radarr_health": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_radarr_history": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_radarr_indexers": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_radarr_library": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_radarr_missing": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_radarr_quality_profiles": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_radarr_queue": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_radarr_search": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_radarr_wanted": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_readarr_calendar": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_readarr_health": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_readarr_history": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_readarr_indexers": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_readarr_library": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_readarr_missing": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_readarr_quality_profiles": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_readarr_queue": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_readarr_wanted": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_readarr_whisparr_unquoted_search": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_seerr_health_and_bitmagnet_health": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_seerr_search": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_sonarr_calendar": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_sonarr_health": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_sonarr_history": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_sonarr_indexers": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_sonarr_library": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_sonarr_missing": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_sonarr_quality_profiles": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_sonarr_queue": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_sonarr_search": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_sonarr_wanted": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_tautulli_activity_and_tautulli_history": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_whisparr_calendar_and_whisparr_quality_profiles": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_whisparr_health": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_whisparr_history": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_whisparr_indexers_and_prowlarr_health": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_whisparr_library": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_whisparr_missing": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_whisparr_queue": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_whisparr_wanted": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "torrent_list_query": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "torrent_list_state": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "torrent_pause": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          },
+          "torrent_resume": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          },
+          "tv_missing": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "tv_missing_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "tv_search_missing_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "tv_search_missing_season": {
+            "total": 35,
+            "exact": 35,
+            "accuracy": 1.0
+          },
+          "tv_search_missing_series": {
+            "total": 35,
+            "exact": 35,
+            "accuracy": 1.0
+          },
+          "tv_status": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "tv_status_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "tv_status_override": {
+            "total": 5,
+            "exact": 5,
+            "accuracy": 1.0
+          },
+          "watch_history_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "watch_history_global": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "watch_history_titled": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          },
+          "waypoint_status": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          }
+        }
+      },
+      "negative_all_1200": {
+        "total_cases": 1200,
+        "total_clusters": 240,
+        "track_a_direct_model": {
+          "native_format_valid": 1200,
+          "native_format_rate": 1.0,
+          "function_exact": 1195,
+          "function_accuracy": 0.995833,
+          "arguments_exact": 1195,
+          "arguments_accuracy": 0.995833,
+          "joint_exact": 1195,
+          "joint_accuracy": 0.995833,
+          "wilson_95_lower": 0.990283,
+          "wilson_95_upper": 0.998219,
+          "cluster_bootstrap_95_lower": 0.9875,
+          "passes_99_gate": false
+        },
+        "track_b_complete_system": {
+          "verified_format_valid": 1200,
+          "verified_function_exact": 1195,
+          "verified_arguments_exact": 1195,
+          "verified_joint_exact": 1195,
+          "verified_joint_accuracy": 0.995833,
+          "wilson_95_lower": 0.990283,
+          "wilson_95_upper": 0.998219,
+          "cluster_bootstrap_95_lower": 0.9875,
+          "passes_99_gate": false,
+          "repaired_by_verifier": 0,
+          "damaged_by_verifier": 0,
+          "unnecessary_refusals_or_clarifications": 0,
+          "raw_unsafe_write_proposals": 0,
+          "verified_unauthorized_writes": 0,
+          "non_write_opportunities": 1200,
+          "unauthorized_write_clopper_pearson": {
+            "one_sided_95_upper": 0.00249333,
+            "two_sided_95_upper": 0.00306935
+          },
+          "structural_guard_frequency": 0.1,
+          "routing_source_breakdown": {
+            "neural_router_mlp": 1200
+          }
+        },
+        "latency_ms": {
+          "warm_p50_ms": 0.401,
+          "warm_p95_ms": 0.647,
+          "mean_ms": 0.428
+        },
+        "per_family_verified_accuracy": {
+          "AV7N-001": {
+            "total": 85,
+            "exact": 85,
+            "accuracy": 1.0
+          },
+          "AV7N-002": {
+            "total": 15,
+            "exact": 15,
+            "accuracy": 1.0
+          },
+          "AV7N-003": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "AV7N-004": {
+            "total": 20,
+            "exact": 20,
+            "accuracy": 1.0
+          },
+          "AV7N-005": {
+            "total": 20,
+            "exact": 20,
+            "accuracy": 1.0
+          },
+          "AV7N-006": {
+            "total": 55,
+            "exact": 55,
+            "accuracy": 1.0
+          },
+          "AV7N-007": {
+            "total": 25,
+            "exact": 25,
+            "accuracy": 1.0
+          },
+          "AV7N-008": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-009": {
+            "total": 20,
+            "exact": 20,
+            "accuracy": 1.0
+          },
+          "AV7N-010": {
+            "total": 60,
+            "exact": 60,
+            "accuracy": 1.0
+          },
+          "AV7N-011": {
+            "total": 25,
+            "exact": 25,
+            "accuracy": 1.0
+          },
+          "AV7N-012": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-013": {
+            "total": 20,
+            "exact": 20,
+            "accuracy": 1.0
+          },
+          "AV7N-014": {
+            "total": 35,
+            "exact": 35,
+            "accuracy": 1.0
+          },
+          "AV7N-015": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-016": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-017": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-018": {
+            "total": 30,
+            "exact": 25,
+            "accuracy": 0.8333
+          },
+          "AV7N-019": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-020": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-021": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-022": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-023": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-024": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-025": {
+            "total": 45,
+            "exact": 45,
+            "accuracy": 1.0
+          },
+          "AV7N-026": {
+            "total": 45,
+            "exact": 45,
+            "accuracy": 1.0
+          },
+          "AV7N-027": {
+            "total": 45,
+            "exact": 45,
+            "accuracy": 1.0
+          },
+          "AV7N-028": {
+            "total": 45,
+            "exact": 45,
+            "accuracy": 1.0
+          },
+          "AV7N-029": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          },
+          "AV7N-030": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          },
+          "AV7N-031": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-032": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-033": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          },
+          "AV7N-034": {
+            "total": 20,
+            "exact": 20,
+            "accuracy": 1.0
+          },
+          "AV7N-035": {
+            "total": 30,
+            "exact": 30,
+            "accuracy": 1.0
+          }
+        }
+      }
+    },
+    "deterministic_baseline_v2": {
+      "positive_v2_1000": {
+        "total_cases": 1060,
+        "total_clusters": 212,
+        "track_a_direct_model": {
+          "native_format_valid": 1060,
+          "native_format_rate": 1.0,
+          "function_exact": 264,
+          "function_accuracy": 0.249057,
+          "arguments_exact": 186,
+          "arguments_accuracy": 0.175472,
+          "joint_exact": 181,
+          "joint_accuracy": 0.170755,
+          "wilson_95_lower": 0.1493,
+          "wilson_95_upper": 0.194587,
+          "cluster_bootstrap_95_lower": 0.122642,
+          "passes_99_gate": false
+        },
+        "track_b_complete_system": {
+          "verified_format_valid": 1060,
+          "verified_function_exact": 264,
+          "verified_arguments_exact": 186,
+          "verified_joint_exact": 181,
+          "verified_joint_accuracy": 0.170755,
+          "wilson_95_lower": 0.1493,
+          "wilson_95_upper": 0.194587,
+          "cluster_bootstrap_95_lower": 0.122642,
+          "passes_99_gate": false,
+          "repaired_by_verifier": 0,
+          "damaged_by_verifier": 0,
+          "unnecessary_refusals_or_clarifications": 726,
+          "raw_unsafe_write_proposals": 0,
+          "verified_unauthorized_writes": 0,
+          "non_write_opportunities": 700,
+          "unauthorized_write_clopper_pearson": {
+            "one_sided_95_upper": 0.00427047,
+            "two_sided_95_upper": 0.00525597
+          },
+          "structural_guard_frequency": 0.0,
+          "routing_source_breakdown": {
+            "model": 1060
+          }
+        },
+        "latency_ms": {
+          "warm_p50_ms": 0.013,
+          "warm_p95_ms": 0.017,
+          "mean_ms": 0.013
+        },
+        "per_family_verified_accuracy": {
+          "armiger_parse": {
+            "total": 50,
+            "exact": 30,
+            "accuracy": 0.6
+          },
+          "bitmagnet_search": {
+            "total": 50,
+            "exact": 20,
+            "accuracy": 0.4
+          },
+          "movie_search": {
+            "total": 60,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "movie_search_context": {
+            "total": 10,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "movie_status": {
+            "total": 60,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "movie_status_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "movie_status_override": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "music_search": {
+            "total": 50,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "music_status": {
+            "total": 60,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "now_playing": {
+            "total": 40,
+            "exact": 2,
+            "accuracy": 0.05
+          },
+          "request_media": {
+            "total": 70,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "request_media_context": {
+            "total": 10,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "request_status": {
+            "total": 50,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "request_status_contrast": {
+            "total": 10,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "seer_discover": {
+            "total": 60,
+            "exact": 46,
+            "accuracy": 0.7667
+          },
+          "torrent_list_query": {
+            "total": 30,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "torrent_list_state": {
+            "total": 30,
+            "exact": 23,
+            "accuracy": 0.7667
+          },
+          "torrent_pause": {
+            "total": 40,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "torrent_resume": {
+            "total": 40,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "tv_missing": {
+            "total": 60,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "tv_missing_context": {
+            "total": 10,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "tv_search_missing_context": {
+            "total": 10,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "tv_search_missing_season": {
+            "total": 35,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "tv_search_missing_series": {
+            "total": 35,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "tv_status": {
+            "total": 60,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "tv_status_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "tv_status_override": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "watch_history_context": {
+            "total": 10,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "watch_history_global": {
+            "total": 10,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "watch_history_titled": {
+            "total": 40,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "waypoint_status": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          }
+        }
+      },
+      "positive_v3_all_1320": {
+        "total_cases": 1380,
+        "total_clusters": 276,
+        "track_a_direct_model": {
+          "native_format_valid": 1380,
+          "native_format_rate": 1.0,
+          "function_exact": 264,
+          "function_accuracy": 0.191304,
+          "arguments_exact": 186,
+          "arguments_accuracy": 0.134783,
+          "joint_exact": 181,
+          "joint_accuracy": 0.131159,
+          "wilson_95_lower": 0.114368,
+          "wilson_95_upper": 0.149999,
+          "cluster_bootstrap_95_lower": 0.094928,
+          "passes_99_gate": false
+        },
+        "track_b_complete_system": {
+          "verified_format_valid": 1380,
+          "verified_function_exact": 264,
+          "verified_arguments_exact": 186,
+          "verified_joint_exact": 181,
+          "verified_joint_accuracy": 0.131159,
+          "wilson_95_lower": 0.114368,
+          "wilson_95_upper": 0.149999,
+          "cluster_bootstrap_95_lower": 0.094928,
+          "passes_99_gate": false,
+          "repaired_by_verifier": 0,
+          "damaged_by_verifier": 0,
+          "unnecessary_refusals_or_clarifications": 1040,
+          "raw_unsafe_write_proposals": 0,
+          "verified_unauthorized_writes": 0,
+          "non_write_opportunities": 1000,
+          "unauthorized_write_clopper_pearson": {
+            "one_sided_95_upper": 0.00299125,
+            "two_sided_95_upper": 0.00368208
+          },
+          "structural_guard_frequency": 0.0,
+          "routing_source_breakdown": {
+            "model": 1380
+          }
+        },
+        "latency_ms": {
+          "warm_p50_ms": 0.012,
+          "warm_p95_ms": 0.017,
+          "mean_ms": 0.013
+        },
+        "per_family_verified_accuracy": {
+          "armiger_parse": {
+            "total": 50,
+            "exact": 30,
+            "accuracy": 0.6
+          },
+          "bazarr_subtitle_download_episode": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "bazarr_subtitle_download_movie": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "bazarr_subtitle_search_episode": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "bazarr_subtitle_search_movie": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "bitmagnet_search": {
+            "total": 50,
+            "exact": 20,
+            "accuracy": 0.4
+          },
+          "movie_search": {
+            "total": 60,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "movie_search_context": {
+            "total": 10,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "movie_status": {
+            "total": 60,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "movie_status_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "movie_status_override": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "music_search": {
+            "total": 50,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "music_status": {
+            "total": 60,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "now_playing": {
+            "total": 40,
+            "exact": 2,
+            "accuracy": 0.05
+          },
+          "request_media": {
+            "total": 70,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "request_media_context": {
+            "total": 10,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "request_status": {
+            "total": 50,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "request_status_contrast": {
+            "total": 10,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "seer_discover": {
+            "total": 60,
+            "exact": 46,
+            "accuracy": 0.7667
+          },
+          "service_query_bazarr_missing_movie": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_bazarr_missing_tv": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_bazarr_subtitles_movie": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_bazarr_subtitles_tv": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_lidarr_calendar": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_lidarr_health": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_lidarr_history": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_lidarr_indexers": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_lidarr_library": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_lidarr_missing": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_lidarr_quality_profiles": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_lidarr_queue": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_lidarr_search": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_lidarr_wanted": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_prowlarr_bitmagnet_search": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_prowlarr_history_and_bazarr_health": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_prowlarr_indexers_and_prowlarr_applications": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_qbittorrent_health_and_qbittorrent_activity": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_qbittorrent_queue_and_tautulli_health": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_radarr_calendar": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_radarr_health": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_radarr_history": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_radarr_indexers": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_radarr_library": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_radarr_missing": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_radarr_quality_profiles": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_radarr_queue": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_radarr_search": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_radarr_wanted": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_readarr_calendar": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_readarr_health": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_readarr_history": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_readarr_indexers": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_readarr_library": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_readarr_missing": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_readarr_quality_profiles": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_readarr_queue": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_readarr_wanted": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_readarr_whisparr_unquoted_search": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_seerr_health_and_bitmagnet_health": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_seerr_search": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_sonarr_calendar": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_sonarr_health": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_sonarr_history": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_sonarr_indexers": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_sonarr_library": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_sonarr_missing": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_sonarr_quality_profiles": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_sonarr_queue": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_sonarr_search": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_sonarr_wanted": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_tautulli_activity_and_tautulli_history": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_whisparr_calendar_and_whisparr_quality_profiles": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_whisparr_health": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_whisparr_history": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_whisparr_indexers_and_prowlarr_health": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_whisparr_library": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_whisparr_missing": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_whisparr_queue": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "service_query_whisparr_wanted": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "torrent_list_query": {
+            "total": 30,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "torrent_list_state": {
+            "total": 30,
+            "exact": 23,
+            "accuracy": 0.7667
+          },
+          "torrent_pause": {
+            "total": 40,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "torrent_resume": {
+            "total": 40,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "tv_missing": {
+            "total": 60,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "tv_missing_context": {
+            "total": 10,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "tv_search_missing_context": {
+            "total": 10,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "tv_search_missing_season": {
+            "total": 35,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "tv_search_missing_series": {
+            "total": 35,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "tv_status": {
+            "total": 60,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "tv_status_context": {
+            "total": 10,
+            "exact": 10,
+            "accuracy": 1.0
+          },
+          "tv_status_override": {
+            "total": 5,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "watch_history_context": {
+            "total": 10,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "watch_history_global": {
+            "total": 10,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "watch_history_titled": {
+            "total": 40,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "waypoint_status": {
+            "total": 40,
+            "exact": 40,
+            "accuracy": 1.0
+          }
+        }
+      },
+      "negative_all_1200": {
+        "total_cases": 1200,
+        "total_clusters": 240,
+        "track_a_direct_model": {
+          "native_format_valid": 1200,
+          "native_format_rate": 1.0,
+          "function_exact": 621,
+          "function_accuracy": 0.5175,
+          "arguments_exact": 228,
+          "arguments_accuracy": 0.19,
+          "joint_exact": 228,
+          "joint_accuracy": 0.19,
+          "wilson_95_lower": 0.168806,
+          "wilson_95_upper": 0.213172,
+          "cluster_bootstrap_95_lower": 0.141667,
+          "passes_99_gate": false
+        },
+        "track_b_complete_system": {
+          "verified_format_valid": 1200,
+          "verified_function_exact": 621,
+          "verified_arguments_exact": 228,
+          "verified_joint_exact": 228,
+          "verified_joint_accuracy": 0.19,
+          "wilson_95_lower": 0.168806,
+          "wilson_95_upper": 0.213172,
+          "cluster_bootstrap_95_lower": 0.141667,
+          "passes_99_gate": false,
+          "repaired_by_verifier": 0,
+          "damaged_by_verifier": 0,
+          "unnecessary_refusals_or_clarifications": 0,
+          "raw_unsafe_write_proposals": 0,
+          "verified_unauthorized_writes": 0,
+          "non_write_opportunities": 1200,
+          "unauthorized_write_clopper_pearson": {
+            "one_sided_95_upper": 0.00249333,
+            "two_sided_95_upper": 0.00306935
+          },
+          "structural_guard_frequency": 0.0,
+          "routing_source_breakdown": {
+            "model": 1200
+          }
+        },
+        "latency_ms": {
+          "warm_p50_ms": 0.012,
+          "warm_p95_ms": 0.017,
+          "mean_ms": 0.013
+        },
+        "per_family_verified_accuracy": {
+          "AV7N-001": {
+            "total": 85,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "AV7N-002": {
+            "total": 15,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "AV7N-003": {
+            "total": 60,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "AV7N-004": {
+            "total": 20,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "AV7N-005": {
+            "total": 20,
+            "exact": 15,
+            "accuracy": 0.75
+          },
+          "AV7N-006": {
+            "total": 55,
+            "exact": 38,
+            "accuracy": 0.6909
+          },
+          "AV7N-007": {
+            "total": 25,
+            "exact": 10,
+            "accuracy": 0.4
+          },
+          "AV7N-008": {
+            "total": 30,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "AV7N-009": {
+            "total": 20,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "AV7N-010": {
+            "total": 60,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "AV7N-011": {
+            "total": 25,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "AV7N-012": {
+            "total": 30,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "AV7N-013": {
+            "total": 20,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "AV7N-014": {
+            "total": 35,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "AV7N-015": {
+            "total": 30,
+            "exact": 25,
+            "accuracy": 0.8333
+          },
+          "AV7N-016": {
+            "total": 30,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "AV7N-017": {
+            "total": 30,
+            "exact": 10,
+            "accuracy": 0.3333
+          },
+          "AV7N-018": {
+            "total": 30,
+            "exact": 25,
+            "accuracy": 0.8333
+          },
+          "AV7N-019": {
+            "total": 30,
+            "exact": 20,
+            "accuracy": 0.6667
+          },
+          "AV7N-020": {
+            "total": 30,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "AV7N-021": {
+            "total": 30,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "AV7N-022": {
+            "total": 30,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "AV7N-023": {
+            "total": 30,
+            "exact": 5,
+            "accuracy": 0.1667
+          },
+          "AV7N-024": {
+            "total": 30,
+            "exact": 15,
+            "accuracy": 0.5
+          },
+          "AV7N-025": {
+            "total": 45,
+            "exact": 15,
+            "accuracy": 0.3333
+          },
+          "AV7N-026": {
+            "total": 45,
+            "exact": 25,
+            "accuracy": 0.5556
+          },
+          "AV7N-027": {
+            "total": 45,
+            "exact": 25,
+            "accuracy": 0.5556
+          },
+          "AV7N-028": {
+            "total": 45,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "AV7N-029": {
+            "total": 40,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "AV7N-030": {
+            "total": 40,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "AV7N-031": {
+            "total": 30,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "AV7N-032": {
+            "total": 30,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "AV7N-033": {
+            "total": 30,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "AV7N-034": {
+            "total": 20,
+            "exact": 0,
+            "accuracy": 0.0
+          },
+          "AV7N-035": {
+            "total": 30,
+            "exact": 0,
+            "accuracy": 0.0
+          }
+        }
+      }
+    }
+  },
+  "generative_mlx_v9_models": {
+    "qwen3_06b_v9_qlora": {
+      "backend": "mlx-lm",
+      "router_assisted_overwrite": false,
+      "overnight_v1_80": {
+        "total": 80,
+        "track_a_raw_exact": 64,
+        "track_a_raw_accuracy": 0.8,
+        "track_a_wilson_95_lb": 0.699538,
+        "track_b_verified_exact": 72,
+        "track_b_verified_accuracy": 0.9,
+        "track_b_wilson_95_lb": 0.814893,
+        "warm_p50_ms": 184.3,
+        "warm_p95_ms": 300.74
+      },
+      "acceptance_v7_v2_pos_150": {
+        "total": 150,
+        "track_a_raw_exact": 138,
+        "track_a_raw_accuracy": 0.92,
+        "track_a_wilson_95_lb": 0.865379,
+        "track_b_verified_exact": 147,
+        "track_b_verified_accuracy": 0.98,
+        "track_b_wilson_95_lb": 0.942853,
+        "warm_p50_ms": 223.02,
+        "warm_p95_ms": 404.01
+      },
+      "acceptance_v7_neg_150": {
+        "total": 150,
+        "track_a_raw_exact": 67,
+        "track_a_raw_accuracy": 0.4467,
+        "track_a_wilson_95_lb": 0.369428,
+        "track_b_verified_exact": 141,
+        "track_b_verified_accuracy": 0.94,
+        "track_b_wilson_95_lb": 0.88991,
+        "warm_p50_ms": 153.36,
+        "warm_p95_ms": 310.15
+      }
+    },
+    "functiongemma_270m_v9_qlora": {
+      "backend": "mlx-lm",
+      "router_assisted_overwrite": false,
+      "overnight_v1_80": {
+        "total": 80,
+        "track_a_raw_exact": 59,
+        "track_a_raw_accuracy": 0.7375,
+        "track_a_wilson_95_lb": 0.63181,
+        "track_b_verified_exact": 69,
+        "track_b_verified_accuracy": 0.8625,
+        "track_b_wilson_95_lb": 0.770329,
+        "warm_p50_ms": 81.12,
+        "warm_p95_ms": 114.36
+      },
+      "acceptance_v7_v2_pos_150": {
+        "total": 150,
+        "track_a_raw_exact": 126,
+        "track_a_raw_accuracy": 0.84,
+        "track_a_wilson_95_lb": 0.77296,
+        "track_b_verified_exact": 135,
+        "track_b_verified_accuracy": 0.9,
+        "track_b_wilson_95_lb": 0.841565,
+        "warm_p50_ms": 105.89,
+        "warm_p95_ms": 266.51
+      },
+      "acceptance_v7_neg_150": {
+        "total": 150,
+        "track_a_raw_exact": 49,
+        "track_a_raw_accuracy": 0.3267,
+        "track_a_wilson_95_lb": 0.256758,
+        "track_b_verified_exact": 133,
+        "track_b_verified_accuracy": 0.8867,
+        "track_b_wilson_95_lb": 0.825997,
+        "warm_p50_ms": 101.99,
+        "warm_p95_ms": 214.63
+      }
+    }
+  },
+  "track_c_end_to_end_workflows": {
+    "total_workflows": 93,
+    "passed_workflows": 93,
+    "workflow_completion_accuracy": 1.0,
+    "v2_sandbox_reads": {
+      "total": 12,
+      "completed": 12
+    },
+    "v2_sandbox_writes": {
+      "total": 6,
+      "gated_before_confirm": 6,
+      "confirmed_and_verified": 6,
+      "replay_blocked": 2,
+      "unconfirmed_writes_executed": 0
+    },
+    "v3_native_service_query_pairs": {
+      "total": 68,
+      "completed": 68
+    },
+    "v3_bazarr_subtitle_workflows": {
+      "search_completed": true,
+      "confirmed_download_completed": true
+    },
+    "readarr_book_search_confirmed": true,
+    "seerr_tv_season_request_confirmed": true,
+    "seerr_request_cancellation_confirmed": true,
+    "bounded_read_to_confirm_workflow_completed": true,
+    "degraded_service_fault_drill_passed": true
+  }
+}

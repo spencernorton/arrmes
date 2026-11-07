@@ -1,0 +1,250 @@
+{
+  "generated_at": "2026-11-07",
+  "engineering_budgets": {
+    "router_artifact_max_mib": 15.0,
+    "router_warm_m4_p50_max_ms": 0.75,
+    "router_warm_m4_p95_max_ms": 1.0,
+    "router_warm_linux_x86_64_p50_max_ms": 1.0,
+    "artifact_max_mb": 400.0,
+    "artifact_stretch_mb": 250.0,
+    "cpu_rss_max_mib": 1536.0,
+    "cpu_rss_stretch_mib": 1024.0,
+    "cpu_warm_p50_max_ms": 250.0,
+    "cpu_warm_p95_max_ms": 500.0,
+    "accel_warm_p50_max_ms": 150.0,
+    "accel_warm_p95_max_ms": 300.0
+  },
+  "large_library_catalog_index": {
+    "hardware": "Apple M4 Pro (macOS ARM64)",
+    "radarr_5000_movies": {
+      "items": 5000,
+      "payload_json_mib": 19.82,
+      "index_build_ms": 38.819,
+      "warm_exact_lookup_us": {
+        "p50": 1.17,
+        "p95": 3.21,
+        "mean": 1.57
+      },
+      "warm_diacritic_and_alt_title_lookup_us": {
+        "p50": 0.96,
+        "p95": 2.29,
+        "mean": 1.28
+      },
+      "linear_scan_baseline_ms": {
+        "p50": 26.162,
+        "p95": 31.458
+      },
+      "speedup_vs_linear_scan_x": 22418.2
+    },
+    "sonarr_1500_series": {
+      "items": 1500,
+      "index_build_ms": 4.652,
+      "warm_exact_lookup_us": {
+        "p50": 0.88,
+        "p95": 1.67
+      }
+    },
+    "lidarr_1200_artists": {
+      "items": 1200,
+      "index_build_ms": 2.086,
+      "warm_exact_lookup_us": {
+        "p50": 2.38,
+        "p95": 3.29
+      }
+    }
+  },
+  "profiles": {
+    "arrmes_neural_router_v3_macos_arm64_cpu": {
+      "backend": "neural-router (CPU NumPy)",
+      "hardware": "Apple M4 Pro (macOS ARM64)",
+      "captured_at": "2026-11-07",
+      "artifact_bytes": 7866855,
+      "artifact_mb_decimal": 7.87,
+      "artifact_mib": 7.5,
+      "meets_400mb_budget": true,
+      "meets_250mb_stretch": true,
+      "meets_15mib_router_budget": true,
+      "cold_load_ms": 19.66,
+      "first_route_ms": 6.71,
+      "warm_samples": 200,
+      "model_only_ms": {
+        "p50": 0.441,
+        "p95": 0.66,
+        "mean": 0.473
+      },
+      "routing_and_verifier_ms": {
+        "p50": 0.678,
+        "p95": 0.998,
+        "mean": 0.718
+      },
+      "http_end_to_end_ms": {
+        "p50": 1.689,
+        "p95": 2.314,
+        "mean": 1.794
+      },
+      "memory_accounting_mb": {
+        "before_model_rss_mb": 52.27,
+        "after_model_load_rss_mb": 70.48,
+        "post_warmup_rss_mb": 70.56,
+        "peak_eval_rss_mb": 70.69,
+        "accelerator_metal_peak_mb": 0.0,
+        "meets_1500mib_budget": true,
+        "meets_1000mib_stretch": true
+      }
+    },
+    "functiongemma_270m_v9_4bit_macos_arm64_mlx": {
+      "backend": "mlx-lm 4-bit + fp16 LoRA unassisted decoding (functiongemma)",
+      "hardware": "Apple M4 Pro (macOS ARM64 Metal)",
+      "captured_at": "2026-11-07",
+      "artifact_bytes": 199611991,
+      "artifact_mb_decimal": 199.61,
+      "artifact_mib": 190.36,
+      "meets_400mb_budget": true,
+      "meets_250mb_stretch": true,
+      "cold_load_ms": 2783.78,
+      "first_route_ms": 448.14,
+      "cold_load_plus_first_route_ms": 3231.92,
+      "warm_samples": 20,
+      "model_only_ms": {
+        "p50": 107.883,
+        "p95": 122.622,
+        "mean": 109.09
+      },
+      "routing_and_verifier_ms": {
+        "p50": 110.079,
+        "p95": 124.795,
+        "mean": 111.66
+      },
+      "mean_generation_tps": 208.9,
+      "memory_accounting_mb": {
+        "process_rss_mb": 1332.91,
+        "mlx_metal_unified_peak_mb": 1692.9,
+        "note": "On Apple Silicon unified memory, process RSS and MLX Metal allocations share physical RAM and must not be summed."
+      }
+    },
+    "qwen3_06b_v9_4bit_macos_arm64_mlx": {
+      "backend": "mlx-lm 4-bit + fp16 LoRA unassisted decoding (hermes)",
+      "hardware": "Apple M4 Pro (macOS ARM64 Metal)",
+      "captured_at": "2026-11-07",
+      "artifact_bytes": 367157481,
+      "artifact_mb_decimal": 367.16,
+      "artifact_mib": 350.15,
+      "meets_400mb_budget": true,
+      "meets_250mb_stretch": false,
+      "cold_load_ms": 576.71,
+      "first_route_ms": 840.59,
+      "cold_load_plus_first_route_ms": 1417.3,
+      "warm_samples": 20,
+      "model_only_ms": {
+        "p50": 203.78,
+        "p95": 229.264,
+        "mean": 206.76
+      },
+      "routing_and_verifier_ms": {
+        "p50": 206.647,
+        "p95": 231.928,
+        "mean": 209.42
+      },
+      "mean_generation_tps": 137.4,
+      "memory_accounting_mb": {
+        "process_rss_mb": 1332.91,
+        "mlx_metal_unified_peak_mb": 2220.5,
+        "note": "On Apple Silicon unified memory, process RSS and MLX Metal allocations share physical RAM and must not be summed."
+      }
+    },
+    "hybrid_router_mlx_qwen3_06b_v9_macos_arm64": {
+      "backend": "hybrid-router-mlx (explicit ArrmesNeuralRouterV3 + Qwen3-0.6B v9 MLX fallback)",
+      "hardware": "Apple M4 Pro (macOS ARM64 CPU + Metal)",
+      "captured_at": "2026-11-07",
+      "artifact_bytes": 375024336,
+      "artifact_mb_decimal": 375.02,
+      "artifact_mib": 357.65,
+      "meets_400mb_budget": true,
+      "meets_250mb_stretch": false,
+      "cold_load_ms": 518.33,
+      "first_route_ms": 1.03,
+      "warm_samples": 40,
+      "routing_and_verifier_ms": {
+        "p50": 0.758,
+        "p95": 1031.391,
+        "mean": 123.079
+      },
+      "memory_accounting_mb": {
+        "process_rss_mb": 1332.91,
+        "mlx_metal_unified_peak_mb": 2381.92
+      }
+    },
+    "arrmes_neural_router_v3_linux_x86_64_cpu": {
+      "backend": "neural-router (CPU NumPy)",
+      "hardware": "AMD Ryzen 9 7950X3D (Linux x86_64 CPU)",
+      "uname": "Linux-7.0.0-42-generic-x86_64-with-glibc2.43",
+      "artifact_bytes": 7884621,
+      "artifact_mb_decimal": 7.88,
+      "artifact_mib": 7.52,
+      "meets_400mb_budget": true,
+      "meets_250mb_stretch": true,
+      "cold_load_ms": 26.178,
+      "first_route_ms": 6.402,
+      "warm_samples": 200,
+      "model_only_ms": {
+        "p50": 0.726,
+        "p95": 0.979,
+        "mean": 0.739
+      },
+      "routing_and_verifier_ms": {
+        "p50": 0.944,
+        "p95": 1.219,
+        "mean": 0.945
+      },
+      "memory_accounting_mb": {
+        "before_model_rss_mb": 47.52,
+        "after_model_load_rss_mb": 63.5,
+        "post_warmup_rss_mb": 63.5,
+        "peak_eval_rss_mb": 63.5,
+        "meets_1500mib_budget": true,
+        "meets_1000mib_stretch": true
+      },
+      "captured_at": "2026-11-02"
+    },
+    "qwen3_06b_public_gguf_q4_k_m_linux_x86_64_cpu": {
+      "backend": "llama-server GGUF Q4_K_M (CPU 2 threads, ctx 4096)",
+      "hardware": "AMD Ryzen 9 7950X3D (Linux x86_64 CPU)",
+      "artifact_bytes": 396704352,
+      "artifact_mb_decimal": 396.7,
+      "artifact_mib": 378.33,
+      "meets_400mb_budget": true,
+      "meets_250mb_stretch": false,
+      "cold_load_plus_first_route_ms": 15000.0,
+      "warm_routing_ms": {
+        "p50": 980.0,
+        "p95": 1150.0
+      },
+      "memory_accounting_mb": {
+        "llama_server_peak_rss_mb": 1190.0,
+        "python_app_rss_mb": 68.5,
+        "combined_resident_mib": 1200.2,
+        "meets_1500mib_budget": true
+      },
+      "evidence_ref": "experiments/portable-v1/linux-cpu-qualification.json",
+      "captured_at": "2026-11-02"
+    },
+    "qwen3_06b_public_gguf_q4_k_m_linux_rtx4070tis_cuda": {
+      "backend": "llama-server GGUF Q4_K_M (CUDA 1 GPU, ctx 4096, batch 256)",
+      "hardware": "AMD Ryzen 9 7950X3D + NVIDIA RTX 4070 Ti SUPER (Linux x86_64 CUDA)",
+      "artifact_bytes": 396704352,
+      "artifact_mb_decimal": 396.7,
+      "artifact_mib": 378.33,
+      "meets_400mb_budget": true,
+      "cold_load_plus_first_route_ms": 1769.0,
+      "warm_samples": 240,
+      "routing_and_verifier_ms": {
+        "p50": 61.9,
+        "p95": 87.7,
+        "mean": 64.2
+      },
+      "meets_accel_latency_budget": true,
+      "evidence_ref": "experiments/portable-v1/linux-cuda-qualification.json",
+      "captured_at": "2026-11-02"
+    }
+  }
+}

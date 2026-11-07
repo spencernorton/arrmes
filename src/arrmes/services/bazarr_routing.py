@@ -11,9 +11,9 @@ _LANGUAGES = {"english": "en", "french": "fr", "spanish": "es", "german": "de", 
               "japanese": "ja", "korean": "ko", "portuguese": "pt", "chinese": "zh", "arabic": "ar",
               "hindi": "hi", "russian": "ru", "dutch": "nl", "polish": "pl", "swedish": "sv"}
 _TARGET = r'(?:(?:the\s+)?movie\s+"(?P<movie>[^"\n]+)"(?:\s*\((?P<movie_year>\d{4})\))?|(?:the\s+)?(?:episode\s+)?S(?P<season>\d{1,4})E(?P<episode>\d{1,5})\s+of\s+"(?P<series>[^"\n]+)"(?:\s*\((?P<series_year>\d{4})\))?)'
-_NATURAL = re.compile(r'^(?:please\s+)?(?P<verb>find|search\s+for|download)\s+(?P<language>[A-Za-z]+)\s+'
+_NATURAL = re.compile(r'^(?:(?:please|kindly)\s+)?(?:(?:in|within|via|using)\s+Bazarr,\s+|use\s+Bazarr\s+to\s+)?(?P<verb>find|search(?:\s+providers)?\s+for|download)\s+(?P<language>[A-Za-z]+)\s+'
     r'(?P<forced>forced|non-forced)\s+(?P<hi>HI|non-HI)\s+subtitles?'
-    r'(?:\s+candidate\s+(?P<candidate>[a-f0-9]{24}))?\s+for\s+' + _TARGET + r'\s+in\s+Bazarr[.!?]?$', re.I)
+    r'(?:\s+candidate\s+(?P<candidate>[a-f0-9]{24}))?\s+for\s+' + _TARGET + r'(?:\s+(?:in|via|within|using)\s+Bazarr)?[.!?]?$', re.I)
 _MACHINE = re.compile(r'^(?:please\s+)?(?P<verb>search|download)\s+Bazarr\s+subtitles?'
     r'(?:\s+candidate\s+(?P<candidate>[a-f0-9]{24}))?\s+for\s+' + _TARGET
     + r'\s+language\s+(?P<language>[a-z]{2})\s+forced\s+(?P<forced>true|false)\s+HI\s+(?P<hi>true|false)[.!?]?$', re.I)

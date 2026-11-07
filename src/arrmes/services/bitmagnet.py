@@ -213,7 +213,7 @@ def _search(native, args, audit) -> AdapterObservation:
             "queryString": args["query"],
             "limit": limit, "offset": page * native.page_size, "totalCount": True,
             "hasNextPage": True, "cached": False,
-            "orderBy": [{"field": "relevance", "descending": True}, {"field": "info_hash", "descending": False}],
+            "orderBy": [{"field": "relevance", "descending": True}],
         }
         if content_type_filter is not None:
             search_input["facets"] = {"contentType": {"filter": [content_type_filter]}}

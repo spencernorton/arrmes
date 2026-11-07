@@ -129,3 +129,15 @@ def test_missing_runtime_and_unavailable_requested_device(tmp_path, monkeypatch)
 def test_unknown_backend_is_rejected():
     with pytest.raises(ValueError, match="Backend must"):
         create_model("models/whatever", backend="made-up")
+
+
+def test_local_model_has_no_router_assisted_overwrite():
+    import inspect
+    from arrmes.model import HybridRouterMLXModel, LocalModel
+
+    sig = inspect.signature(LocalModel.__init__)
+    assert "router_assisted" not in sig.parameters
+    infer_src = inspect.getsource(LocalModel.infer)
+    assert "_router" not in infer_src
+    assert "router_assisted" not in infer_src
+    assert HybridRouterMLXModel.backend == "hybrid-router-mlx"

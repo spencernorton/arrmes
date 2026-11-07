@@ -78,6 +78,10 @@ def finalize_output(raw_unverified: str, query: str, context: dict | None, famil
             tok_clean = tok.strip(".,?!:;\"' ")
             if "\"" in tok_clean and tok_clean in repaired_raw:
                 repaired_raw = repaired_raw.replace(tok_clean, tok_clean.replace("\"", "\\\""))
+        if "\"name\": \"seerr_discover\"" in repaired_raw:
+            repaired_raw = repaired_raw.replace("\"name\": \"seerr_discover\"", "\"name\": \"seer_discover\"")
+        elif "call:seerr_discover{" in repaired_raw:
+            repaired_raw = repaired_raw.replace("call:seerr_discover{", "call:seer_discover{")
         if "\"name\": \"now_playing\"" in repaired_raw and "\"title\":" in repaired_raw:
             repaired_raw = repaired_raw.replace("\"name\": \"now_playing\"", "\"name\": \"watch_history\"")
         elif "call:now_playing{" in repaired_raw and "title:<escape>" in repaired_raw:
@@ -96,6 +100,8 @@ def finalize_output(raw_unverified: str, query: str, context: dict | None, famil
                         if isinstance(obj, dict) and obj.get("name") in registry and isinstance(obj.get("arguments"), dict):
                             orig_args = dict(obj["arguments"])
                             name_cand = obj["name"]
+                            if name_cand in {"tv_status", "movie_status"} and "artist" in orig_args and re.search(r"\blidarr\b", query, re.I):
+                                name_cand = "music_status"
                             if name_cand in {"music_status", "music_search"} and "title" in orig_args and "album" not in orig_args:
                                 orig_args["album"] = orig_args.pop("title")
                             if name_cand == "request_media" and "media_type" not in orig_args:
@@ -113,13 +119,15 @@ def finalize_output(raw_unverified: str, query: str, context: dict | None, famil
         try:
             decoded_call = decode(repaired_raw, family, allow_v3=allow_v3)
         except InvalidCall:
+            from .planner import _infer_clarify_slot
+            selected_ctx = (context or {}).get("selected_media") if isinstance(context, dict) else None
             fallback = verify_proposal(
-                Call("clarify", {"slot": "title"}),
+                Call("clarify", {"slot": _infer_clarify_slot(query, selected_ctx)}),
                 query,
                 context,
                 contract_version=contract_version,
             )
-            if fallback.name == "unsupported":
+            if fallback.name == "unsupported" or raw_unverified.lstrip().startswith(("<start_function_call>", "<tool_call>", "<think>")):
                 decoded_call = fallback
     if decoded_call is not None:
         verified_call = verify_proposal(
@@ -140,7 +148,6 @@ class LocalModel:
         adapter: str | None = None,
         *,
         contract_version: str = "v1",
-        router_assisted: bool = True,
     ):
         if family not in {"functiongemma", "hermes"}:
             raise ValueError("Unknown model family")
@@ -171,19 +178,7 @@ class LocalModel:
         self._call_count = 0
         self._owner_thread = threading.current_thread()
         self._mlx_queue: queue.Queue | None = None
-        self.router_assisted = router_assisted
-        self._router = None
-        if router_assisted:
-            from .neural_router import ArrmesNeuralRouterV3
-            cand_dirs = [
-                Path(self.path).parent / "arrmes-neural-router-v3",
-                Path(__file__).resolve().parents[2] / "models" / "arrmes-neural-router-v3",
-            ]
-            for rdir in cand_dirs:
-                if (rdir / "router_weights.npz").is_file():
-                    cv = contract_version if contract_version in {"v2", "v3", "arrmes.tools.v2", "arrmes.tools.v3"} else "v2"
-                    self._router = ArrmesNeuralRouterV3(str(rdir), family=self.family, contract_version=cv)
-                    break
+        self.backend = "mlx-lm"
 
     def _tool_defs(self) -> list[dict]:
         if self.contract_version in {"v3", "arrmes.tools.v3"}:
@@ -325,15 +320,8 @@ class LocalModel:
                         if c.offset > target_prefix_len:
                             c.trim(c.offset - target_prefix_len)
             elapsed = time.perf_counter() - start
-        raw_mlx_unassisted = raw_unverified
-        if self.router_assisted and self._router is not None:
-            cv = self.contract_version if self.contract_version in {"v2", "v3", "arrmes.tools.v2", "arrmes.tools.v3"} else "v2"
-            self._router.contract_version = cv
-            pred_c, _conf, probs = self._router.predict_proba(query, context)
-            r_call, _ = self._router._build_call(pred_c, probs, query, context)
-            raw_unverified = encode(r_call, self.family)
         raw_out = finalize_output(raw_unverified, query, context, self.family, self.contract_version)
-        return {"raw": raw_out, "raw_unverified": raw_unverified, "raw_mlx_unassisted": raw_mlx_unassisted, "seconds": round(elapsed, 6),
+        return {"raw": raw_out, "raw_unverified": raw_unverified, "backend": self.backend, "seconds": round(elapsed, 6),
                 "first_token_seconds": round(first, 6) if first is not None else None,
                 "prompt_tokens": prompt_tokens,
                 "generation_tokens": gen_tokens,
@@ -357,6 +345,66 @@ class LocalModel:
                 reply_q.put((True, res))
             except Exception as exc:
                 reply_q.put((False, exc))
+
+
+class HybridRouterMLXModel:
+    """Explicit hybrid router + MLX fallback backend ('hybrid-router-mlx').
+
+    Never used implicitly by LocalModel ('mlx-lm'): callers must explicitly
+    request backend='hybrid-router-mlx' so standalone generative LLM metrics
+    are never conflated with router-assisted proposals.
+    """
+
+    backend = "hybrid-router-mlx"
+
+    def __init__(
+        self,
+        path: str,
+        family: str = "functiongemma",
+        adapter: str | None = None,
+        *,
+        contract_version: str = "v2",
+        router_dir: str | None = None,
+        confidence_threshold: float = 0.85,
+    ) -> None:
+        from .neural_router import ArrmesNeuralRouterV3
+
+        started = time.perf_counter()
+        self.mlx_model = LocalModel(path, family=family, adapter=adapter, contract_version=contract_version)
+        self.family = family
+        self.path = self.mlx_model.path
+        self.adapter = self.mlx_model.adapter
+        self.contract_version = contract_version
+        self.confidence_threshold = confidence_threshold
+        rdir = Path(router_dir) if router_dir else (Path(self.path).parent / "arrmes-neural-router-v3")
+        if not (rdir / "router_weights.npz").is_file():
+            rdir = Path(__file__).resolve().parents[2] / "models" / "arrmes-neural-router-v3"
+        if not (rdir / "router_weights.npz").is_file():
+            raise ValueError("hybrid-router-mlx requires router_weights.npz")
+        cv = contract_version if contract_version in {"v2", "v3", "arrmes.tools.v2", "arrmes.tools.v3"} else "v2"
+        self.router = ArrmesNeuralRouterV3(str(rdir), family=family, contract_version=cv)
+        self.load_seconds = time.perf_counter() - started
+
+    def infer(self, query: str, context: dict | None = None, max_tokens: int = 160) -> dict[str, Any]:
+        t0 = time.perf_counter()
+        r_res = self.router.infer(query, context, max_tokens=max_tokens)
+        if r_res.get("neural_confidence", 0.0) >= self.confidence_threshold or r_res.get("used_structural_guard", False):
+            elapsed = time.perf_counter() - t0
+            return {
+                **r_res,
+                "backend": self.backend,
+                "hybrid_route_source": "neural-router",
+                "seconds": round(elapsed, 6),
+            }
+        m_res = self.mlx_model.infer(query, context, max_tokens=max_tokens)
+        elapsed = time.perf_counter() - t0
+        return {
+            **m_res,
+            "backend": self.backend,
+            "hybrid_route_source": "mlx-lm",
+            "seconds": round(elapsed, 6),
+        }
+
 
 class DeterministicBaselineModel:
     """Non-neural deterministic keyword/regex baseline router for benchmark comparison."""

@@ -10,7 +10,7 @@ evidence. Several release claims combined them.
 
 [The before matrix](capabilities-before.json) preserves the release audit. [The current matrix](capabilities-after.json) records native operations, scopes, route layers and fixture coverage. The released v2 catalog and historical sandbox handlers remain separate from this native API qualification. A fixture test does not prove compatibility with every actual upstream deployment.
 
-Current coverage includes **31 native read workflows over eight service APIs**. Each
+Current coverage includes **68 native `service_query` read workflows over 11 service APIs** (`sonarr`, `radarr`, `lidarr`, `readarr`, `whisparr`, `prowlarr`, `bazarr`, `qbittorrent`, `tautulli`, `seerr`, and `bitmagnet`). Each
 advertised service/operation pair is tested from an explicit natural-language
 request through `BoundedExecutor` to a loopback HTTP service fixture under
 `NetworkIsolationGuard`. These per-pair checks use HTTP fixtures. Selected
@@ -72,6 +72,10 @@ test is recorded separately from the 29 explicit grammar checks.
   gaps.
   Native confirmed search supports one exact album or an explicitly requested,
   bounded artist missing-album set. Track/disc/format restrictions clarify.
+- **Prowlarr:** native `/api/v1` reads cover `health`, `indexers` (merging `/api/v1/indexer` with `/api/v1/indexerstatus`), `applications`, `history`, and `search`, verified against live Prowlarr v1 in `experiments/upstream-lab-v1/summary.json`.
+- **Readarr / Chaptarr:** native `/api/v1` reads cover all 10 Arr operations (`health`, `queue`, `history`, `library`, `missing`, `wanted`, `calendar`, `quality_profiles`, `indexers`, `search`), plus two-phase HMAC-confirmed `BookSearch` (`execute_book_search` / `confirm_book_search`), verified against a seeded live Readarr `0.4.19.2811` container in `experiments/upstream-lab-v1/summary.json`.
+- **Whisparr:** native `/api/v3` reads cover all 10 Arr operations across both v2 (`/api/v3/series`) and v3 `eros` (`/api/v3/movie` automatic fallback on `404`), verified against live Whisparr `3.6.5.1886` in `experiments/upstream-lab-v1/summary.json`.
+- **Bounded Read-to-Confirm Workflows (`arrmes/workflows.py`):** `execute_read_to_confirm_workflow` executes a read inspection step first and mints a confirmation-gated follow-up search proposal only when missing monitored items are present, never auto-confirming writes.
 - **Bazarr:** absent from v2 at every layer. Native reads now report missing
   movie or TV subtitles, subtitle status for an exact movie/series title, and
   health issues. Movie and TV scope is explicit. TV subtitle status first
@@ -98,9 +102,7 @@ test is recorded separately from the 29 explicit grammar checks.
   as an explicit NL spelling alias for this configured native service.
   A separate caller-bound adapter now provides title-specific owned request
   status and confirmed standard movie submission. Trusted subject-to-user mappings
-  and current account fingerprints are required. TV/4K submission, approval,
-  cancellation and retries remain unsupported. Actual 3.5.1 identity and empty-read
-  qualification does not qualify metadata search or the full request workflow.
+  and current account fingerprints are required. Caller-bound TV series/season submission (`execute_tv_request`) and caller-owned pending request cancellation (`execute_cancel_request`) are supported with HMAC confirmation and current `/api/v1/auth/me` account incarnation checks, and are verified against live Seerr 3.5.1 in `experiments/upstream-lab-v1/summary.json`. 4K submission, admin approval, and retries remain unsupported.
 - **Legacy `seer_discover` and Request Service:** the old tool calls a custom
   request-portal discovery route, rather than native Seerr. The local service
   migration record says this portal moved discovery to TMDB and retired Seerr
@@ -350,9 +352,7 @@ limits remain separate from broader fixture coverage.
   [native GraphQL schema](https://github.com/bitmagnet-io/bitmagnet/blob/4d4042acdddfa1af05bfaf092a68c97b1e3698e2/graphql/schema/query.graphqls)
   defines `version`, health/workers and `torrentContent.search`. The search/model
   schema is unchanged in audited `v0.10.1-beta.1` source. Both fixed queries
-  validate against those upstream schemas. Native binaries remain untested;
-  proxy authentication, estimated counts and fixed POST read safeguards are
-  documented in [the native adapter guide](native-bitmagnet.md).
+  validate against those upstream schemas. Live Bitmagnet `v0.10.1` + PostgreSQL 16 container execution (`health`, GraphQL `search`, `content_type` facet filtering, and `bitmagnet_search`) is verified in `experiments/upstream-lab-v1/summary.json`; proxy authentication, estimated counts and fixed POST read safeguards are documented in [the native adapter guide](native-bitmagnet.md).
 
 Run the native workflow regression suite with
 `python -m pytest -q tests/test_native_services.py tests/test_native_bitmagnet.py`. The tests include all
