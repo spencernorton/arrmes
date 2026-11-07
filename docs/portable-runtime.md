@@ -129,7 +129,7 @@ Set `ARRMES_BACKEND=llama-server`, `ARRMES_MODEL_PATH` to the fused GGUF,
 Do not pass an MLX adapter path alongside GGUF: it must already contain the
 chosen adapter, and the factory rejects an unfused extra adapter.
 
-Export a fused GGUF using the [conversion recipe](#exact-model-portability-recipe),
+Export a fused GGUF using the [conversion recipe](#exact-adapter-export-and-provenance),
 or use a model you have already exported and verified. The experimental
 396,704,352-byte Q4_K_M artifact used in the historical tests is currently
 unavailable from GitHub Releases. Its recorded SHA-256 is
