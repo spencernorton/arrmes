@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.6.0] - 2026-11-07
+
+### Added
+- Template-skeleton-disjoint `acceptance-v7` evaluation suite (`scripts/build_and_evaluate_acceptance_v7.py`, `experiments/acceptance-v7/summary.json`, `seed=9009`, `2,580` cases across `516` clusters: `1,380` positives across `v2`/`v3` contracts + `1,200` hard negatives across 35 refusal/clarification/adversarial families) enforcing `0` exact query overlap, `0` entity overlap, and `0` normalized template-skeleton overlap (`normalize_template_skeleton`) against `train-*`, `dev-v5`, `dev-v6`, `acceptance-v4`, `acceptance-v6`, and `overnight-v1`.
+- Genuine unassisted `v9` mixed-precision QLoRA adapters for `Qwen3-0.6B` (`92.0%` Track A / `98.0%` Track B on `acceptance-v7` `v2` positives; `44.67%` Track A / `94.0%` Track B on hard negatives; `80.0%` Track A / `90.0%` Track B on `overnight-v1`) and `FunctionGemma-270M` (`84.0%` Track A / `90.0%` Track B on `acceptance-v7` `v2` positives; `32.67%` Track A / `88.67%` Track B on hard negatives; `73.75%` Track A / `86.25%` Track B on `overnight-v1`) plus updated `ArrmesNeuralRouterV3 v9` weights (`1,380/1,380` on `acceptance-v7` `v3` positives, `1,060/1,060` on `v2` positives, `1,200/1,200` on hard negatives) in `scripts/build_and_train_v9.py` and `experiments/mlx-lora-v9-provenance.json`.
+- Separate explicit `HybridRouterMLXModel` (`backend = "hybrid-router-mlx"`, `src/arrmes/model.py`, `src/arrmes/backends.py`) while keeping `LocalModel` (`backend = "mlx-lm"`) strictly unassisted so standalone LLM metrics are never conflated with router proposals.
+- Expanded 11-service live upstream Docker container binary qualification (`scripts/qualify_upstream_lab.py`, `experiments/upstream-lab-v1/summary.json`) covering `73/73` live checks across official `Sonarr`, `Radarr` (320 seeded multi-page movies + confirmed `MoviesSearch`), `Lidarr`, `Readarr` (`0.4.19.2811` with seeded author/book + confirmed `BookSearch`), `Whisparr` (`3.6.5.1886` `eros` v3), `Prowlarr`, `Bazarr`, `Tautulli`, `qBittorrent`, `Bitmagnet` (`v0.10.1` + PostgreSQL 16 live GraphQL `search` and `content_type` facet filtering), and `Seerr` (`3.5.1` with seeded user + pending request + caller-owned `request_status` + confirmed `cancel_request`).
+- Data-driven chart generator (`scripts/generate_v9_charts.py`) and automated receipt-parity test suite (`tests/test_chart_receipt_parity.py`) verifying that every plotted chart metric matches its committed JSON receipt, historical `arrmes_v7_*.png` figures match commit `c5844ca` byte-for-byte, and `docs/capabilities.md` / `docs/capabilities-after.json` match all 68 native `service_query` pairs across 11 services.
+
+### Fixed
+- Removed the `router_assisted` output replacement in `LocalModel` (`src/arrmes/model.py`) so `LocalModel.infer` always returns unmodified MLX LLM generation in `raw_unverified` (Track A) and `finalize_output(raw_unverified, ...)` in `raw` (Track B).
+- Fixed Bitmagnet `v0.10.1` + PostgreSQL 16 GraphQL `search` query failure (`ERROR: column "_order_1" does not exist (SQLSTATE 42703)`) in `src/arrmes/services/bitmagnet.py` by using a single `[{"field": "relevance", "descending": True}]` `orderBy` clause (`tests/test_native_bitmagnet.py`).
+- Added automatic `/api/v3/series` -> `/api/v3/movie` fallback on HTTP `404` for Whisparr v3 (`eros`) deployments in `src/arrmes/services/native.py` (`tests/test_native_services.py`).
+
 ## [1.5.0] - 2026-11-06
 
 ### Added

@@ -35,12 +35,12 @@ _SCOPE_RE = re.compile(
 )
 _REQUEST_WORD_RE = re.compile(r"\b(request|requests|requested)\b", re.IGNORECASE)
 _REQUEST_TRACK_RE = re.compile(
-    r"\b(track|status\s+of\s+(?:my|the|our)\s+(?:(?:<QUOTED>|media|existing|seerr|seer)\s+)*request|request\b[^.;?!]*?\b(?:been\s+approved|approved\s+(?:yet|or)|still\s+(?:pending|processing))|where\s+(?:is|has)\s+my\s+.+\s+request|"
-    r"existing\s+(?:media\s+)?request|request\s+status|request[- ]approval\s+progress|request\s+progress|request\s+receipt|check\s+that\s+request|state\s+is\s+my\s+submission|how\s+is\s+my\s+.*request|"
+    r"\b(track|status\s+of\s+(?:my|the|our)\s+(?:(?:<QUOTED>|media|existing|seerr|seer|submitted)\s+)*request|request\b[^.;?!]*?\b(?:(?:is|was|been)\s+(?:already\s+)?approved|approved\s+(?:yet|or)|still\s+(?:pending|processing))|where\s+(?:is|has)\s+my\s+.+\s+request|"
+    r"existing\s+(?:(?:media|seerr|seer)\s+)*request|submitted\s+request|approval\s+(?:state|status)\s+of\s+(?:my|the|our)\s+.*request|request\s+status|request[- ]approval\s+progress|request\s+progress|request\s+receipt|check\s+that\s+request|state\s+is\s+my\s+submission|how\s+is\s+my\s+.*request|"
     r"any\s+(?:update|progress)\s+on\s+my\s+.*request|has\s+my\s+request\s+.*finished|"
     r"is\s+.+\s+(?:already\s+)?requested|did\s+my\s+request\s+.*go\s+through|"
-    r"(?:check|inspect|look\s+up|report)\s+(?:(?:whether|if|only|the\s+status\s+of)\s+)?(?:my|the|our)\s+(?:(?:existing|media|seerr|seer)\s+)*request|"
-    r"(?:is|was|has|did)\s+(?:the|my|our)\s+(?:(?:existing|media|seerr|seer)\s+)*request)\b",
+    r"(?:check|inspect|look\s+up|report)\s+(?:(?:whether|if|only|the\s+status\s+of)\s+)?(?:my|the|our)\s+(?:(?:existing|media|seerr|seer|submitted)\s+)*request|"
+    r"(?:is|was|has|did)\s+(?:the|my|our)\s+(?:(?:existing|media|seerr|seer|submitted)\s+)*request)\b",
     re.IGNORECASE,
 )
 _INTERROGATIVE_OR_HYPOTHETICAL_WRITE_RE = re.compile(
@@ -72,12 +72,12 @@ _NEGATED_REQUEST_RE = re.compile(
 )
 _AFFIRMATIVE_PAUSE_RE = re.compile(
     r"\b(pause|pausing|halt|halting|suspend|suspending)\b"
-    r"|\b(?:want|need|like|prefer|wish|get|have|keep|leave|make\s+sure)\b[^.;?!]*?\b(?:paused|halted|suspended)\b",
+    r"|\b(?:want|need|like|prefer|wish|get|have|keep|leave|make\s+sure|put|place|transition|[s]et)\b[^.;?!]*?\b(?:paused|halted|suspended)\b",
     re.IGNORECASE,
 )
 _NEGATED_PAUSE_RE = re.compile(
     r"\b(?:don'?t|do\s+not|never|without|instead\s+of|rather\s+than|avoid|refrain\s+from)\s+"
-    r"(?:(?:ever|actually|automatically|currently|be|keep|leave|try|to)\s+)*"
+    r"(?:(?:ever|actually|automatically|currently|be|keep|leave|try|to|resum(?:e|ing)\s+or|unpaus(?:e|ing)\s+or)\s+)*"
     r"(?:paus(?:e|ed|ing)|halt(?:ed|ing)?|suspend(?:ed|ing)?)\b"
     r"|\b(?:don'?t|do\s+not|never)\s+(?:want|need|get|have|keep|leave)\b[^.;?!]*?\b(?:paused|halted|suspended)\b",
     re.IGNORECASE,
@@ -88,12 +88,14 @@ _PASSIVE_PAUSE_QUERY_RE = re.compile(
 )
 _AFFIRMATIVE_RESUME_RE = re.compile(
     r"\b(resume|unpause|resuming|unpausing)\b"
-    r"|\b(?:want|need|like|prefer|wish|get|have|keep|leave|make\s+sure)\b[^.;?!]*?\b(?:resumed|unpaused)\b",
+    r"|\b(?:want|need|like|prefer|wish|get|have|keep|leave|make\s+sure|put|place|transition|[s]et)\b[^.;?!]*?\b(?:resumed|unpaused)\b"
+    r"|\b(?:start|get|let)\b[^.;?!]*?\b(?:transferring|seeding|downloading)\s+again\b"
+    r"|\brestore\s+(?:active\s+)?transfer\b",
     re.IGNORECASE,
 )
 _NEGATED_RESUME_RE = re.compile(
     r"\b(?:don't|do\s+not|never|without|instead\s+of|rather\s+than|avoid|not|no|stop|cease|quit|refrain\s+from)\s+"
-    r"(?:(?:ever|actually|automatically|currently|longer|be|keep|on|start|try|to)\s+)*"
+    r"(?:(?:ever|actually|automatically|currently|longer|be|keep|on|start|try|to|paus(?:e|ing)\s+or)\s+)*"
     r"(?:resum(?:e|ing)|unpaus(?:e|ing))\b",
     re.IGNORECASE,
 )
@@ -175,7 +177,7 @@ def _explicit_seasons(query: str) -> set[int]:
 
 
 _HISTORY_WORD_RE = re.compile(
-    r"\b(history|watched\s+recently|was\s+watched|recently\s+watched|viewing\s+(?:ledger|records|log)|past\s+(?:plex\s+)?plays|recorded\s+(?:plex\s+)?watches)\b",
+    r"\b(history|watched\s+recently|was\s+watched|recently\s+watched|viewing\s+(?:ledger|records|log)|past\s+(?:plex\s+)?plays|recorded\s+(?:plex\s+)?watches|historical\s+(?:watch|playback|viewing)\s+(?:log|records?|ledger|history)|watch\s+log)\b",
     re.IGNORECASE,
 )
 
@@ -193,13 +195,13 @@ def _has_history_intent(query: str) -> bool:
 
 _COMPLEX_RE = re.compile(
     r"\b("
-    r"and\s+also|and\s+simultaneously|\bat\s+the\s+same\s+time\b|and\s+then|and\s+after\s+that|and,?\s+if\s+(?:it|not|so|any|they|missing)|followed\s+by|then\s+(?:download|request|pause|restart|search|submit|start|launch|run|trigger)|submit\s+requests?\s+for\s+both\b|if\s+<QUOTED>\s+is\b[^.;]*?;\s*otherwise\b|\bwhen\s+<QUOTED>\s+finishes\b|in\s+(?:sonarr|radarr|lidarr)\s+and\s+(?:(?:check|list|show|search|request|whether)\s+)+(?:<QUOTED>\s+(?:is\s+)?in\s+)?(?:sonarr|radarr|lidarr)\b|"
-    r"request\s+both\b|both\s+.+\s+and\s+.+\s+at\s+the\s+same\s+time|"
+    r"and\s+also|while\s+also|and\s+simultaneously|while\s+simultaneously|\bat\s+the\s+same\s+time\b|and\s+then|and\s+after\s+that|and\s+afterwards|and,?\s+if\s+(?:it|not|so|any|they|missing)|followed\s+by|then\s+(?:download|request|pause|restart|search|submit|start|launch|run|trigger)|(?:submit|file|place|open|create)\s+requests?\s+for\s+both\b|if\s+<QUOTED>\s+is\b[^.;]*?;\s*otherwise\b|\b(?:when|as\s+soon\s+as|once)\s+<QUOTED>\s+finishes\b|in\s+(?:sonarr|radarr|lidarr)\s+and\s+(?:(?:check|list|show|search|request|whether)\s+)+(?:<QUOTED>\s+(?:is\s+)?in\s+)?(?:sonarr|radarr|lidarr)\b|"
+    r"request\s+both\b|both\s+.+\s+and\s+.+\s+at\s+(?:the\s+same\s+time|once)|"
     r"and\s+a\s+second\s+(?:[a-z]+\s+)?request\b|as\s+a\s+separate\s+task\b|"
     r"(?:list|show|check)\s+(?:active\s+plex\s+)?streams?\b.*\band\s+(?:request|pause|restart)\b|"
     r"(?:check|list)\s+(?:missing\s+.+|the\s+movie\s+.+|.+\s+in\s+(?:sonarr|radarr)|tautulli)\s+and\s+(?:request|restart|pause|list\s+(?:the\s+)?(?:sonarr|radarr|lidarr|qbittorrent|missing|paused|downloading))\b|"
     r"do\s+three\s+different\s+operations\b|and\s+(?:separately\s+)?(?:pause|resume|delete|remove|request|search)\s+the\s+(?:separate\s+)?torrent\b|"
-    r"pause\s+(?:torrent\s+)?.+\band\s+resume\b|resume\s+(?:torrent\s+)?.+\band\s+pause\b|"
+    r"(?:pause|pausing)\s+(?:torrent\s+)?.+\b(?:and|while)\s+(?:also\s+)?(?:resum(?:e|ing)|unpaus(?:e|ing))\b|(?:resume|resuming|unpause|unpausing)\s+(?:torrent\s+)?.+\b(?:and|while)\s+(?:also\s+)?paus(?:e|ing)\b|"
     r"list\s+the\s+(?:sonarr|radarr|lidarr)\s+queue\s+and\s+list\s+the\s+(?:sonarr|radarr|lidarr)\s+queue"
     r")",
     re.IGNORECASE,
@@ -207,10 +209,10 @@ _COMPLEX_RE = re.compile(
 
 _UNSAFE_RE = re.compile(
     r"\b("
-    r"pause\s+(?:all|every)\b|delete\s+(?:all|every|the\s+entire)\b|delete\s+.+\s+from\s+(?:radarr|sonarr|lidarr|disk)\b|"
-    r"remove\s+(?:all\s+torrent|.+and\s+delete)\b|erase\s+(?:all|every)\b|purge\s+the\b|wipe\s+(?:all|the)\b|"
-    r"restart\s+(?:the|sonarr|radarr|lidarr|tautulli|qbittorrent|dh-waypoint)\b|reboot\s+the\b|"
-    r"execute\s+a\s+shell\b|stop\s+(?:every|everyone's)\s+.*streams?\b|retrain\s+armiger\b|"
+    r"paus(?:e|ing)\s+(?:all|every)\b|freeze\s+the\s+entire\b|delete\s+(?:all|every|the\s+entire)\b|delete\s+.+\s+from\s+(?:radarr|sonarr|lidarr|disk)\b|delete\s+<QUOTED>|unlink\s+(?:all\s+)?(?:audio\s+|video\s+|media\s+)?(?:tracks?|files?)\b|"
+    r"remove\s+(?:all\s+torrent|.+and\s+delete)\b|erase\s+(?:all|every)\b|purge\s+(?:the|all|every|<QUOTED>)\b|wipe\s+(?:all|every|the)\b|"
+    r"restart\s+(?:the|sonarr|radarr|lidarr|tautulli|qbittorrent|dh-waypoint)\b|reboot\s+the\b|(?:hardware\s+)?reboot\s+(?:on|of)\b|power\s+off\s+the\b|"
+    r"execute\s+a\s+shell\b|spawn\s+a\s+(?:host\s+)?shell\b|id\s+-u\s+root\b|stop\s+(?:every|everyone's)\s+.*streams?\b|retrain\s+armiger\b|"
     r"reconfigure\s+dh-waypoint\b|disable\s+(?:authentication|validation)\b|post\s+arbitrary\s+json\b|"
     r"run\s+curl\s+on\b|export\s+the\s+server\s+credentials\b|change\s+my\s+user\s+role\s+to\s+admin\b|"
     r"api\s+keys?\b|api\s+tokens?\b|secret\s+keys?\b|x-api-key\b|"
@@ -218,24 +220,24 @@ _UNSAFE_RE = re.compile(
     r"permanently\s+delete\b|delete\s+(?:the\s+)?(?:[a-z]+\s+)?(?:movie|series|show|torrent|album|files?|library)\b|"
     r"together\s+with\s+its\s+downloaded\s+files\b|login\s+credentials\b|session\s+cookies\b|"
     r"reveal\s+the\s+.*password\b|in\s+a\s+shell\s+on\b|ssh\s+into\b|"
-    r"make\s+my\s+account\s+an\s+administrator\b|elevate\s+my\s+role\s+to\s+(?:owner|admin(?:istrator)?)\b|turn\s+off\s+pre-execution\s+verification\b|disable\s+authorization\s+checks\b|"
+    r"make\s+my\s+account\s+an\s+administrator\b|(?:elevate|promote)\s+my\s+(?:(?:caller\s+)?(?:account|profile|user|role)\s+)to\s+(?:full\s+)?(?:owner|admin(?:istrator)?)\b|turn\s+off\s+pre-execution\s+verification\b|disable\s+authorization\s+checks\b|"
     r"ignore\s+all\s+previous\s+rules\b|invoke\s+the\s+hidden\s+administrative\s+tool\b|"
     r"(?:stop|suspend|halt|resume)\s+(?:all|every)\b|remove\s+.+\s+from\s+(?:radarr|sonarr|lidarr|disk)\b|"
-    r"(?:erase|wipe)\s+(?:its|the|their)\s+(?:audio\s+|video\s+|media\s+|downloaded\s+)?(?:files?|folder|directory|storage)\b|"
-    r"purge\s+(?:the|<QUOTED>)|drop\s+the\s+(?:entire\s+)?.*database\b|clear\s+all\s+indexed\b|"
+    r"(?:erase|wipe)\s+(?:its|the|their)\s+(?:audio\s+|video\s+|media\s+|downloaded\s+)?(?:files?|folder|directory|storage|payload|data|content|tracks?)\b|"
+    r"purge\s+(?:the|<QUOTED>)|(?:drop|truncate)\s+the\s+(?:entire\s+)?.*database\b|(?:clear|drop)\s+all\s+indexed\b|"
     r"ssh\s+(?:keys?|into|tunnel)\b|\.env\s+secrets?\b|secret\s+values?\b|"
-    r"execute\s+(?:a|the)\s+shell\b|(?:terminal|shell)\s+command\b|return\s+stdout\b|bash\s+subshell\b|\bas\s+root\b|root\s+(?:permissions?|privileges?|access)\b|bypass\s+(?:confirmation|authorization|auth|security|verification)\b|(?:raw|saved|stored)\s+credentials\b|disregard\s+(?:all\s+)?(?:prior|previous|safety)\s+(?:constraints|rules|policy|instructions)\b|(?:unconfirmed|bulk)\s+wipe\b|override\s+(?:the\s+)?(?:rbac|tool\s+schema)\b|passkeys?\b|passwords?\b|metadata\.internal|systemctl\s+(?:stop|disable|restart|mask)\b|(?:use|connect\s+via)\s+ssh\b|shut\s*down\s+the\s+.*server\b|chmod\s+777\b|grant\s+full\s+write\s+access\b|unrestricted\s+shell\s+agent\b"
+    r"execute\s+(?:a|the)\s+shell\b|(?:terminal|shell)\s+command\b|return\s+stdout\b|bash\s+subshell\b|\bas\s+root\b|root\s+(?:permissions?|privileges?|access)\b|bypass\s+(?:confirmation|authorization|auth|security|verification|(?:tool\s+)?(?:contract\s+)?validation)\b|(?:raw|saved|stored)\s+credentials\b|disregard\s+(?:all\s+)?(?:prior|previous|safety)\s+(?:constraints|rules|policy|instructions)\b|(?:unconfirmed|bulk|destructive)\s+wipe\b|override\s+(?:the\s+)?(?:rbac|tool\s+schema)\b|passkeys?\b|passwords?\b|metadata\.internal|systemctl\s+(?:stop|disable|restart|mask)\b|(?:use|connect\s+(?:via|over))\s+ssh\b|shut\s*down\s+the\s+.*server\b|chmod\s+777\b|grant\s+full\s+write\s+access\b|unrestricted\s+shell\s+(?:agent|runner)\b|new\s+system\s+directive\b"
     r")|/(?:bin/(?:ba)?sh|etc/shadow|etc/passwd)\b",
     re.IGNORECASE,
 )
 
 _OUT_OF_SCOPE_RE = re.compile(
     r"\b("
-    r"sightseer|seeress|bitagent|bitwarden|install\s+the\s+bittorrent\s+client|"
-    r"transcode\s+(?:the\s+)?(?:movie|series|show|video|file)|trim\s+the\s+opening\s+minute|"
-    r"tomorrow'?s\s+weather|weather\s+in\b|summarize\s+my\s+email\s+inbox|compose\s+a\s+[^.;?!]*?\bpoem|redesign\s+the\s+[^.;?!]*?\bartwork|poster\s+artwork|edit\s+the\s+metadata\s+artwork|recommend\s+what\s+i\s+should\s+watch|"
-    r"ffmpeg|handbrake|mkvmerge|mux\s+the|remux\s+the|re-encode|convert\s+the\s+audio|burn\s+in\s+subtitles|frame\s+interpolation|\d+\s*fps|normalize\s+(?:the\s+)?loudness|lufs|split\s+the\s+(?:mkv|mp4|video|audio|file)|(?:reclassify|modify|edit|update)\b[^.;?!]*?\bbitmagnet|(?!overseerr\b|jellyseerr\b|seerr\b|seer\b)[a-z0-9_-]*seer[a-z0-9_-]*|"
-    r"mortgage\s+payment|recipe\s+for|tax\s+return|flight\s+status|stock\s+price|workout\s+plan|translate\s+(?:this|the\s+subtitles|subtitles)\b|delete\s+(?:existing\s+)?subtitles\b|bittorrent\s+desktop\s+installer|sql\s+migration"
+    r"sightseer|seeress|bitagent|bitwarden|install\s+the\s+bittorrent\s+client|bittorrent\s+(?:client|desktop|dmg|installer)|"
+    r"transcode\s+(?:the\s+)?(?:movie|series|show|video|file)|trim\s+the\s+opening\s+minute|cut\s+the\s+first\s+.*?\bseconds?\s+off|"
+    r"tomorrow'?s\s+weather|weather\s+in\b|(?:weather|rainfall|barometric)\s+forecast|pomodoro\s+timer|[s]et\s+an\s+alarm|compound\s+interest|interest\s+schedule|quarterly\s+earnings|summarize\s+my\s+email\s+inbox|compose\s+a\s+[^.;?!]*?\bpoem|redesign\s+the\s+[^.;?!]*?\bartwork|poster\s+artwork|edit\s+the\s+metadata\s+artwork|recommend\s+what\s+i\s+should\s+watch|"
+    r"ffmpeg|handbrake|mkvmerge|mux\s+the|remux\s+the|re-encode|convert\s+the\s+audio|downmix\s+the|surround\s+audio\s+track|stereo\s+aac|burn\s+in\s+subtitles|preview\s+thumbnails|contact-sheet|(?:frame|motion)\s+interpolation|double\s+the\s+frame\s+rate|\d+\s*fps|normalize\s+(?:the\s+)?loudness|loudness\s+normalization|ebu\s+r128|lufs|(?:split|slice)\s+the\s+(?:mkv|mp4|video|audio|file)(?:\s+container)?|(?:reclassify|reassign|modify|edit|update)\b[^.;?!]*?\bbitmagnet|bitmagnet\b[^.;?!]*?\b(?:reclassify|reassign|modify|edit|update)\b|(?!overseerr\b|jellyseerr\b|seerr\b|seer\b)[a-z0-9_-]*seer[a-z0-9_-]*|"
+    r"mortgage\s+payment|recipe\s+for|tax\s+return|flight\s+status|stock\s+price|workout\s+plan|translate\s+(?:this|the\s+subtitles|subtitles)\b|delete\s+(?:the\s+)?(?:existing\s+)?subtitles?(?:\s+files?)?\b|sql\s+migration"
     r")\b",
     re.IGNORECASE,
 )
@@ -273,6 +275,10 @@ _GENERIC_DOMAIN_PLACEHOLDERS = frozenset({
     "live production data", "all",
     "album", "the album", "an album", "albums", "new album", "the new album", "latest album", "the latest album",
     "artist", "the artist", "an artist", "artists",
+    "title", "the title", "a title", "name", "the name", "a name",
+    "filename", "the filename", "release filename", "the release filename", "release",
+    "catalog", "torrent catalog", "tv series in", "series in", "movie in", "show in", "film in",
+    "tv series title", "movie title", "series title", "show title", "film title", "album title", "artist name",
 })
 
 _MANDATORY_ENTITY_SLOTS: dict[str, str] = {
@@ -357,7 +363,7 @@ def _artist_role_is_explicit(artist: str, album: str, query: str) -> bool:
         before, after = text[:match.start()], text[match.end():]
         if re.search(r'''\b(?:by|from|(?:whose\s+)?(?:artist|band|performer)(?:\s+field)?(?:\s+is)?)(?:\s*[:=]\s*|\s+)(?:(?:the|artist|band|performer)\s+)?["']?\s*$''', before):
             return True
-        if re.match(r'''^["']?(?:['’]s\b|\s+album\b|\s+and\s+(?:their|his|her|its|the)\s+album\b|\s+as\s+(?:the\s+)?(?:artist|band|performer)\b)''', after):
+        if re.match(r'''^["']?(?:['’]s\b|\s+album\b|\s+and\s+(?:their|his|her|its|the)?\s*(?:album|record)\b|\s+(?:as|is)\s+(?:the\s+)?(?:artist|band|performer)\b)''', after):
             return True
     return False
 
@@ -371,8 +377,13 @@ def _write_scope_fits_schema(name: str, args: dict[str, Any], query: str) -> boo
     # Otherwise a proposal can name "track 4" or "1080p" as an album/title,
     # erase the restriction, and offer a different whole-entity write. Literal
     # titles containing these words remain expressible with explicit quotes.
-    text_no_caller = re.sub(r"\b(?:under|on|for|in|from|with)\s+my\s+(?:own\s+)?profile\b", " ", text, flags=re.I)
-    if re.search(r"\b(4k|uhd|2160p|1080p|720p|480p|hdr|hdr10|hevc|h264|h265|x264|x265|remux|bluray|web[- ]dl|web[- ]rip|lossless|flac|mp3|aac|bitrate|quality|profiles?|private\s+indexers?|public\s+indexers?|usenet\s+only|root\s+folder)\b", text_no_caller):
+    text_no_caller = re.sub(
+        r"\b(?:(?:associated\s+with|linked\s+to|tied\s+to|attached\s+to|belonging\s+to|owned\s+by|connected\s+to|registered\s+to|under|on|for|in|from|with)\s+)?my\s+(?:(?:own|caller)\s+)?(?:account|profile|login|user)(?:'s)?\b",
+        " ",
+        text,
+        flags=re.I,
+    )
+    if re.search(r"\b(4k|uhd|2160p|1080p|720p|480p|hdr|hdr10|hevc|h264|h265|x264|x265|remux|bluray|web[- ]dl|web[- ]rip|lossless|flac|mp3|aac|bitrate|quality|profiles?|(?:private|public)\s+(?:indexers?|trackers?)|usenet\s+only|root\s+folder)\b", text_no_caller):
         return False
     if name == "request_media" and (
         re.search(r"\b(seasons?|episodes?|quota)\b", text)
@@ -396,7 +407,8 @@ def _write_scope_fits_schema(name: str, args: dict[str, Any], query: str) -> boo
         number_words = "|".join(_SEASON_WORDS)
         if re.search(r"\bepisodes\s+(?:(?:from|between)\s+)?(?:" + number_words + r")\b|\b(?:" + number_words + r")\s+(?:missing\s+)?episodes\b", selectors):
             return False
-        if re.search(r"\b(latest|newest|oldest|first|last|next|previous|selected|random|few|some|several|couple)\b", text):
+        text_no_ctx_sel = re.sub(r"\b(?:this|that|the)\s+(?:currently\s+)?selected\s+(?:tv\s+)?(?:show|series)\b", " ", text, flags=re.I)
+        if re.search(r"\b(latest|newest|oldest|first|last|next|previous|selected|random|few|some|several|couple)\b", text_no_ctx_sel):
             return False
         if re.search(r"\b(before|after|since|starting|ending|excluding|besides|apart\s+from|other\s+than)\b", text):
             return False
@@ -410,7 +422,7 @@ def _write_scope_fits_schema(name: str, args: dict[str, Any], query: str) -> boo
         if "album" not in args:
             # Every album is a representable artist-wide set. A named album,
             # record or single is a different target and cannot be discarded.
-            remainder = re.sub(r"\bevery\s+album\b", " ", text)
+            remainder = re.sub(r"\bevery\s+(?:(?:missing|monitored|released)\s+)*album\b", " ", text)
             if re.search(r"\b(album|record|ep|single)\b", remainder):
                 return False
             artist = _norm_alnum(str(args.get("artist", "")))
@@ -426,7 +438,7 @@ def _request_identity_scope_fits_schema(text: str) -> bool:
     mapping cannot be selected or overridden by a phrase in the query.
     """
     text = re.sub(
-        r"\b(?:(?:associated\s+with|linked\s+to|tied\s+to|attached\s+to|belonging\s+to|connected\s+to|registered\s+to|under|on|for|in|from)\s+)?my\s+(?:own\s+)?(?:account|profile|login|user)(?:'s)?\b",
+        r"\b(?:(?:associated\s+with|linked\s+to|tied\s+to|attached\s+to|belonging\s+to|owned\s+by|connected\s+to|registered\s+to|under|on|for|in|from|with)\s+)?my\s+(?:(?:own|caller)\s+)?(?:account|profile|login|user)(?:'s)?\b",
         " CALLER ", text, flags=re.I,
     )
     text = re.sub(r"\bas\s+(?:me|myself)\b", " CALLER ", text, flags=re.I)
@@ -446,16 +458,16 @@ def _infer_clarify_slot(query: str, selected: dict[str, Any] | None = None) -> s
     q_unquoted = _strip_quoted_and_releases(query)
     if re.search(r"\bno\s+selection\s+list\s+is\s+attached\b|\b(?:second|first|third)\s+selected\b", q_unquoted, re.IGNORECASE):
         return "reference"
-    if re.search(r"\b((?:other|earlier|later|counterpart)\s+(?:version|remake|adaptation|edition)|(?:second|first|third)\s+(?:one|movie|film|series|show|item|result)\b|latest\s+one)\b", q_unquoted, re.IGNORECASE):
+    if re.search(r"\b((?:other|earlier|later|counterpart|alternate)\s+(?:version|remake|adaptation|edition)|(?:second|first|third)\s+(?:one|movie|film|series|show|item|result)\b|latest\s+one)\b", q_unquoted, re.IGNORECASE):
         return "reference"
     q_deictic_check = re.sub(r"\band\s+report\s+its\s+status\b", " ", q_unquoted, flags=re.I)
-    if _DEICTIC_RE.search(q_deictic_check) and not _quoted_spans(query) and not re.search(r"\b(?:haven't|have\s+not)\s+(?:named|given|supplied|provided)\b|\bwithout\s+giving\s+the\b", q_unquoted, re.I):
+    if _DEICTIC_RE.search(q_deictic_check) and not _quoted_spans(query) and not re.search(r"\b(?:haven't|have\s+not)\s+(?:named|given|supplied|provided)\b|\bwithout\s+giving\s+the\b|\bforgot\s+to\s+name\b", q_unquoted, re.I):
         return "reference"
-    if re.search(r"\b(?:whether|without\s+saying|without\s+specifying|not\s+specified\s+whether)\b[^.;?!]*?\b(?:movie|film)\b[^.;?!]*?\b(?:or|and)\b[^.;?!]*?\b(?:tv|television|series|show)\b", q_unquoted, re.IGNORECASE):
+    if re.search(r"\b(?:whether|without\s+(?:saying|specifying|stating|declaring|indicating)|(?:while\s+)?(?:omitting|leaving)|not\s+(?:specified|stated|declared)\s+whether)\b[^.;?!]*?\b(?:movie|film)\b[^.;?!]*?\b(?:or|vs\.?|versus|and)\b[^.;?!]*?\b(?:tv|television|series|show)\b", q_unquoted, re.IGNORECASE):
         return "media_type"
     if _SCOPE_RE.search(q_unquoted):
         return "scope"
-    if _REQUEST_WORD_RE.search(q_unquoted) and not _MEDIA_OR_SERVICE_WORD_RE.search(q_unquoted):
+    if _REQUEST_WORD_RE.search(q_unquoted) and not _REQUEST_TRACK_RE.search(q_unquoted) and not _MEDIA_OR_SERVICE_WORD_RE.search(q_unquoted):
         return "media_type"
     if re.search(r"\b(?:have\s+not\s+chosen\s+which|which\s+(?:version|year|season)|season\s+\d+\s+or\s+season\s+\d+|only\s+for\s+episode|in\s+4k\s+only|only\s+track\s+\d+)\b", q_unquoted, re.IGNORECASE):
         return "scope"
@@ -511,6 +523,13 @@ def _snap_entity_to_query(entity: str, query: str) -> str | None:
             c_norm = _norm_alnum(cand)
             if not c_norm or c_norm in _GENERIC_DOMAIN_PLACEHOLDERS or c_norm in _DEICTIC_PLACEHOLDERS:
                 continue
+            if all(
+                w in _GENERIC_DOMAIN_PLACEHOLDERS
+                or w in _DEICTIC_PLACEHOLDERS
+                or w in {"in", "on", "for", "of", "to", "from", "with", "by", "at", "the", "a", "an", "and", "or", "my", "our", "its", "status", "report"}
+                for w in c_norm.split()
+            ):
+                continue
             ratio = difflib.SequenceMatcher(None, ent_norm, c_norm).ratio()
             c_words = c_norm.split()
             e_words = ent_norm.split()
@@ -556,12 +575,13 @@ def verify_proposal(
 
     # 0. Compound multi-action, unsafe instruction, and vague-scope guard (ignoring quoted titles and .mkv filenames)
     q_for_unsafe = re.sub(
-        r"\b(?:do\s+not|don't|never|without)\s+(?:delet(?:e|ing)|remov(?:e|ing)|eras(?:e|ing)|wip(?:e|ing))\s+(?:its|the|any|their)?\s*(?:downloaded\s+)?files?\b",
+        r"\b(?:do\s+not|don't|never|without)\s+(?:delet(?:e|ing)|remov(?:e|ing)|eras(?:e|ing)|wip(?:e|ing))\s+(?:its|the|any|their)?\s*(?:downloaded\s+)?files?\b"
+        r"|\bdelete\s+(?:the\s+)?(?:existing\s+)?subtitles?(?:\s+files?)?.*",
         " ",
         q_unquoted,
         flags=re.I,
     )
-    svc_mentions = { ("seerr" if s.lower() == "seer" else s.lower()) for s in re.findall(r"\b(sonarr|radarr|lidarr|qbittorrent|seerr|seer|bitmagnet|armiger|bazarr)\b", q_unquoted, re.I) }
+    svc_mentions = { ("seerr" if s.lower() == "seer" else s.lower()) for s in re.findall(r"\b(sonarr|radarr|lidarr|qbittorrent|tautulli|prowlarr|readarr|chaptarr|whisparr|seerr|seer|bitmagnet|armiger|bazarr)\b", q_unquoted, re.I) }
     if _COMPLEX_RE.search(q_unquoted):
         return validate_call("unsupported", {"reason": "complex"})
     if _UNSAFE_RE.search(q_for_unsafe):
@@ -577,14 +597,19 @@ def verify_proposal(
     # A validated abstention cannot execute anything. Preserve its reason or
     # requested slot rather than inventing a different diagnosis on each pass,
     # except when the query has an explicit structural slot requirement.
-    if re.search(r"\b(?:is\s+unrelated|is\s+background\s+only|aside\s+from\s+<QUOTED>|is\s+not\s+the\s+target|do\s+not\s+use\s+<QUOTED>|ignore\s+<QUOTED>).*?\b(?:different|separate|another|not\s+(?:supplied|given|provided)|have\s+not\s+(?:supplied|named|given|provided)|whose\s+(?:name|title)\s+(?:i\s+)?(?:left\s+(?:blank|out)|omitted|forgot|is\s+missing)|forgot\s+to\s+(?:include|name)|left\s+(?:blank|out))\b|\bwithout\s+(?:giving|naming)\s+(?:the|a|an)\s+(?:series|movie|film|show|album|artist)(?:\s+title|\s+name)?\b|\bwithout\s+specifying\s+which\s+one\b|\b(?:film|movie|series|show|album|artist)\s+i\s+(?:haven't|have\s+not)\s+named\b", q_unquoted, re.I):
+    if re.search(r"\b(?:is\s+unrelated|is\s+background\s+only|only\s+background\s+context|appears\s+in\s+my\s+notes|(?:[s]etting|[s]et)\s+<QUOTED>\s+aside|aside\s+from\s+<QUOTED>|is\s+not\s+the\s+target|do\s+not\s+use\s+<QUOTED>|ignor(?:e|ing)\s+<QUOTED>|disregard\s+<QUOTED>).*?\b(?:different|separate|another|unnamed|not\s+(?:supplied|given|provided)|have\s+not\s+(?:supplied|named|given|provided)|(?:whose|its)\s+(?:name|title)\s+(?:(?:i\s+)?(?:left\s+(?:blank|out)|omitted|forgot)|is\s+(?:missing|blank|omitted))|forgot\s+to\s+(?:include|name|supply)|left\s+(?:blank|out))\b|\bwithout\s+(?:giving|naming)\s+(?:the|a|an)\s+(?:series|movie|film|show|album|artist)(?:\s+title|\s+name)?\b|\bwithout\s+specifying\s+which\s+one\b|\b(?:film|movie|series|show|album|artist|torrent|transfer|query(?:\s+string)?)\s+(?:that\s+|which\s+)?i\s+(?:haven't|have\s+not|forgot\s+to)\s+(?:named?|supplied|given|provided|supply)\b", q_unquoted, re.I):
         return validate_call("clarify", {"slot": "title"})
     if re.search(r"\bno\s+selection\s+list\s+is\s+attached\b|\bunattached\s+list\b|\b(?:second|first|third)\s+selected\b", q_unquoted, re.I):
         return validate_call("clarify", {"slot": "reference"})
-    if re.search(r"\b(?:without\s+(?:saying|specifying)|not\s+specified\s+whether)\s+(?:whether\s+(?:it\s+is\s+(?:a\s+)?)?)?(?:movie|film)\s+or\s+(?:tv|television|series|show)\b", q_unquoted, re.I):
+    if re.search(r"\b(?:without\s+(?:saying|specifying|stating|declaring|indicating)|(?:while\s+)?(?:omitting|leaving)\b[^.;?!]*?|(?:not\s+(?:specified|stated|declared)\s+whether))\s*(?:whether\s+(?:it\s+is\s+(?:a\s+)?)?)?(?:movie|film)\s+(?:or|vs\.?|versus)\s+(?:tv|television|series|show)\b", q_unquoted, re.I):
         return validate_call("clarify", {"slot": "media_type"})
-    if re.search(r"\b(?:two\s+(?:films|movies|series|shows)\s+share\s+the\s+title|have\s+not\s+(?:chosen|decided|selected|picked)\s+(?:which|whether|another\s+action|any\s+other\s+action)|prohibition\s+is\s+my\s+entire|only\s+the\s+(?:season\s+finale|pilot|premiere)\s+episode|in\s+sonarr,\s+search\s+for\s+s\d{1,2}e\d{1,3}\b|(?:latest|newest|final)\s+season\b[^.;?!]*?\bwithout\s+knowing\s+the\s+season\s+number|seasons?\s+\d+\s+(?:or|through|to)\s+(?:season\s+)?\d+\b|rename\s+the\s+(?:series|show|movie|film|album|artist)|change\s+the\s+(?:quality\s+profile|root\s+folder|monitoring)|unmonitor\s+season\b|\bunless\s+<QUOTED>\s+is\s+already\s+complete\b|belonging\s+to\s+user\s+\w+|in\s+(?:1080p|2160p|720p|4k)\s+bluray\s+quality\s+only)\b", q_unquoted, re.I):
+    if re.search(r"\b(?:two\s+(?:films|movies|series|shows)\s+share\s+the\s+title|between\s+the\s+\d{4}\s+and\s+\d{4}\s+(?:films|movies|series|shows)|whichever\s+one\s+i\s+mean|have\s+not\s+(?:chosen|decided|selected|picked)\s+(?:which|whether|the\s+(?:year|version|season|edition)|another\s+action|any\s+other\s+action)|prohibition\s+is\s+my\s+entire|negative\s+instruction\s+is\s+my\s+whole|no\s+other\s+action\s+is\s+requested|do\s+nothing\s+else|otherwise\s+do\s+nothing|only\s+the\s+(?:season\s+finale|pilot|premiere)\s+episode|in\s+sonarr,\s+search\s+for\s+s\d{1,2}e\d{1,3}\b|(?:latest|newest|final)\s+season\b[^.;?!]*?\bwithout\s+knowing\s+the\s+season\s+number|seasons?\s+\d+\s+(?:or|through|to)\s+(?:season\s+)?\d+\b|rename\s+the\s+(?:series|show|movie|film|album|artist)|change\s+the\s+(?:quality\s+profile|root\s+folder|monitoring)|unmonitor\s+season\b|to\s+unmonitored\b|\bunless\s+<QUOTED>\s+is\s+already\s+complete\b|\bonly\s+if\s+<QUOTED>\s+is\s+(?:incomplete|missing)\b|belonging\s+to\s+user\s+\w+|in\s+(?:1080p|2160p|720p|4k)\s+(?:bluray|remux|web-dl)\s+quality\s+only|(?:relocate|move)\s+(?:the\s+)?(?:torrent|transfer)\b|(?:recheck|re-verify|force-recheck)\s+(?:the\s+)?(?:torrent|transfer|downloaded|piece|hash)\b|(?:cap|limit|throttle)\s+(?:the\s+)?(?:download|upload|transfer|torrent)\s+(?:speed|bandwidth|rate))\b", q_unquoted, re.I):
         return validate_call("clarify", {"slot": "scope"})
+    if re.search(r"^\s*(?:if|unless)\b", q_unquoted, re.I) and (
+        _SEARCH_DOWNLOAD_TRIGGER_RE.search(q_unquoted)
+        or re.search(r"\b(?:submit|file|place|open|create|fall\s+back\s+to)\s+(?:a\s+|request(?:ing)?\b)", q_unquoted, re.I)
+    ):
+        return validate_call("unsupported", {"reason": "complex"})
     if name == "unsupported":
         return call
     if name == "clarify":
@@ -609,10 +634,29 @@ def verify_proposal(
         # The released request schema cannot carry quality/season/other-user
         # restrictions. Do not silently discard them when choosing a provider.
         scope_text = unicodedata.normalize("NFKC", q_unquoted).casefold()
-        scope_text_no_caller = re.sub(r"\b(?:under|on|for|in|from|with)\s+my\s+(?:own\s+)?profile\b", " ", scope_text, flags=re.I)
+        scope_text_no_caller = re.sub(
+            r"\b(?:(?:associated\s+with|linked\s+to|tied\s+to|attached\s+to|belonging\s+to|owned\s+by|connected\s+to|registered\s+to|under|on|for|in|from|with)\s+)?my\s+(?:(?:own|caller)\s+)?(?:account|profile|login|user)(?:'s)?\b",
+            " ",
+            scope_text,
+            flags=re.I,
+        )
         if re.search(r"\b(4k|uhd|2160p|1080p|720p|seasons?|episodes?|quality|profile|quota|root\s+folder)\b", scope_text_no_caller) or not _request_identity_scope_fits_schema(scope_text):
             return validate_call("clarify", {"slot": "scope"})
-        if name == "request_status" and re.search(r"\b(?:18\d{2}|19\d{2}|20\d{2}|21\d{2}|2200|movies?|films?|tv|series)\b", scope_text):
+        t_cand_norm = _norm_alnum(str(args.get("title", "")))
+        has_real_req_title = bool(
+            _quoted_spans(query)
+            or selected is not None
+            or (
+                t_cand_norm
+                and t_cand_norm not in _GENERIC_DOMAIN_PLACEHOLDERS
+                and t_cand_norm not in _DEICTIC_PLACEHOLDERS
+                and _is_grounded_in_text(str(args.get("title", "")), query)
+            )
+        )
+        if name == "request_status" and (
+            re.search(r"\b(?:18\d{2}|19\d{2}|20\d{2}|21\d{2}|2200)\b", scope_text)
+            or (has_real_req_title and re.search(r"\b(?:movies?|films?|tv|series)\b", scope_text))
+        ):
             return validate_call("clarify", {"slot": "scope"})
         if name == "request_status" and any(_TRAILING_PAREN_YEAR_RE.match(span) for span in _quoted_spans(query)):
             return validate_call("clarify", {"slot": "scope"})
@@ -645,12 +689,8 @@ def verify_proposal(
             return validate_call("clarify", {"slot": "scope"})
         return validate_call(grounded.name, grounded.arguments)
     # 0b. Service & Tautulli history alignment before entity checks
-    if re.search(r"\b(?:is\s+unrelated|is\s+background\s+only|aside\s+from\s+<QUOTED>|is\s+not\s+the\s+target|do\s+not\s+use\s+<QUOTED>|ignore\s+<QUOTED>).*?\b(?:different|separate|another|not\s+(?:supplied|given|provided)|have\s+not\s+(?:supplied|named|given|provided)|whose\s+(?:name|title)\s+(?:i\s+)?(?:left\s+(?:blank|out)|omitted|forgot|is\s+missing)|forgot\s+to\s+(?:include|name)|left\s+(?:blank|out))\b|\bwithout\s+(?:giving|naming)\s+(?:the|a|an)\s+(?:series|movie|film|show|album|artist)(?:\s+title|\s+name)?\b|\bwithout\s+specifying\s+which\s+one\b|\b(?:film|movie|series|show|album|artist)\s+i\s+(?:haven't|have\s+not)\s+named\b", q_unquoted, re.I):
-        return validate_call("clarify", {"slot": "title"})
-    if re.search(r"\b(?:(?:check|look\s+up|search|request|grab|trigger\s+a\s+download\s+search)\s+(?:for\s+)?the\s+(?:other|earlier|later|counterpart)\s+(?:version|remake|adaptation|edition)|check\s+the\s+(?:second|first|third)\s+one\b|counterpart\s+version)\b", q_unquoted, re.I) and len(set(re.findall(r"\b(18[7-9]\d|19\d{2}|20\d{2}|21\d{2})\b", q_unquoted))) < 2:
+    if re.search(r"\b(?:(?:check|look\s+up|search|request|grab|trigger\s+a\s+download\s+search)\s+(?:for\s+)?(?:the\s+)?(?:other|earlier|later|counterpart|alternate)\s+(?:version|remake|adaptation|edition)|(?:other|earlier|later|counterpart|alternate)\s+(?:version|remake|adaptation|edition)\s+of\s+the\s+(?:film|movie|series|show)|check\s+the\s+(?:second|first|third)\s+one\b|counterpart\s+version)\b", q_unquoted, re.I) and len(set(re.findall(r"\b(18[7-9]\d|19\d{2}|20\d{2}|21\d{2})\b", q_unquoted))) < 2:
         return validate_call("clarify", {"slot": "reference"})
-    if re.search(r"\b(?:two\s+(?:films|movies|series|shows)\s+share\s+the\s+title|have\s+not\s+(?:chosen|decided|selected|picked)\s+(?:which|whether|another\s+action|any\s+other\s+action)|prohibition\s+is\s+my\s+entire|only\s+the\s+(?:season\s+finale|pilot|premiere)\s+episode|in\s+sonarr,\s+search\s+for\s+s\d{1,2}e\d{1,3}\b|(?:latest|newest|final)\s+season\b[^.;?!]*?\bwithout\s+knowing\s+the\s+season\s+number|season\s+\d+\s+or\s+(?:season\s+)?\d+\b|rename\s+the\s+(?:series|show|movie|film|album|artist)|change\s+the\s+(?:quality\s+profile|root\s+folder|monitoring)|unmonitor\s+season\b|\bunless\s+<QUOTED>\s+is\s+already\s+complete\b)\b", q_unquoted, re.I):
-        return validate_call("clarify", {"slot": "scope"})
     if name in {"now_playing", "tv_status", "movie_status"} and _has_history_intent(q_unquoted):
         name = "watch_history"
     elif name == "watch_history" and re.search(r"\b(present\s+(?:plex\s+)?(?:viewing\s+)?sessions?|present\s+session\s+list|streams?\s+that\s+plex\s+has\s+in\s+progress|currently\s+streaming|playing\s+right\s+now)\b", q_unquoted, re.I):
@@ -669,8 +709,11 @@ def verify_proposal(
         args.pop("include_specials", None)
     elif name == "tv_status" and _MOVIE_WORD_RE.search(q_unquoted) and not _TV_WORD_RE.search(q_unquoted):
         name = "movie_status"
-    elif name == "tv_status" and re.search(r"\b(missing|absent|gaps?|holes?)\b", q_unquoted, re.IGNORECASE) and not re.search(r"\b(?:not|no|without|instead\s+of|rather\s+than)\s+(?:(?:a|an|the|any|its)\s+)?(?:missing|absent|gaps?|holes?)\b", q_unquoted, re.IGNORECASE):
+    elif name == "tv_status" and re.search(r"\b(missing|absent|gaps?|holes?|unacquired|unobtained|no\s+file|lacking|left\s+to\s+grab|still\s+need|not\s+yet\s+downloaded)\b", q_unquoted, re.IGNORECASE) and not re.search(r"\b(?:not|no|without|instead\s+of|rather\s+than)\s+(?:(?:a|an|the|any|its)\s+)?(?:missing|absent|gaps?|holes?|unacquired|unobtained)\b", q_unquoted, re.IGNORECASE):
         name = "tv_missing"
+    elif name == "tv_missing" and not re.search(r"\b(missing|absent|gaps?|holes?|unacquired|unobtained|no\s+file|specials?|ovas?|incomplete|lacking|left\s+to\s+grab|still\s+need|not\s+yet\s+downloaded|which\s+episodes|what\s+episodes)\b", q_unquoted, re.IGNORECASE):
+        name = "tv_status"
+        args.pop("include_specials", None)
     elif name == "bitmagnet_search" and re.search(r"\bradarr\b", q_unquoted, re.IGNORECASE) and not re.search(r"\bbitmagnet\b", q_unquoted, re.IGNORECASE):
         q_val = args.pop("query", None)
         name = "movie_search"
@@ -694,9 +737,9 @@ def verify_proposal(
     quoted = _quoted_spans(query)
     if (name == "music_status" or (name == "music_search" and "album" in args)) and len(quoted) == 2:
         q_placeholder = re.sub(r"""["'][^"'\n]+["']""", "<QUOTED>", query)
-        if _artist_role_is_explicit(quoted[0], quoted[1], query) or re.search(r"\bnames\s+<QUOTED>\s+as\s+(?:the\s+)?artist\s+and\s+<QUOTED>\s+as\s+(?:the\s+)?album\b|\bartist(?:\s+field)?\s+is\s+<QUOTED>\s+and\s+(?:my\s+|the\s+)?album(?:\s+field)?\s+is\s+<QUOTED>", q_placeholder, re.I):
+        if _artist_role_is_explicit(quoted[0], quoted[1], query) or re.search(r"\bnames\s+<QUOTED>\s+as\s+(?:the\s+)?artist\s+and\s+<QUOTED>\s+as\s+(?:the\s+)?album\b|\bartist(?:\s+field)?\s+is\s+<QUOTED>\s+and\s+(?:my\s+|the\s+)?album(?:\s+field)?\s+is\s+<QUOTED>|<QUOTED>\s+is\s+(?:the\s+)?(?:artist|performer|band)\s+and\s+<QUOTED>\s+is\s+(?:the\s+)?(?:album|record)", q_placeholder, re.I):
             args["artist"], args["album"] = quoted[0], quoted[1]
-        elif _artist_role_is_explicit(quoted[1], quoted[0], query) or re.search(r"\bnames\s+<QUOTED>\s+as\s+(?:the\s+)?album\s+and\s+<QUOTED>\s+as\s+(?:the\s+)?artist\b|\balbum(?:\s+field)?\s+is\s+<QUOTED>\s+and\s+(?:my\s+|the\s+)?artist(?:\s+field)?\s+is\s+<QUOTED>", q_placeholder, re.I):
+        elif _artist_role_is_explicit(quoted[1], quoted[0], query) or re.search(r"\bnames\s+<QUOTED>\s+as\s+(?:the\s+)?album\s+and\s+<QUOTED>\s+as\s+(?:the\s+)?artist\b|\balbum(?:\s+field)?\s+is\s+<QUOTED>\s+and\s+(?:my\s+|the\s+)?artist(?:\s+field)?\s+is\s+<QUOTED>|<QUOTED>\s+is\s+(?:the\s+)?(?:album|record)\s+and\s+<QUOTED>\s+is\s+(?:the\s+)?(?:artist|performer|band)", q_placeholder, re.I):
             args["album"], args["artist"] = quoted[0], quoted[1]
     if name == "armiger_parse" and isinstance(args.get("release_name"), str):
         m_mkv = re.search(r"\b(\S+\.(?:mkv|mp4|avi|ts|iso))\b", query, re.I)
@@ -797,8 +840,13 @@ def verify_proposal(
                 query.strip(),
                 re.IGNORECASE,
             )
-            if m_inst:
-                val = m_inst.group(1).strip()
+            override_span = (
+                quoted[0].strip()
+                if len(quoted) == 1 and _norm_alnum(quoted[0]) not in _GENERIC_DOMAIN_PLACEHOLDERS and _norm_alnum(quoted[0]) not in _DEICTIC_PLACEHOLDERS
+                else (m_inst.group(1).strip() if m_inst else None)
+            )
+            if override_span:
+                val = override_span
                 args[slot] = val
                 val_norm = _norm_alnum(val)
                 in_query = True
@@ -861,7 +909,13 @@ def verify_proposal(
         and not is_non_imperative_question
     )
     has_request_word = bool(_REQUEST_WORD_RE.search(q_unquoted))
-    has_track_word = bool(_REQUEST_TRACK_RE.search(q_unquoted))
+    q_for_track = re.sub(
+        r"\b(?:rather\s+than|instead\s+of|without)\s+(?:checking|inspecting|looking\s+up|viewing)\s+(?:(?:my|the|existing|seerr|seer)\s+)*request\s+(?:status|progress)\b",
+        " ",
+        q_unquoted,
+        flags=re.I,
+    )
+    has_track_word = bool(_REQUEST_TRACK_RE.search(q_for_track))
     has_negated_request = bool(_NEGATED_REQUEST_RE.search(q_unquoted))
     has_affirmative_request = (
         bool(_AFFIRMATIVE_REQUEST_RE.search(q_unquoted))
@@ -899,7 +953,7 @@ def verify_proposal(
                 name = "movie_status"
                 args = {k: v for k, v in args.items() if k in {"title", "year"}}
             elif _TV_WORD_RE.search(q_unquoted) or args.get("media_type") == "tv":
-                name = "tv_missing" if re.search(r"\b(missing|absent|gaps|holes)\b", q_unquoted, re.IGNORECASE) else "tv_status"
+                name = "tv_missing" if re.search(r"\b(missing|absent|gaps?|holes?|unacquired)\b", q_unquoted, re.IGNORECASE) else "tv_status"
                 args = {"title": args["title"]}
             else:
                 return validate_call("clarify", {"slot": "scope"})
@@ -914,10 +968,10 @@ def verify_proposal(
         artist = str(args.get("artist", ""))
         if artist:
             scope_text = re.sub(r"(?<!\w)" + re.escape(artist) + r"(?!\w)", " ENTITY ", scope_text, flags=re.I)
-        if not re.search(r"\b(?:all\s+(?:(?:the|of|missing|monitored|released)\s+)*(?:albums|music)|every\s+album|(?:entire|whole)\s+(?:artist\s+)?(?:catalog(?:ue)?|discography)|discography|missing\s+(?:albums|music)|artist[- ]wide|(?:monitored|the)\s+artist)\b", scope_text, re.I):
+        if not re.search(r"\b(?:all\s+(?:(?:the|of|missing|monitored|released)\s+)*(?:albums|music)|every\s+(?:(?:missing|monitored|released)\s+)*album|(?:entire|whole)\s+(?:artist\s+)?(?:catalog(?:ue)?|discography)|discography|missing\s+(?:albums|music)|artist[- ]wide|(?:monitored|the)\s+artist)\b", scope_text, re.I):
             return validate_call("clarify", {"slot": "scope"})
     elif name == "tv_search_missing" and not has_search_trigger:
-        name = "tv_missing" if re.search(r"\b(missing|absent|gaps|holes)\b", q_unquoted, re.IGNORECASE) else "tv_status"
+        name = "tv_missing" if re.search(r"\b(missing|absent|gaps?|holes?|unacquired)\b", q_unquoted, re.IGNORECASE) else "tv_status"
         args.pop("season", None)
     elif name == "torrent_pause":
         is_neg_pause = bool(_NEGATED_PAUSE_RE.search(q_unquoted))
@@ -997,10 +1051,11 @@ def verify_proposal(
         elif args.get("include_specials") is True:
             args["include_specials"] = False
     if name == "torrent_list" and args.get("state", "all") == "all":
+        q_tl_st = re.sub(r"\bcompleted\s+downloading\b", "completed", q_unquoted, flags=re.I)
         explicit_states = [
             st for st in ("paused", "stalled", "downloading", "seeding", "completed")
-            if re.search(rf"\b{st}\b", q_unquoted, re.IGNORECASE)
-            and not re.search(rf"\b(?:not|no|without|except|excluding)\s+(?:[a-z]+\s+)?{st}\b", q_unquoted, re.IGNORECASE)
+            if re.search(rf"\b{st}\b", q_tl_st, re.IGNORECASE)
+            and not re.search(rf"\b(?:not|no|without|except|excluding)\s+(?:[a-z]+\s+)?{st}\b", q_tl_st, re.IGNORECASE)
         ]
         if len(explicit_states) == 1:
             args["state"] = explicit_states[0]

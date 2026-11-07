@@ -23,7 +23,7 @@ from urllib.parse import urlsplit
 from urllib.request import Request, urlopen
 
 from .catalog import tools, tools_v2, tools_v3
-from .model import LocalModel, finalize_output, messages
+from .model import HybridRouterMLXModel, LocalModel, finalize_output, messages
 
 
 class InferenceError(RuntimeError):
@@ -262,7 +262,13 @@ def create_model(path: str, family: str = "functiongemma", adapter: str | None =
             return LocalModel(path, family, adapter, contract_version=contract_version)
         except ImportError as exc:
             raise InferenceError("MLX backend is optional; install arrmes[mlx] on Apple Silicon or select llama-server") from exc
+    if backend == "hybrid-router-mlx":
+        if endpoint is not None:
+            raise ValueError("The hybrid-router-mlx backend does not use an inference endpoint")
+        if platform.system() != "Darwin" or platform.machine().lower() not in {"arm64", "aarch64"}:
+            raise InferenceError("hybrid-router-mlx requires Apple Silicon macOS")
+        return HybridRouterMLXModel(path, family, adapter, contract_version=contract_version)
     if backend == "llama-server":
         return LlamaServerModel(path, family, adapter, contract_version=contract_version, endpoint=endpoint,
                                 device=device, executable=executable, context_size=context_size, threads=threads)
-    raise ValueError("Backend must be auto, mlx, or llama-server")
+    raise ValueError("Backend must be auto, mlx, hybrid-router-mlx, neural-router, or llama-server")

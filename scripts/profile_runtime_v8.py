@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import hashlib
 import json
 from pathlib import Path
 import resource
@@ -283,7 +284,7 @@ def main() -> None:
     # Profile FunctionGemma v8 4-bit and Qwen3-0.6B v8 4-bit on Apple M4 Pro Metal (20 warm samples)
     fg_dir = ROOT / "models" / "functiongemma-270m-arrmes-v8-4bit"
     t0 = time.perf_counter()
-    fg_model = LocalModel(str(fg_dir), family="functiongemma", contract_version="v2", router_assisted=True)
+    fg_model = LocalModel(str(fg_dir), family="functiongemma", contract_version="v2")
     _ = fg_model.infer(pos_cases[0]["query"], pos_cases[0].get("context"))
     fg_cold_ms = round((time.perf_counter() - t0) * 1000.0, 2)
     fg_lats = []
@@ -300,7 +301,7 @@ def main() -> None:
 
     qw_dir = ROOT / "models" / "qwen3-06b-arrmes-v8-4bit"
     t0 = time.perf_counter()
-    qw_model = LocalModel(str(qw_dir), family="hermes", contract_version="v2", router_assisted=True)
+    qw_model = LocalModel(str(qw_dir), family="hermes", contract_version="v2")
     _ = qw_model.infer(pos_cases[0]["query"], pos_cases[0].get("context"))
     qw_cold_ms = round((time.perf_counter() - t0) * 1000.0, 2)
     qw_lats = []

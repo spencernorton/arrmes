@@ -3,21 +3,25 @@
   "baseline_source_commit": "a536483a75ada2d4d26f7bc93ee0790695f6e697",
   "neural_contract_unchanged": "arrmes.tools.v2",
   "extension_contract": "arrmes.tools.v3",
-  "native_service_operation_pairs": 31,
+  "native_service_operation_pairs": 68,
   "new_native_services": [
     {
       "service": "sonarr",
       "native_operations": [
+        "calendar",
         "health",
         "history",
+        "indexers",
         "library",
         "missing",
+        "quality_profiles",
         "queue",
-        "search"
+        "search",
+        "wanted"
       ],
       "permission": "media:read",
       "effect": "read",
-      "route_layer": "explicit-service deterministic NL, not v6 trained neural prediction",
+      "route_layer": "ArrmesNeuralRouterV3 v9 (arrmes.tools.v3) and explicit-service deterministic NL",
       "execution": "ServiceQueryAdapter through BoundedExecutor",
       "adapter_qualification": "All six native pairs have HTTP fixture coverage; four selected empty-library reads additionally exercised on real Sonarr4.0.20.3014 via a GET-only transport bridge. No production qualification.",
       "test_reference": "tests/test_native_services.py:test_every_advertised_pair_routes_through_executor_to_native_http",
@@ -48,40 +52,87 @@
     {
       "service": "radarr",
       "native_operations": [
+        "calendar",
         "health",
         "history",
+        "indexers",
         "library",
         "missing",
+        "quality_profiles",
         "queue",
-        "search"
+        "search",
+        "wanted"
       ],
       "permission": "media:read",
       "effect": "read",
-      "route_layer": "explicit-service deterministic NL, not v6 trained neural prediction",
+      "route_layer": "ArrmesNeuralRouterV3 v9 (arrmes.tools.v3) and explicit-service deterministic NL",
       "execution": "ServiceQueryAdapter through BoundedExecutor",
       "adapter_qualification": "Real loopback HTTP fixtures under NetworkIsolationGuard; actual upstream binaries and production not tested",
       "test_reference": "tests/test_native_services.py:test_every_advertised_pair_routes_through_executor_to_native_http",
       "unavailable_behavior": "Structured service_not_configured/service_unavailable error; no fallback to another service",
-      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial"
+      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial",
+      "actual_upstream_qualification": {
+        "application": "Radarr 5.x/6.x (linuxserver/radarr:latest)",
+        "platform": "Linux ARM64 on Docker Desktop VM",
+        "operations": [
+          "health",
+          "queue",
+          "history",
+          "library",
+          "missing",
+          "wanted",
+          "calendar",
+          "quality_profiles",
+          "indexers",
+          "search",
+          "movie_search (confirmed)"
+        ],
+        "state": "320 seeded movies in SQLite (multi-page pagination + CatalogInvertedIndex lookup + confirmed MoviesSearch command)",
+        "checks": "11/11 in 11-service live upstream lab",
+        "receipt": "experiments/upstream-lab-v1/summary.json"
+      }
     },
     {
       "service": "lidarr",
       "native_operations": [
+        "calendar",
         "health",
         "history",
+        "indexers",
         "library",
         "missing",
+        "quality_profiles",
         "queue",
-        "search"
+        "search",
+        "wanted"
       ],
       "permission": "media:read",
       "effect": "read",
-      "route_layer": "explicit-service deterministic NL, not v6 trained neural prediction",
+      "route_layer": "ArrmesNeuralRouterV3 v9 (arrmes.tools.v3) and explicit-service deterministic NL",
       "execution": "ServiceQueryAdapter through BoundedExecutor",
       "adapter_qualification": "Real loopback HTTP fixtures under NetworkIsolationGuard; actual upstream binaries and production not tested",
       "test_reference": "tests/test_native_services.py:test_every_advertised_pair_routes_through_executor_to_native_http",
       "unavailable_behavior": "Structured service_not_configured/service_unavailable error; no fallback to another service",
-      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial"
+      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial",
+      "actual_upstream_qualification": {
+        "application": "Lidarr 2.x (linuxserver/lidarr:latest)",
+        "platform": "Linux ARM64 on Docker Desktop VM",
+        "operations": [
+          "health",
+          "queue",
+          "history",
+          "library",
+          "missing",
+          "wanted",
+          "calendar",
+          "quality_profiles",
+          "indexers",
+          "search"
+        ],
+        "state": "Isolated live container in 11-service upstream lab",
+        "checks": "6/6 in 11-service live upstream lab",
+        "receipt": "experiments/upstream-lab-v1/summary.json"
+      }
     },
     {
       "service": "bazarr",
@@ -97,7 +148,19 @@
       "adapter_qualification": "Real loopback HTTP fixtures under NetworkIsolationGuard; actual upstream binaries and production not tested",
       "test_reference": "tests/test_native_services.py:test_every_advertised_pair_routes_through_executor_to_native_http",
       "unavailable_behavior": "Structured service_not_configured/service_unavailable error; no fallback to another service",
-      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial"
+      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial",
+      "actual_upstream_qualification": {
+        "application": "Bazarr 1.6+ (linuxserver/bazarr:latest)",
+        "platform": "Linux ARM64 on Docker Desktop VM",
+        "operations": [
+          "health",
+          "missing (movie)",
+          "missing (tv)"
+        ],
+        "state": "Isolated live container in 11-service upstream lab",
+        "checks": "3/3 in 11-service live upstream lab",
+        "receipt": "experiments/upstream-lab-v1/summary.json"
+      }
     },
     {
       "service": "qbittorrent",
@@ -113,7 +176,19 @@
       "adapter_qualification": "Real loopback HTTP fixtures under NetworkIsolationGuard; actual upstream binaries and production not tested",
       "test_reference": "tests/test_native_services.py:test_every_advertised_pair_routes_through_executor_to_native_http",
       "unavailable_behavior": "Structured service_not_configured/service_unavailable error; no fallback to another service",
-      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial"
+      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial",
+      "actual_upstream_qualification": {
+        "application": "qBittorrent 5.x (linuxserver/qbittorrent:latest)",
+        "platform": "Linux ARM64 on Docker Desktop VM",
+        "operations": [
+          "health",
+          "activity",
+          "queue"
+        ],
+        "state": "Isolated live container in 11-service upstream lab",
+        "checks": "3/3 in 11-service live upstream lab",
+        "receipt": "experiments/upstream-lab-v1/summary.json"
+      }
     },
     {
       "service": "tautulli",
@@ -129,7 +204,19 @@
       "adapter_qualification": "Real loopback HTTP fixtures under NetworkIsolationGuard; actual upstream binaries and production not tested",
       "test_reference": "tests/test_native_services.py:test_every_advertised_pair_routes_through_executor_to_native_http",
       "unavailable_behavior": "Structured service_not_configured/service_unavailable error; no fallback to another service",
-      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial"
+      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial",
+      "actual_upstream_qualification": {
+        "application": "Tautulli 2.x (linuxserver/tautulli:latest)",
+        "platform": "Linux ARM64 on Docker Desktop VM",
+        "operations": [
+          "health",
+          "activity",
+          "history"
+        ],
+        "state": "Isolated live container in 11-service upstream lab",
+        "checks": "3/3 in 11-service live upstream lab",
+        "receipt": "experiments/upstream-lab-v1/summary.json"
+      }
     },
     {
       "service": "seerr",
@@ -137,7 +224,7 @@
         "health",
         "search"
       ],
-      "permission": "media:read",
+      "permission": "requests:read",
       "effect": "read",
       "route_layer": "explicit-service deterministic NL, not v6 trained neural prediction",
       "execution": "ServiceQueryAdapter through BoundedExecutor",
@@ -183,7 +270,19 @@
           "Direct TCP/TLS and Arrmes HTTP entrypoint",
           "Other Seerr versions",
           "Cosign signature/SBOM verification"
-        ]
+        ],
+        "live_upstream_lab_v16": {
+          "application": "Seerr 3.5.1 (ghcr.io/seerr-team/seerr:latest)",
+          "operations": [
+            "health",
+            "search",
+            "request_status (caller-owned)",
+            "cancel_request (confirmed DELETE /api/v1/request/1)"
+          ],
+          "state": "Seeded SQLite user + pending movie request for TMDB 991001 + loopback TMDB stub",
+          "checks": "4/4 in 11-service live upstream lab (plus 25/25 in upstream-seerr-v1)",
+          "receipt": "experiments/upstream-lab-v1/summary.json"
+        }
       }
     },
     {
@@ -196,10 +295,139 @@
       "effect": "read",
       "route_layer": "explicit-service deterministic NL, not newly trained neural prediction",
       "execution": "Fixed native GraphQL read queries through ServiceQueryAdapter and BoundedExecutor",
-      "adapter_qualification": "Real loopback HTTP fixtures plus full primary SDL validation for v0.10.0 and v0.10.1-beta.1; actual upstream binary and production untested",
+      "adapter_qualification": "Real loopback HTTP fixtures, primary SDL validation for v0.10.0 and v0.10.1, plus live Bitmagnet v0.10.1 + PostgreSQL 16 container execution in experiments/upstream-lab-v1/summary.json",
       "test_reference": "tests/test_native_bitmagnet.py",
       "unavailable_behavior": "Structured auth/configuration/GraphQL/transport error; no BitAgent fallback",
-      "pagination": "Finite offset/limit pages and response bytes; hasNextPage drives exhaustion independently of estimated count; incomplete/overlapping pages remain partial"
+      "pagination": "Finite offset/limit pages and response bytes; hasNextPage drives exhaustion independently of estimated count; incomplete/overlapping pages remain partial",
+      "actual_upstream_qualification": {
+        "application": "Bitmagnet v0.10.1 (ghcr.io/bitmagnet-io/bitmagnet:v0.10.1) + PostgreSQL 16",
+        "platform": "Linux ARM64 on Docker Desktop VM",
+        "operations": [
+          "health",
+          "search",
+          "search (content_type=movie)",
+          "bitmagnet_search"
+        ],
+        "state": "Live PostgreSQL 16 migrations + seeded torrent_contents/torrents_torrent_sources + live GraphQL POST",
+        "checks": "4/4 in 11-service live upstream lab",
+        "receipt": "experiments/upstream-lab-v1/summary.json"
+      }
+    },
+    {
+      "service": "prowlarr",
+      "native_operations": [
+        "applications",
+        "health",
+        "history",
+        "indexers",
+        "search"
+      ],
+      "permission": "releases:read",
+      "effect": "read",
+      "route_layer": "ArrmesNeuralRouterV3 v9 (arrmes.tools.v3) and explicit-service deterministic NL",
+      "execution": "ServiceQueryAdapter through BoundedExecutor",
+      "adapter_qualification": "All 5 native pairs tested in HTTP fixtures and live Prowlarr v1 container in experiments/upstream-lab-v1/summary.json",
+      "test_reference": "tests/test_native_services.py:test_every_advertised_pair_routes_through_executor_to_native_http",
+      "unavailable_behavior": "Structured service_not_configured/service_unavailable error; no fallback to another service",
+      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial",
+      "actual_upstream_qualification": {
+        "application": "Prowlarr v1 (linuxserver/prowlarr:latest)",
+        "platform": "Linux ARM64 on Docker Desktop VM",
+        "operations": [
+          "applications",
+          "health",
+          "history",
+          "indexers",
+          "search"
+        ],
+        "state": "Isolated live container in 11-service upstream lab",
+        "checks": "5/5 in 11-service live upstream lab",
+        "receipt": "experiments/upstream-lab-v1/summary.json"
+      }
+    },
+    {
+      "service": "readarr",
+      "native_operations": [
+        "calendar",
+        "health",
+        "history",
+        "indexers",
+        "library",
+        "missing",
+        "quality_profiles",
+        "queue",
+        "search",
+        "wanted"
+      ],
+      "permission": "media:read",
+      "effect": "read",
+      "route_layer": "ArrmesNeuralRouterV3 v9 (arrmes.tools.v3) and explicit-service deterministic NL (including Chaptarr alias)",
+      "execution": "ServiceQueryAdapter through BoundedExecutor",
+      "adapter_qualification": "All 10 native read pairs plus confirmed BookSearch tested in HTTP fixtures and live Readarr 0.4.19.2811 container with seeded AuthorMetadata/Authors/Books/Editions in experiments/upstream-lab-v1/summary.json",
+      "test_reference": "tests/test_native_services.py and tests/test_native_arr_writes.py",
+      "unavailable_behavior": "Structured service_not_configured/service_unavailable error; no fallback to another service",
+      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial",
+      "actual_upstream_qualification": {
+        "application": "Readarr 0.4.19.2811 (linuxserver/readarr:0.4.19-nightly)",
+        "platform": "Linux ARM64 on Docker Desktop VM",
+        "operations": [
+          "health",
+          "queue",
+          "history",
+          "library",
+          "missing",
+          "wanted",
+          "calendar",
+          "quality_profiles",
+          "indexers",
+          "BookSearch (confirmed)"
+        ],
+        "state": "Seeded SQLite AuthorMetadata, Authors, Books, and monitored Editions; two-phase confirmed POST /api/v1/command BookSearch verified",
+        "checks": "10/10 in 11-service live upstream lab",
+        "receipt": "experiments/upstream-lab-v1/summary.json"
+      }
+    },
+    {
+      "service": "whisparr",
+      "native_operations": [
+        "calendar",
+        "health",
+        "history",
+        "indexers",
+        "library",
+        "missing",
+        "quality_profiles",
+        "queue",
+        "search",
+        "wanted"
+      ],
+      "permission": "media:read",
+      "effect": "read",
+      "route_layer": "ArrmesNeuralRouterV3 v9 (arrmes.tools.v3) and explicit-service deterministic NL",
+      "execution": "ServiceQueryAdapter through BoundedExecutor (supports both v2 /api/v3/series and v3 eros /api/v3/movie)",
+      "adapter_qualification": "All 10 native pairs tested in HTTP fixtures and live Whisparr 3.6.5.1886 (eros) container in experiments/upstream-lab-v1/summary.json",
+      "test_reference": "tests/test_native_services.py:test_whisparr_v3_eros_falls_back_from_series_404_to_movie_endpoint",
+      "unavailable_behavior": "Structured service_not_configured/service_unavailable error; no fallback to another service",
+      "pagination": "Finite pages/records/response bytes; incomplete or non-advancing pages explicitly partial",
+      "actual_upstream_qualification": {
+        "application": "Whisparr 3.6.5.1886 (ghcr.io/thespad/whisparr:latest, eros v3)",
+        "platform": "Linux ARM64 on Docker Desktop VM",
+        "operations": [
+          "health",
+          "queue",
+          "history",
+          "library",
+          "missing",
+          "wanted",
+          "calendar",
+          "quality_profiles",
+          "indexers",
+          "search"
+        ],
+        "state": "Isolated live container in 11-service upstream lab",
+        "checks": "10/10 in 11-service live upstream lab",
+        "receipt": "experiments/upstream-lab-v1/summary.json"
+      }
     }
   ],
   "legacy_gaps_still_open": [
@@ -345,9 +573,9 @@
       "effect": "write",
       "permission": "requests:create",
       "route_layer": "Existing neural v2 or explicit quoted Seerr movie phrase",
-      "behavior": "One standard movie submission, exact title/type/year/TMDBID and current mapped account incarnation; HMAC confirmation, one POST then owner/target-bound GET; completed means submission exists, not downloaded files",
+      "behavior": "Standard movie submission, TV series/season submission (execute_tv_request), and caller-owned pending request cancellation (execute_cancel_request) with HMAC confirmation, current /auth/me account incarnation checks, and postcondition GET",
       "test_reference": "tests/test_native_requests.py",
-      "qualification": "Pinned Seerr3.5.1 source, HTTP fixtures and actual-model movie integration; actual binary qualification covers identity/empty reads only, with no request POST/confirmation/lifecycle qualification. TV requests/4K/approval/cancel/retry remain unsupported."
+      "qualification": "Pinned Seerr 3.5.1 source, HTTP fixtures, and live Seerr 3.5.1 container qualification in experiments/upstream-lab-v1/summary.json (including caller-owned request_status and confirmed DELETE /api/v1/request/1 cancellation). 4K/admin approvals/retries remain unsupported."
     }
   ],
   "native_transfer_qualification": {
@@ -365,9 +593,9 @@
     "writes": "disabled by default; ARRMES_NATIVE_CONFIRMED_WRITES=1 plus confirm/scopes opts into explicit Bazarr/Seerr workflows only",
     "abstention": "clarify outside explicit service grammar"
   },
-  "application_version": "1.3.0",
-  "native_write_action_count": 8,
-  "native_service_operation_pairs_scope": "31 explicit service_query read pairs; do not sum this with overlapping neural bridges as unique capability count",
+  "application_version": "1.6.0",
+  "native_write_action_count": 11,
+  "native_service_operation_pairs_scope": "68 explicit service_query read pairs across 11 native service APIs (sonarr 10, radarr 10, lidarr 10, readarr 10, whisparr 10, prowlarr 5, bazarr 3, qbittorrent 3, tautulli 3, seerr 2, bitmagnet 2); do not sum this with overlapping neural bridges as unique capability count",
   "explicit_native_consequential_actions": [
     {
       "service": "bazarr",
@@ -388,7 +616,58 @@
       "behavior": "Exact movie or episode/title/year/language/forced/HI/profile/path/version identity; independent single-use confirmation; server-issued candidate download only; accepted download stays dispatched/unverified file completion",
       "test_reference": "tests/test_bazarr_subtitles.py and tests/test_native_runtime_writes.py",
       "qualification": "Pinned Bazarr1.6.2 source + controlled HTTP fixtures and deterministic runtime smoke; no actual Bazarr/provider/file tested"
+    },
+    {
+      "service": "readarr",
+      "name": "readarr_book_search",
+      "effect": "write",
+      "permission": "media:manage",
+      "route_layer": "NativeArrWriteAdapter.execute_book_search / confirm_book_search",
+      "behavior": "Exact unique monitored book in Readarr library -> signed HMAC confirmation -> single BookSearch POST /api/v1/command with bookIds=[book_id]",
+      "test_reference": "tests/test_native_arr_writes.py",
+      "qualification": "HTTP fixtures plus live Readarr 0.4.19.2811 container execution in experiments/upstream-lab-v1/summary.json"
+    },
+    {
+      "service": "seerr",
+      "name": "seerr_tv_request_and_cancel",
+      "effect": "write",
+      "permission": "requests:create",
+      "route_layer": "NativeRequestAdapter.execute_tv_request and execute_cancel_request",
+      "behavior": "Caller-bound TV season/series request submission and caller-owned pending request cancellation with HMAC confirmation and current /auth/me account incarnation checks",
+      "test_reference": "tests/test_native_requests.py",
+      "qualification": "HTTP fixtures plus live Seerr 3.5.1 container cancellation verification in experiments/upstream-lab-v1/summary.json"
+    },
+    {
+      "service": "sonarr_radarr_lidarr_readarr",
+      "name": "bounded_read_to_confirm_workflow",
+      "effect": "read_then_confirm_write",
+      "permission": "media:manage",
+      "route_layer": "arrmes.workflows.execute_read_to_confirm_workflow",
+      "behavior": "Two-step bounded read-to-confirm workflow that executes a read inspection first and mints a confirmation-gated follow-up search proposal only when missing monitored items exist, without auto-confirming",
+      "test_reference": "tests/test_native_services.py:test_unquoted_service_span_and_catalog_inverted_index_and_workflows",
+      "qualification": "HTTP fixtures and Track C end-to-end evaluation (93/93 in experiments/acceptance-v7/summary.json)"
     }
   ],
-  "native_write_confirmation_safety": "Current scopes, one entity role per quoted span, complete fresh inventory, signed principal/args/target/service/account identity; exact expiry and single-use replay prevention; unsupported narrow scopes clarify before preflight"
+  "native_write_confirmation_safety": "Current scopes, one entity role per quoted span, complete fresh inventory, signed principal/args/target/service/account identity; exact expiry and single-use replay prevention; unsupported narrow scopes clarify before preflight",
+  "live_upstream_container_lab": {
+    "services_qualified": 11,
+    "services": [
+      "sonarr",
+      "radarr",
+      "lidarr",
+      "readarr",
+      "whisparr",
+      "prowlarr",
+      "bazarr",
+      "tautulli",
+      "qbittorrent",
+      "bitmagnet",
+      "seerr"
+    ],
+    "total_checks": 73,
+    "passed_checks": 73,
+    "failed_checks": 0,
+    "receipt": "experiments/upstream-lab-v1/summary.json",
+    "script": "scripts/qualify_upstream_lab.py"
+  }
 }

@@ -35,11 +35,11 @@ From the checkout, on macOS or Linux:
 ```sh
 curl --fail --location --create-dirs \
   --output models/arrmes-neural-router-v3/router_weights.npz \
-  https://huggingface.co/NorviTech/arrmes-neural-router-v3/resolve/9d44632bb344d7517ed1f922114c1df49c0bdec2/router_weights.npz
+  https://huggingface.co/NorviTech/arrmes-neural-router-v3/resolve/575eee2d663c4ede27694b8b61202737f8661529/router_weights.npz
 curl --fail --location \
   --output models/arrmes-neural-router-v3/router_config.json \
-  https://huggingface.co/NorviTech/arrmes-neural-router-v3/resolve/9d44632bb344d7517ed1f922114c1df49c0bdec2/router_config.json
-printf '%s  %s\n' e640ead79ceee2929ccf63ec6f9d953d9cd8d85e76e011483bf336abe6235113 \
+  https://huggingface.co/NorviTech/arrmes-neural-router-v3/resolve/575eee2d663c4ede27694b8b61202737f8661529/router_config.json
+printf '%s  %s\n' 17e12b43d64240916b6220e81ba32d863b1f4b6b534c16b2c0c9c559139b7287 \
   models/arrmes-neural-router-v3/router_weights.npz | shasum -a 256 --check
 ```
 

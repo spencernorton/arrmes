@@ -630,3 +630,30 @@ def test_unquoted_service_span_and_catalog_inverted_index_and_workflows():
     # 4. Bounded read-to-confirm workflow
     steps = build_read_to_confirm_steps(Call("tv_missing", {"title": "Severance"}), season=1)
     assert len(steps) == 2
+
+
+def test_whisparr_v3_eros_falls_back_from_series_404_to_movie_endpoint():
+    from arrmes.services.native import _UpstreamError
+    adapter = ServiceQueryAdapter({"whisparr": ServiceConfig("https://fixture.test")})
+    paths_called = []
+
+    def fake_get(_service, path, audit, **kwargs):
+        paths_called.append(path)
+        if path == "/api/v3/series" or path.startswith("/api/v3/series/lookup"):
+            audit.append({"method": "GET", "path": path, "status": 404, "attempt": 1})
+            raise _UpstreamError("service_api_version_or_route_unsupported", 404)
+        audit.append({"method": "GET", "path": path, "status": 200, "attempt": 1})
+        if path == "/api/v3/movie":
+            return [{"id": 101, "title": "Eros Scene 101", "year": 2026}]
+        if path.startswith("/api/v3/movie/lookup"):
+            return [{"id": 102, "title": "Eros Lookup 102", "year": 2026}]
+        return []
+
+    adapter._get = fake_get
+    with NetworkIsolationGuard():
+        obs_lib = adapter.execute(Call("service_query", {"service": "whisparr", "operation": "library"}), OWNER)
+        obs_lkp = adapter.execute(Call("service_query", {"service": "whisparr", "operation": "search", "query": "Eros"}), OWNER)
+    assert obs_lib.verified_complete and obs_lib.data["items"][0]["title"] == "Eros Scene 101"
+    assert obs_lkp.verified_complete and obs_lkp.data["items"][0]["title"] == "Eros Lookup 102"
+    assert "/api/v3/series" in paths_called and "/api/v3/movie" in paths_called
+    assert any(p.startswith("/api/v3/series/lookup") for p in paths_called) and any(p.startswith("/api/v3/movie/lookup") for p in paths_called)

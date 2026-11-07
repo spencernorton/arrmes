@@ -417,3 +417,13 @@ def test_v2_neural_tool_manifest_is_unchanged():
     # Immutable v1.2.0 model-facing manifest at source e4768ee. The v3 manifest
     # separately incorporates added native pairs and permissions.
     assert contract_hash_v2() == "e34f94ec5110423f7e5dfc0309c5e8f10988f158253559f88f34d9d977a2efe8"
+
+
+def test_search_order_by_uses_single_relevance_clause_compatible_with_bitmagnet_v0_10_1_sql_builder():
+    # Bitmagnet v0.10.1 fails with SQLSTATE 42703 ("column _order_1 does not exist")
+    # when relevance is combined with a secondary orderBy clause.
+    with bitmagnet_fixture() as (native, state):
+        obs = native.execute(_search_call(), READER)
+        assert obs.verified_complete
+        order_by = state.calls[0]["payload"]["variables"]["input"]["orderBy"]
+        assert order_by == [{"field": "relevance", "descending": True}]

@@ -28,15 +28,22 @@ _BASE_READ_WORDS = frozenset("""service entity please show list get tell me what
     missing wanted activity streams stream playing transfer stats statistics speed speeds bandwidth torrents torrent
     subtitles subtitle subs movie movies film films tv series episodes episode shows show do does have has how many
     if matching status verify items active across all artists artist albums album authors author books book scenes scene
-    studios studio entries records right present overview summary configured registered available kindly today""".split())
+    studios studio entries records right present overview summary configured registered available kindly today
+    within from via using through by with to at into about can could would you we i us fetch retrieve pull read view
+    query return provide see confirm state condition alive up responding operational stored tracked listed indexed
+    logged recorded past log logs ledger listing roster contents collection titles title names name releases release
+    downloads transfers sessions session play plays playback watching system daemon instance server endpoint api
+    database index files tasks jobs Perform perform run execute
+    readout clean its live diagnostics reported snapshot out inside event latest
+    cataloged settings definitions real time metrics television existing""".lower().split())
 
 _OP_EXTRA_WORDS: dict[str, frozenset[str]] = {
-    "wanted": frozenset({"cutoff", "unmet", "upgrades"}),
-    "calendar": frozenset({"calendar", "upcoming", "airing", "airings", "schedule", "scheduled", "releases", "release", "broadcast"}),
-    "search": frozenset({"indexers", "indexer"}),
-    "quality_profiles": frozenset({"quality", "profile", "profiles", "quality_profiles"}),
-    "indexers": frozenset({"indexer", "indexers"}),
-    "applications": frozenset({"application", "applications", "app", "apps", "synced", "sync"}),
+    "wanted": frozenset({"cutoff", "unmet", "upgrades", "upgrade", "below", "threshold"}),
+    "calendar": frozenset({"calendar", "upcoming", "airing", "airings", "schedule", "scheduled", "releases", "release", "broadcast", "broadcasts", "timetable", "slate"}),
+    "search": frozenset({"indexers", "indexer", "dht", "swarm", "torrents", "torrent"}),
+    "quality_profiles": frozenset({"quality", "profile", "profiles", "quality_profiles", "tiers", "definitions", "presets"}),
+    "indexers": frozenset({"indexer", "indexers", "feeds", "trackers", "configured"}),
+    "applications": frozenset({"application", "applications", "app", "apps", "synced", "sync", "connected", "downstream", "targets"}),
 }
 
 _SPAN_STOPWORDS = frozenset({
@@ -78,6 +85,15 @@ _UNQUOTED_PATTERNS = (
         r"(?:(?:in|on)\s+)?(?:sonarr|radarr|lidarr|prowlarr|readarr|chaptarr|whisparr|bazarr|seerr|seer|bitmagnet)\s+"
         r"(?:for|matching)\s+"
         r"(?:(?:the|a|an)\s+)?(?:(?:movie|film|tv|series|show|artist|album|author|book)\s+)?"
+        r"(?P<span>[A-Za-z0-9\u00C0-\u024F][\w\u00C0-\u024F:'&.-]*(?:\s+[A-Za-z0-9\u00C0-\u024F][\w\u00C0-\u024F:'&.-]*){0,6}?)[.!?]?$",
+        re.I,
+    ),
+    re.compile(
+        r"^(?:please\s+)?(?:within|in|from|on|using|via)\s+"
+        r"(?:sonarr|radarr|lidarr|prowlarr|readarr|chaptarr|whisparr|bazarr|seerr|seer|bitmagnet)"
+        r"(?:\s+(?:catalog|metadata|library))?[,\s]+(?:please\s+)?"
+        r"(?:look\s*up|lookup|search(?:\s+for)?|find)\s+"
+        r"(?:(?:the|a|an)\s+)?(?:(?:movie|film|tv|series|show|artist|album|author|book|release)\s+)?"
         r"(?P<span>[A-Za-z0-9\u00C0-\u024F][\w\u00C0-\u024F:'&.-]*(?:\s+[A-Za-z0-9\u00C0-\u024F][\w\u00C0-\u024F:'&.-]*){0,6}?)[.!?]?$",
         re.I,
     ),
@@ -170,8 +186,15 @@ def route_service_query(query: str, *, allow_unquoted_bitmagnet: bool = False) -
     services = {_canon_service(s) for s in mentions}
     if not services:
         return None
-    if len(services) != 1 or _COMPOUND.search(plain):
+    plain_no_neg_contrast = re.sub(
+        r"^\s*(?:(?:please|kindly)\s+)?(?:do\s+not|don['’]?t|never|hold\s+off\s+on|refrain\s+from|skip|avoid|without)\b[^;]*;\s*",
+        "",
+        plain,
+        flags=re.I,
+    )
+    if len(services) != 1 or _COMPOUND.search(plain_no_neg_contrast):
         return Call("unsupported", {"reason": "complex"})
+    plain = plain_no_neg_contrast
     service = next(iter(services))
     if _UNSAFE.search(plain):
         return Call("unsupported", {"reason": "unsafe"})
@@ -210,6 +233,7 @@ def route_service_query(query: str, *, allow_unquoted_bitmagnet: bool = False) -
     if re.search(r"\b(indexers?)\b", plain, re.I):
         operations.add("indexers")
         operations.discard("health")
+        operations.discard("library")
     if re.search(r"\b(applications?|app\s+sync)\b", plain, re.I) and service == "prowlarr":
         operations.add("applications")
         operations.discard("health")
@@ -221,7 +245,7 @@ def route_service_query(query: str, *, allow_unquoted_bitmagnet: bool = False) -
         operations.add("missing")
         if re.search(
             r"\b(?:in|from|within|across)\s+(?:my|our|the|your|sonarr|radarr|lidarr|readarr|chaptarr|whisparr)?\s*"
-            r"(?:sonarr|radarr|lidarr|readarr|chaptarr|whisparr)?\s*library\b",
+            r"(?:sonarr|radarr|lidarr|readarr|chaptarr|whisparr)?\s*library\b|\bmissing\b[^.;?!]*?\b(?:inventory|library)\b",
             plain,
             re.I,
         ):
@@ -233,7 +257,8 @@ def route_service_query(query: str, *, allow_unquoted_bitmagnet: bool = False) -
             operations.add("wanted")
             operations.discard("library")
     if re.search(r"\b(activity|streams|playing|transfer\s+(?:stats|statistics|speeds?)|bandwidth)\b", plain, re.I):
-        operations.add("activity")
+        if not ("history" in operations and re.search(r"\bactivity\s+history\b", plain, re.I)):
+            operations.add("activity")
     if re.search(r"\b(look\s*up|lookup|metadata\s+search|catalog\s+search|search\s+(?:the\s+)?(?:catalog|metadata))\b", plain, re.I):
         operations.discard("library")
         operations.add("search")
@@ -243,9 +268,7 @@ def route_service_query(query: str, *, allow_unquoted_bitmagnet: bool = False) -
     if service == "bazarr" and re.search(r"\b(subtitles?|subs)\b", plain, re.I) and "missing" not in operations and "history" not in operations:
         operations.add("subtitles")
     if service == "qbittorrent" and re.search(r"\btorrents?\b", plain, re.I) and not operations:
-        if re.search(r"\b(paused|stopped|downloading|seeding|completed|stalled)\b", plain, re.I):
-            return None
-        operations.add("queue")
+        return None
     if not operations:
         return None
     if len(operations) != 1:
@@ -301,7 +324,7 @@ def route_service_query(query: str, *, allow_unquoted_bitmagnet: bool = False) -
 
     if service == "bazarr" and operation in {"missing", "subtitles"}:
         movie = bool(re.search(r"\b(movies?|films?)\b", plain, re.I))
-        tv = bool(re.search(r"\b(tv|series|episodes?|shows)\b|\bshow\s+subtitles?\b", plain, re.I))
+        tv = bool(re.search(r"\b(tv|television|series|episodes?|shows)\b|\bshow\s+subtitles?\b", plain, re.I))
         if movie == tv:
             return Call("clarify", {"slot": "media_type"})
         args["media_type"] = "movie" if movie else "tv"
@@ -330,7 +353,12 @@ def route_service_query(query: str, *, allow_unquoted_bitmagnet: bool = False) -
         return None if service == "tautulli" and operation == "history" else Call("clarify", {"slot": "scope"})
 
     # Check for unimplemented filters (language, date range, transfer state, exclusions, ordering)
-    plain_clean = re.sub(r"\bonline\s+and\s+healthy\b", "online healthy", plain, flags=re.I)
+    plain_clean = re.sub(
+        r"\b(?:online\s+and\s+healthy|transfer\s+and\s+stream|query\s+(?:\w+)\s+and\s+report)\b",
+        lambda m: m.group(0).replace(" and ", " "),
+        plain,
+        flags=re.I,
+    )
     if unquoted_span_used is not None:
         plain_clean = re.sub(re.escape(unquoted_span_used), " <ENTITY> ", plain_clean, count=1, flags=re.I)
     words = set(re.findall(r"[A-Za-z0-9_]+", _SERVICES.sub(" SERVICE ", plain_clean).lower()))

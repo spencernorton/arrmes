@@ -57,22 +57,22 @@ and [Docker](docs/portable-runtime.md#linux-containers) setup.
 
 ## Benchmarks
 
-Recorded neural-router and system results on the locked `acceptance-v6` (`N=2,580`) and retired `dev-v6` (`acceptance-v5`, `N=2,460`) suites:
+Recorded neural-router, unassisted generative MLX, and system results on the template-skeleton-disjoint `acceptance-v7` (`N=2,580`) and historical suites:
 
-- **Locked `acceptance-v6` positive calls (`v3` contract, 276 clusters):** `1,380 / 1,380` (`100.00%` Track A raw and Track B verified; 95% Wilson LB `99.72%`, 95% cluster-bootstrap LB `100.00%`).
-- **Locked `acceptance-v6` positive calls (`v2` contract, 212 clusters):** `1,060 / 1,060` (`100.00%` Track A raw and Track B verified; 95% Wilson LB `99.64%`, 95% cluster-bootstrap LB `100.00%`).
-- **Locked `acceptance-v6` hard-negative & safety cases (240 clusters):** `1,200 / 1,200` (`100.00%` Track A raw and Track B verified; `0` damaged raw predictions, `0` unauthorized writes).
-- **Retired `dev-v6` (`acceptance-v5`) positive calls:** `1,260 / 1,260` (`100.00%`, eliminating all 3 residual misses from `v1.4.4`).
+- **Locked `acceptance-v7` positive calls (`v3` contract, 276 clusters, 0 template-skeleton overlap):** `1,380 / 1,380` (`100.00%` Track A raw and Track B verified; 95% Wilson LB `99.72%`, 95% cluster-bootstrap LB `100.00%`).
+- **Locked `acceptance-v7` positive calls (`v2` contract, 212 clusters):** `1,060 / 1,060` (`100.00%` Track A raw and Track B verified; 95% Wilson LB `99.64%`, 95% cluster-bootstrap LB `100.00%`).
+- **Locked `acceptance-v7` hard-negative & safety cases (240 clusters):** `1,200 / 1,200` (`100.00%` Track A raw and Track B verified; `0` damaged raw predictions, `0` unauthorized writes).
+- **Unassisted `Qwen3-0.6B v9` mixed-precision QLoRA (`LocalModel`, `mlx-lm`):** `138 / 150` (`92.0%` Track A raw) and `147 / 150` (`98.0%` Track B verified) on `acceptance-v7` `v2` positives; `67 / 150` (`44.7%` Track A raw) and `141 / 150` (`94.0%` Track B verified) on hard negatives; `64 / 80` (`80.0%` raw) and `72 / 80` (`90.0%` verified) on `overnight-v1`.
 - **Track C end-to-end execution workflows (HTTP fixtures):** `93 / 93` (`100.00%` across `v2` reads/writes, all `68` native `service_query` pairs, Readarr book search, Seerr TV season request/cancellation, and bounded read-to-confirm workflows).
-- **Upstream Docker container binary qualification (`experiments/upstream-lab-v1/summary.json`):** `45 / 45` (`100.00%` live checks against official Sonarr v4, Radarr v5/v6 with 320 seeded multi-page movies, Lidarr v2, Prowlarr v1, Bazarr 1.6+, Tautulli v2, and qBittorrent v5 container binaries on an isolated loopback bridge).
+- **11-service live upstream Docker container binary qualification (`experiments/upstream-lab-v1/summary.json`):** `73 / 73` (`100.00%` live checks across official Sonarr v4, Radarr v5/v6 with 320 seeded movies + confirmed `MoviesSearch`, Lidarr v2, Readarr 0.4.19 with seeded author/book + confirmed `BookSearch`, Whisparr 3.6.5 v3 `eros`, Prowlarr v1, Bazarr 1.6+, Tautulli v2, qBittorrent v5, Bitmagnet v0.10.1 + PostgreSQL 16 GraphQL search, and Seerr 3.5.1 with caller-owned status and confirmed request cancellation).
 
-![Model accuracy and generative/router convergence across locked acceptance-v6 and historical benchmarks](docs/figures/arrmes-model-accuracy-comparison.png)
+![Model accuracy across template-disjoint acceptance-v7 and unassisted MLX QLoRA v9](docs/figures/arrmes-model-accuracy-comparison.png)
 
-[Recorded `acceptance-v6` scores](experiments/acceptance-v6/summary.json) and [MLX LoRA v8 provenance](experiments/mlx-lora-v8-provenance.json) report Track A direct model output separately from Track B verified system proposals and explicit deterministic routes.
+[Recorded `acceptance-v7` scores](experiments/acceptance-v7/summary.json) and [MLX LoRA v9 provenance](experiments/mlx-lora-v9-provenance.json) report Track A direct unmodified model output separately from Track B verified system proposals and explicit deterministic routes.
 
 ![Warm routing latency, 5,000-movie CatalogInvertedIndex lookup throughput, and model footprint](docs/figures/arrmes-local-runtime-comparison.png)
 
-[Recorded runtime profiles](experiments/runtime-profile-v8.json): `0.597 ms` warm p50 / `0.885 ms` warm p95 routing + verification on Apple M4 Pro (`7.52 MiB` weights), and `1.17 us` p50 title lookup across a 5,000-movie library via `CatalogInvertedIndex` (`22,495.7x` faster than linear scan).
+[Recorded runtime profiles](experiments/runtime-profile-v9.json): `0.678 ms` warm p50 / `0.998 ms` warm p95 routing + verification on Apple M4 Pro (`7.50 MiB` weights), and `0.96 us` p50 title lookup across a 5,000-movie library via `CatalogInvertedIndex` (`28,200x` faster than linear scan).
 
 ## Documentation
 

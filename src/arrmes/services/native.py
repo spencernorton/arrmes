@@ -162,6 +162,8 @@ def _validated_rows(service: str, operation: str, rows: list[dict[str, Any]], *,
                     provider = row["author"].get("foreignAuthorId")
                 if service == "readarr" and provider is None:
                     provider = row.get("foreignBookId")
+                if service == "whisparr" and provider is None:
+                    provider = row.get("tmdbId") or row.get("foreignId")
                 is_str_provider = service in {"lidarr", "readarr"}
                 valid_provider = _text(provider) if is_str_provider else _id(provider)
                 provider_shape = provider is None or (isinstance(provider, str) if is_str_provider else _id(provider, zero=True))
@@ -172,9 +174,12 @@ def _validated_rows(service: str, operation: str, rows: list[dict[str, Any]], *,
             elif operation == "history":
                 valid = _id(row.get("id")) and _display(row)
             elif operation in {"missing", "wanted"} and service in {"sonarr", "whisparr"}:
-                valid = (_id(row.get("id")) and _id(row.get("seriesId"))
-                         and _id(row.get("seasonNumber"), zero=True) and _id(row.get("episodeNumber"), zero=True)
-                         and (row.get("title") is None or isinstance(row.get("title"), str)))
+                valid = (
+                    (_id(row.get("id")) and _id(row.get("seriesId"))
+                     and _id(row.get("seasonNumber"), zero=True) and _id(row.get("episodeNumber"), zero=True)
+                     and (row.get("title") is None or isinstance(row.get("title"), str)))
+                    or (service == "whisparr" and _id(row.get("id")) and _text(row.get("title")))
+                )
             elif operation in {"missing", "wanted"}:
                 valid = _id(row.get("id")) and _text(row.get("title"))
                 if service == "lidarr":
@@ -496,7 +501,13 @@ class ServiceQueryAdapter:
         else:
             suffix = ("/lookup?" + urllib.parse.urlencode({"term": args["query"]}, quote_via=urllib.parse.quote)
                       if op == "search" else "")
-            all_rows = _rows(self._get(service, root + "/" + entity + suffix, audit))
+            try:
+                all_rows = _rows(self._get(service, root + "/" + entity + suffix, audit))
+            except _UpstreamError as exc:
+                if service == "whisparr" and exc.status == 404:
+                    all_rows = _rows(self._get(service, root + "/movie" + suffix, audit))
+                else:
+                    raise
             _validated_rows(service, op, all_rows)
             if op == "library" and (args.get("query") or args.get("monitored") is not None):
                 # Scan the full in-budget library before applying query/monitored filter in _result
