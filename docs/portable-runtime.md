@@ -129,24 +129,11 @@ Set `ARRMES_BACKEND=llama-server`, `ARRMES_MODEL_PATH` to the fused GGUF,
 Do not pass an MLX adapter path alongside GGUF: it must already contain the
 chosen adapter, and the factory rejects an unfused extra adapter.
 
-The reviewed experimental GGUF is now a separate
-[release asset](https://github.com/spencernorton/arrmes/releases/download/v1.2.0/arrmes-qwen3-0.6b-public-8a9bcf-cpu-q4_k_m.gguf).
-It is 396,704,352 bytes, with SHA-256
+Export a fused GGUF using the [conversion recipe](#exact-model-portability-recipe),
+or use a model you have already exported and verified. The experimental
+396,704,352-byte Q4_K_M artifact used in the historical tests is currently
+unavailable from GitHub Releases. Its recorded SHA-256 is
 `c7d6f1eef1eb4cd0f93769dadca7e270f3c3d470cfb542240733859c7d02f255`.
-Get the accompanying MODEL-LICENSE.txt, NOTICE.txt, documentation ZIP and
-SHA256SUMS from the [same release](https://github.com/spencernorton/arrmes/releases/tag/v1.2.0).
-The model is Apache-2.0; application/tooling licenses are separate. Preserve the
-notices when redistributing. The artifact uses the actual public float32 LoRA,
-not the different retained research checkpoint. It is an experimental
-conversion with measured, non-identical predictions; it is not a new training.
-
-For example, on Linux or macOS, download to a new local file and verify it:
-
-```sh
-curl --fail --location --output arrmes-q4.gguf \
-  https://github.com/spencernorton/arrmes/releases/download/v1.2.0/arrmes-qwen3-0.6b-public-8a9bcf-cpu-q4_k_m.gguf
-printf '%s  %s\n' c7d6f1eef1eb4cd0f93769dadca7e270f3c3d470cfb542240733859c7d02f255 arrmes-q4.gguf | shasum -a 256 --check
-```
 
 Model-file size is not a RAM requirement. The [measurements](#evidence-and-limits)
 depend on backend, context and hardware; Windows memory remains unmeasured.
@@ -170,9 +157,9 @@ cmake --build llama.cpp/build --target llama-server llama-quantize -j 2
 ```
 
 Point `--llama-server` to the resulting executable if it is not on `PATH`.
-Supply the separate hash-checked GGUF above, or export your own. The Hugging
-Face Arrmes repository supplies an MLX LoRA rather than an interchangeable
-native GGUF. The conversion recipe below produces revision-specific artifacts.
+Supply a fused, hash-checked GGUF. The Hugging Face Arrmes repository
+provides the MLX LoRA used by the conversion recipe, which produces
+revision-specific artifacts.
 
 ```sh
 .venv/bin/python -m arrmes route --backend llama-server --family hermes \

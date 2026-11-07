@@ -44,12 +44,12 @@ runs with two CPU threads, one slot and a 4,096-token context, then uploads only
 its JSON evidence for 30 days. Model and runtime downloads are temporary runner
 files, not source-controlled assets.
 
-Run it only after artifact-specific release review accepts and publishes the exact model artifact
-with its Apache-2.0 license, modification notice and manifest. At preparation,
-this workflow has not run and there is no new Windows generation result.
-A future green execution qualifies its recorded hosted runner environment;
-it does not qualify owned Windows hardware or NVIDIA acceleration. The existing
-Windows compile/`--version` job remains a separate check.
+The [November 2 hosted run](windows-cpu-qualification.md) passed with the
+exact model artifact. The GitHub release currently has no downloadable copy,
+so a fresh hosted run requires a reviewed public URL for the same SHA-256.
+The hosted result covers the recorded Windows runner. The Windows native
+build job remains a separate check.
+
 
 ## Artifact inspection
 
