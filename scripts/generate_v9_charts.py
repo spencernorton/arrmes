@@ -13,29 +13,34 @@ import struct
 from pathlib import Path
 from typing import Any
 
-import matplotlib
-matplotlib.use("Agg")
-import matplotlib.pyplot as plt
-import numpy as np
-
 ROOT_DIR = Path(__file__).resolve().parents[1]
 FIG_DIR = ROOT_DIR / "docs" / "figures"
 FIG_DIR.mkdir(parents=True, exist_ok=True)
 
-plt.rcParams.update({
-    "font.family": "sans-serif",
-    "font.sans-serif": ["DejaVu Sans", "Arial", "Helvetica"],
-    "axes.edgecolor": "#CBD5E1",
-    "axes.linewidth": 0.9,
-    "axes.spines.top": False,
-    "axes.spines.right": False,
-    "grid.color": "#CBD5E1",
-    "grid.linestyle": "--",
-    "grid.alpha": 0.55,
-    "figure.facecolor": "#FFFFFF",
-    "axes.facecolor": "#FFFFFF",
-    "savefig.facecolor": "#FFFFFF",
-})
+try:
+    import matplotlib
+    matplotlib.use("Agg")
+    import matplotlib.pyplot as plt
+    import numpy as np
+
+    plt.rcParams.update({
+        "font.family": "sans-serif",
+        "font.sans-serif": ["DejaVu Sans", "Arial", "Helvetica"],
+        "axes.edgecolor": "#CBD5E1",
+        "axes.linewidth": 0.9,
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+        "grid.color": "#CBD5E1",
+        "grid.linestyle": "--",
+        "grid.alpha": 0.55,
+        "figure.facecolor": "#FFFFFF",
+        "axes.facecolor": "#FFFFFF",
+        "savefig.facecolor": "#FFFFFF",
+    })
+except ImportError:  # pragma: no cover - minimal CI environments without matplotlib
+    matplotlib = None  # type: ignore[assignment]
+    plt = None  # type: ignore[assignment]
+    np = None  # type: ignore[assignment]
 
 
 def _strip_png_metadata(png_path: Path) -> None:
