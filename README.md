@@ -2,9 +2,11 @@
 
 Local control for your self-hosted media stack.
 
-[![CI](https://github.com/spencernorton/arrmes/actions/workflows/ci.yml/badge.svg)](https://github.com/spencernorton/arrmes/actions/workflows/ci.yml)
-[![Release](https://img.shields.io/github/v/tag/spencernorton/arrmes?label=release&sort=semver)](https://github.com/spencernorton/arrmes/tags)
-[![MIT](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
+[![CI](https://github.com/spencernorton/arrmes/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/spencernorton/arrmes/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/spencernorton/arrmes?label=release)](https://github.com/spencernorton/arrmes/releases)
+[![MIT licence](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
+[![Arrmes on NorviTech](https://img.shields.io/badge/NorviTech-Suite-FD8024.svg)](https://norvitech.com/ai-models/#arrmes)
+[![Hugging Face models](https://img.shields.io/badge/Hugging_Face-models-FFD21E.svg)](https://huggingface.co/NorviTech/arrmes-qwen3-0.6b)
 
 Arrmes turns plain-language requests into API calls to Sonarr, Radarr, Lidarr,
 Bazarr, qBittorrent, Tautulli, Seerr and Bitmagnet. Routing runs locally; service
@@ -93,4 +95,26 @@ Security issues: [private reporting](https://github.com/spencernorton/arrmes/sec
 
 [MIT](LICENSE) © Spencer Norton. Model weights have separate licences and notices.
 
-Part of [NorviTech](https://norvitech.com) · [Support development](https://buy.stripe.com/8x26oH2U44f65TRe574wM04)
+[Support development](https://buy.stripe.com/8x26oH2U44f65TRe574wM04)
+
+---
+
+<p align="center">
+  <a href="https://norvitech.com"><img alt="Part of the NorviTech Suite" src="https://norvitech.com/assets/banner.svg" width="640"></a>
+</p>
+
+<p align="center">
+  <a href="https://github.com/spencernorton/helios">Helios</a> ·
+  <a href="https://github.com/spencernorton/DH-Waypoint">DH-Waypoint</a> ·
+  <a href="https://github.com/spencernorton/armiger">Armiger</a> ·
+  <a href="https://github.com/spencernorton/arrmes">Arrmes</a> ·
+  <a href="https://github.com/spencernorton/endexis">Endexis</a> ·
+  <a href="https://github.com/spencernorton/xnote">XNote</a> ·
+  <a href="https://github.com/spencernorton/xnote-placement">XNote Placement</a> ·
+  <a href="https://github.com/spencernorton/snipsnap">SnipSnap</a> ·
+  <a href="https://github.com/spencernorton/conductor">Conductor</a> ·
+  <a href="https://github.com/spencernorton/norvi-os">NorviOS</a> ·
+  <a href="https://github.com/spencernorton/indigo">Indigo</a> ·
+  <a href="https://github.com/spencernorton/roadtrack">Road Track</a> ·
+  <a href="https://norvitech.com">norvitech.com</a>
+</p>
