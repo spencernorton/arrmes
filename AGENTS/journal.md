@@ -1,3 +1,7 @@
+## 2026-11-06 — Public repository navigation
+
+Aligned the public README with the suite navigation and added direct links to the model page and GitHub releases.
+
 ## 2026-11-05 — v1.4.4: Seerr query encoding and Bazarr start time
 
 - Released the first outside contribution (PR16, squash 969e670): native Seerr searches percent-encode the query, because Seerr's API validator rejects the `+` that `urlencode` uses for spaces, and the Bazarr subtitle adapter accepts the numeric `start_time` that Bazarr 1.6.2 reports. Multi-word Seerr searches and every Bazarr subtitle search failed before.
