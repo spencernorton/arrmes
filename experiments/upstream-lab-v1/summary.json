@@ -1,0 +1,1078 @@
+{
+  "suite": "arrmes-upstream-container-lab-v1",
+  "generated_at": "2026-11-07T04:00:46Z",
+  "network_isolation": {
+    "docker_network": "arrmes_upstream_lab_net",
+    "bind_host": "127.0.0.1",
+    "production_endpoints_contacted": 0
+  },
+  "images": {
+    "lscr.io/linuxserver/sonarr:latest": "sha256:3b8c947d7fa173f70e40047d2c8d02835fb8416aeb5ae36def57d9ad15e2f906",
+    "lscr.io/linuxserver/radarr:latest": "sha256:ade5937813c6ae415b29db729386e53fea3ecf067a019849bafbe2d2a6ec02ba",
+    "lscr.io/linuxserver/lidarr:latest": "sha256:d5707cfe084da21a3864c7ef0edd9c0543b5e26c79c551f84dad5ef8683af8c7",
+    "lscr.io/linuxserver/prowlarr:latest": "sha256:431d7efebcef466e56adaa40a7a2fa2b0e85159a037b8bf465eaadbf0cf5bedf",
+    "lscr.io/linuxserver/bazarr:latest": "sha256:7ef0e58216900dbce30b123e0eb65f5cb30e36f126de9474acdd2022fb069c54",
+    "lscr.io/linuxserver/qbittorrent:latest": "sha256:05c1454f9a32967affc1f34f67f8cc0cc57dd805dca45489fe797095a6286556",
+    "lscr.io/linuxserver/tautulli:latest": "sha256:7ca2e262712700ae28ca5b32f9cebf1168e3ea3bfcd97a8da6e040f5ca6227a5",
+    "ghcr.io/fallenbagel/jellyseerr:latest": "sha256:91edd5620e51ed512ecdfd8b2e157c473faf385edf88c3764dc9ec32d310c0df",
+    "ghcr.io/bitmagnet-io/bitmagnet:latest": "sha256:b6373349a30193b436ce6b05e21f91aa4934074268105dded1f3b065b8c86f19"
+  },
+  "live_containers": {
+    "sonarr": {
+      "version": "4.0.20.3014",
+      "app_name": "Sonarr",
+      "runtime_version": "6.0.13"
+    },
+    "radarr": {
+      "version": "6.4.4.10685",
+      "app_name": "Radarr",
+      "runtime_version": "8.0.27",
+      "seeded_multipage_movies": 320
+    },
+    "lidarr": {
+      "version": "3.1.6.5079",
+      "app_name": "Lidarr",
+      "runtime_version": "8.0.27"
+    },
+    "prowlarr": {
+      "version": "2.7.0.5723",
+      "app_name": "Prowlarr",
+      "runtime_version": "8.0.27"
+    },
+    "bazarr": {
+      "bazarr_version": "1.6.2",
+      "python_version": "3.12.16",
+      "start_time_type": "float"
+    },
+    "tautulli": {
+      "tautulli_version": "v2.18.2",
+      "tautulli_branch": "master"
+    },
+    "bitmagnet": {
+      "image_version": "v0.10.1"
+    },
+    "jellyseerr": {
+      "package_version": "2.7.3-deprecated"
+    }
+  },
+  "adapter_verifications": [
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "sonarr",
+        "operation": "health"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 16.75,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v3/system/status",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/v3/health",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "sonarr",
+        "operation": "queue"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 38.39,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v3/queue?page=1&pageSize=50&includeSeries=true",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "sonarr",
+        "operation": "history"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 6.68,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v3/history?page=1&pageSize=50&includeSeries=true",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "sonarr",
+        "operation": "library"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 13.13,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v3/series",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "sonarr",
+        "operation": "missing"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 8.53,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v3/wanted/missing?page=1&pageSize=50&includeSeries=true",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "sonarr",
+        "operation": "wanted"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 10.87,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v3/wanted/cutoff?page=1&pageSize=50&includeSeries=true",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "sonarr",
+        "operation": "calendar"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 5.14,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v3/calendar",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "sonarr",
+        "operation": "quality_profiles"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 6,
+      "total_records": 6,
+      "truncated": false,
+      "latency_ms": 10.6,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v3/qualityprofile",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "sonarr",
+        "operation": "indexers"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 5.59,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v3/indexer",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "radarr",
+        "operation": "health"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 13.78,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v3/system/status",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/v3/health",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "radarr",
+        "operation": "queue"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 64.29,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v3/queue?page=1&pageSize=50&includeMovie=true",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "radarr",
+        "operation": "history"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 15.55,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v3/history?page=1&pageSize=50&includeMovie=true",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "radarr",
+        "operation": "library"
+      },
+      "status": "partial",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 250,
+      "total_records": 320,
+      "truncated": true,
+      "latency_ms": 86.47,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v3/movie",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "radarr",
+        "operation": "library",
+        "query": "Lab Qualified Film 042"
+      },
+      "status": "partial",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 1,
+      "total_records": null,
+      "truncated": true,
+      "latency_ms": 26.23,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v3/movie",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "radarr",
+        "operation": "library",
+        "monitored": true
+      },
+      "status": "partial",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 160,
+      "total_records": null,
+      "truncated": true,
+      "latency_ms": 25.13,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v3/movie",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "radarr",
+        "operation": "library",
+        "monitored": false
+      },
+      "status": "partial",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 160,
+      "total_records": null,
+      "truncated": true,
+      "latency_ms": 43.03,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v3/movie",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "radarr",
+        "operation": "missing"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 160,
+      "total_records": 160,
+      "truncated": false,
+      "latency_ms": 163.38,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v3/wanted/missing?page=1&pageSize=50&includeMovie=true",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/v3/wanted/missing?page=2&pageSize=50&includeMovie=true",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/v3/wanted/missing?page=3&pageSize=50&includeMovie=true",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/v3/wanted/missing?page=4&pageSize=50&includeMovie=true",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "radarr",
+        "operation": "wanted"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 8.86,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v3/wanted/cutoff?page=1&pageSize=50&includeMovie=true",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "radarr",
+        "operation": "calendar"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 6.32,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v3/calendar",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "radarr",
+        "operation": "quality_profiles"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 6,
+      "total_records": 6,
+      "truncated": false,
+      "latency_ms": 9.67,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v3/qualityprofile",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "radarr",
+        "operation": "indexers"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 8.51,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v3/indexer",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "lidarr",
+        "operation": "health"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 14.75,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v1/system/status",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/health",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "lidarr",
+        "operation": "queue"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 42.15,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v1/queue?page=1&pageSize=50&includeArtist=true",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "lidarr",
+        "operation": "history"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 10.45,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v1/history?page=1&pageSize=50&includeArtist=true",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "lidarr",
+        "operation": "library"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 12.95,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v1/artist",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "lidarr",
+        "operation": "missing"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 5.9,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v1/wanted/missing?page=1&pageSize=50&includeArtist=true",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "lidarr",
+        "operation": "wanted"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 13.02,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v1/wanted/cutoff?page=1&pageSize=50&includeArtist=true",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "lidarr",
+        "operation": "calendar"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 5.27,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v1/calendar",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "lidarr",
+        "operation": "quality_profiles"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 3,
+      "total_records": 3,
+      "truncated": false,
+      "latency_ms": 8.87,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v1/qualityprofile",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "lidarr",
+        "operation": "indexers"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 10.21,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v1/indexer",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "prowlarr",
+        "operation": "health"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 17.46,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v1/system/status",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/health",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "prowlarr",
+        "operation": "indexers"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 32.75,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v1/indexer",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/v1/indexerstatus",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "prowlarr",
+        "operation": "applications"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 12.7,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v1/applications",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "prowlarr",
+        "operation": "history"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 23.36,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v1/history?page=1&pageSize=50",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "prowlarr",
+        "operation": "search",
+        "query": "Ubuntu"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 31.65,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v1/search?query=Ubuntu&type=search",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "bazarr",
+        "operation": "health"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 5.5,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/system/health",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "bazarr",
+        "operation": "missing",
+        "media_type": "tv"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 5.06,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/episodes/wanted?start=0&length=50",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "bazarr",
+        "operation": "missing",
+        "media_type": "movie"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 4.96,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/movies/wanted?start=0&length=50",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "tautulli",
+        "operation": "health"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 3.15,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v2?cmd=get_tautulli_info",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "tautulli",
+        "operation": "activity"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 2.87,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v2?cmd=get_activity",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "tautulli",
+        "operation": "history"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 6.77,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v2?cmd=get_history&start=0&length=50&order_column=date&order_dir=desc",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "qbittorrent",
+        "operation": "health"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 5.31,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v2/app/version",
+          "status": 200
+        },
+        {
+          "method": "GET",
+          "path": "/api/v2/app/webapiVersion",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "qbittorrent",
+        "operation": "activity"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 1.98,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v2/transfer/info",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "ServiceQueryAdapter",
+      "arguments": {
+        "service": "qbittorrent",
+        "operation": "queue"
+      },
+      "status": "verified_ok",
+      "http_status": 200,
+      "ok": true,
+      "returned_count": 0,
+      "total_records": 0,
+      "truncated": false,
+      "latency_ms": 3.03,
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v2/torrents/info?filter=all&limit=50&offset=0&sort=hash",
+          "status": 200
+        }
+      ]
+    },
+    {
+      "adapter": "NativeArrWriteAdapter",
+      "arguments": {
+        "title": "Lab Qualified Film 001"
+      },
+      "phase1_status": "confirmation_required",
+      "phase2_status": "dispatched",
+      "ok": true,
+      "command_id": 1,
+      "search_job_status": "started",
+      "audit": [
+        {
+          "method": "GET",
+          "path": "/api/v3/system/status",
+          "status": 200,
+          "attempt": 1
+        },
+        {
+          "method": "GET",
+          "path": "/api/v3/movie",
+          "status": 200,
+          "attempt": 1
+        },
+        {
+          "method": "POST",
+          "path": "/api/v3/command",
+          "status": 201,
+          "attempt": 1
+        },
+        {
+          "method": "GET",
+          "path": "/api/v3/command/1",
+          "status": 200,
+          "attempt": 1
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "total_checks": 45,
+    "passed_checks": 45,
+    "failed_checks": 0,
+    "elapsed_seconds": 16.13
+  }
+}

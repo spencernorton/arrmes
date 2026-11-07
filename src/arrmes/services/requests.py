@@ -1,4 +1,4 @@
-"""Caller-owned native Seerr requests with single-use movie confirmation."""
+"""Caller-owned native Seerr requests with single-use movie, TV season, and cancellation confirmation."""
 from __future__ import annotations
 
 from datetime import date, datetime, timezone
@@ -23,6 +23,7 @@ _REQUEST_STATES = {1: "pending", 2: "approved", 3: "declined", 4: "failed", 5: "
 _MEDIA_STATES = {1: "unknown", 2: "pending", 3: "processing", 4: "partially_available",
                  5: "available", 6: "blocklisted", 7: "deleted"}
 _SEERR_VERSION = re.compile(r"v?3\.[0-9]+\.[0-9]+(?:-[A-Za-z0-9.-]+)?(?:\+[A-Za-z0-9.-]+)?")
+_DELETE_REQ_PATH = re.compile(r"^/api/v1/request/\d+$")
 
 
 class _Clarify(ValueError):
@@ -57,18 +58,44 @@ def _title(value):
     return _text(value) and len(value) <= 2048 and not any(ord(char) < 32 or ord(char) == 127 for char in value)
 
 
+def _valid_post_body(body: Any) -> bool:
+    if not isinstance(body, dict):
+        return False
+    if set(body) == {"mediaType", "mediaId"} and body["mediaType"] == "movie" and _id(body["mediaId"]):
+        return True
+    if (
+        set(body) == {"mediaType", "mediaId", "seasons"}
+        and body["mediaType"] == "tv"
+        and _id(body["mediaId"])
+        and isinstance(body["seasons"], list)
+        and len(body["seasons"]) > 0
+        and all(_id(s) for s in body["seasons"])
+    ):
+        return True
+    return False
+
+
 class NativeRequestAdapter:
     """Existing v2 names; trusted subjects map to verified native user IDs.
 
-    Movie creation is supported. TV status is supported, but TV creation stays
-    unsupported until complete season and existing-request semantics are qualified.
+    Movie creation and TV status are enabled by default. TV/season creation and
+    caller-owned pending request cancellation are supported via execute_tv_request,
+    execute_cancel_request, or allow_tv_creation=True.
     """
 
-    def __init__(self, native: ServiceQueryAdapter, *, write_mode: str = "confirm", confirmation_store=None) -> None:
+    def __init__(
+        self,
+        native: ServiceQueryAdapter,
+        *,
+        write_mode: str = "confirm",
+        confirmation_store=None,
+        allow_tv_creation: bool = False,
+    ) -> None:
         if write_mode not in {"confirm", "shadow", "disabled"}:
             raise ValueError("Native request mode must be confirm, shadow, or disabled")
         from arrmes.live_adapter import WriteConfirmationStore
         self.native, self.write_mode = native, write_mode
+        self.allow_tv_creation = bool(allow_tv_creation)
         self.confirmation_store = confirmation_store or WriteConfirmationStore()
         # Two confirmations cannot race their duplicate preflights in this
         # adapter. Reads and confirmation previews remain independent.
@@ -93,10 +120,12 @@ class NativeRequestAdapter:
     def _http(self, method: str, path: str, context: tuple[ServiceConfig, int],
               audit: list[dict[str, Any]], *, body: dict[str, Any] | None = None) -> Any:
         config, user_id = context
-        if method not in {"GET", "POST"} or (method == "POST" and
-                (path != "/api/v1/request" or not isinstance(body, dict)
-                 or set(body) != {"mediaType", "mediaId"} or body["mediaType"] != "movie" or not _id(body["mediaId"]))):
-            raise InvalidCall("Only native reads and one fixed movie request POST are supported")
+        if method not in {"GET", "POST", "DELETE"}:
+            raise InvalidCall("Only native GET, POST, and DELETE request operations are supported")
+        if method == "POST" and (path != "/api/v1/request" or not _valid_post_body(body)):
+            raise InvalidCall("Only bounded movie or season-scoped TV request POST payloads are supported")
+        if method == "DELETE" and (not _DELETE_REQ_PATH.fullmatch(path) or body is not None):
+            raise InvalidCall("Only single caller-owned request DELETE paths are supported")
         headers = {"Accept": "application/json", "X-Api-Key": config.api_key,
                    "X-API-User": str(user_id), "User-Agent": "arrmes-native-request/1"}
         raw_body = None
@@ -124,19 +153,26 @@ class NativeRequestAdapter:
                     if length > self.native.max_response_bytes:
                         raise _UpstreamError("response_limit_exceeded")
                     chunks.append(chunk)
+                raw_bytes = b"".join(chunks)
+                if method == "DELETE" and code in {200, 204} and not raw_bytes.strip():
+                    return {}
                 try:
-                    data = json.loads(b"".join(chunks).decode("utf-8"), object_pairs_hook=_unique,
+                    data = json.loads(raw_bytes.decode("utf-8"), object_pairs_hook=_unique,
                                       parse_constant=lambda _v: (_ for _ in ()).throw(ValueError("Nonfinite JSON")))
                 except (UnicodeError, ValueError, RecursionError):
                     raise _UpstreamError("invalid_upstream_json") from None
-                if code != (201 if method == "POST" else 200):
+                if method == "POST" and code != 201:
+                    raise _UpstreamError("unexpected_upstream_status", 502)
+                if method == "GET" and code != 200:
+                    raise _UpstreamError("unexpected_upstream_status", 502)
+                if method == "DELETE" and code not in {200, 204}:
                     raise _UpstreamError("unexpected_upstream_status", 502)
                 return data
         except urllib.error.HTTPError as exc:
             code = int(exc.code)
             exc.close()
             audit.append({"method": method, "path": safe_path, "status": code, "attempt": 1})
-            error = ("upstream_request_rejected" if method == "POST" and code in {400, 401, 403, 404, 405, 409, 422} else
+            error = ("upstream_request_rejected" if method in {"POST", "DELETE"} and code in {400, 401, 403, 404, 405, 409, 422} else
                      "upstream_authentication_failed" if code in {401, 403} else
                      "upstream_redirect_refused" if 300 <= code < 400 else "upstream_http_error")
             raise _UpstreamError(error, code) from None
@@ -176,6 +212,25 @@ class NativeRequestAdapter:
         if not _SEERR_VERSION.fullmatch(version):
             raise _UpstreamError("unsupported_seerr_version", 501)
         return version
+
+    @staticmethod
+    def _extract_tv_seasons(detail: dict[str, Any]) -> list[int]:
+        raw_seasons = detail.get("seasons")
+        if isinstance(raw_seasons, list):
+            nums: list[int] = []
+            for s in raw_seasons:
+                if not isinstance(s, dict):
+                    raise _UpstreamError("invalid_seerr_season_record")
+                sn = s.get("seasonNumber")
+                if type(sn) is not int or sn < 0:
+                    raise _UpstreamError("invalid_seerr_season_record")
+                if sn > 0:
+                    nums.append(sn)
+            return sorted(set(nums))
+        num_seasons = detail.get("numberOfSeasons")
+        if type(num_seasons) is int and num_seasons > 0:
+            return list(range(1, num_seasons + 1))
+        return []
 
     def _resolve(self, args, context, audit):
         matches, seen, first_total, first_pages, complete = [], set(), None, None, False
@@ -229,7 +284,8 @@ class NativeRequestAdapter:
         availability = info.get("status") if isinstance(info, dict) else None
         if availability is not None and (type(availability) is not int or availability not in _MEDIA_STATES):
             raise _UpstreamError("invalid_seerr_availability")
-        return {**match, "title": detail[title_key]}, availability
+        available_seasons = self._extract_tv_seasons(detail) if match["media_type"] == "tv" else []
+        return {**match, "title": detail[title_key], "_available_seasons": available_seasons}, availability
 
     @staticmethod
     def _owned_row(row, user_id):
@@ -242,15 +298,26 @@ class NativeRequestAdapter:
                 or media.get("mediaType") != row["type"] or type(media.get("status")) is not int
                 or media["status"] not in _MEDIA_STATES):
             raise _UpstreamError("invalid_native_request_record")
-        return {"request_id": row["id"], "tmdb_id": media["tmdbId"], "media_type": row["type"],
-                "request_status": _REQUEST_STATES[row["status"]], "availability": _MEDIA_STATES[media["status"]],
-                "is_4k": row["is4k"]}
+        parsed = {"request_id": row["id"], "tmdb_id": media["tmdbId"], "media_type": row["type"],
+                  "request_status": _REQUEST_STATES[row["status"]], "availability": _MEDIA_STATES[media["status"]],
+                  "is_4k": row["is4k"]}
+        if "seasons" in row and isinstance(row["seasons"], list):
+            s_nums: list[int] = []
+            for s in row["seasons"]:
+                if isinstance(s, dict) and _id(s.get("seasonNumber")):
+                    s_nums.append(s["seasonNumber"])
+                elif _id(s):
+                    s_nums.append(s)
+                else:
+                    raise _UpstreamError("invalid_native_request_record")
+            parsed["seasons"] = sorted(set(s_nums))
+        return parsed
 
     def _own_requests(self, context, audit):
         rows, seen, first_total = [], set(), None
         for page in range(self.native.max_pages):
             payload = self._http("GET", "/api/v1/request?" + urllib.parse.urlencode({"requestedBy": context[1],
-                "take": self.native.page_size, "skip": page * self.native.page_size, "filter": "all", "sort": "added"}), context, audit)
+                "take": self.native.page_size, "skip": page * self.native.page_size, "filter": "all", "sort": "added"}, quote_via=urllib.parse.quote), context, audit)
             info = payload.get("pageInfo") if isinstance(payload, dict) else None
             if not isinstance(info, dict):
                 raise _UpstreamError("invalid_own_request_page")
@@ -281,17 +348,29 @@ class NativeRequestAdapter:
         if expected_identity is not None and user_identity != expected_identity:
             raise _UpstreamError("confirmation_account_identity_changed", 409)
         version = self._version(context, audit)
-        media, availability = self._resolve(call.arguments, context, audit)
+        media_raw, availability = self._resolve(call.arguments, context, audit)
+        available_seasons = media_raw.pop("_available_seasons", [])
+        media = media_raw
         own = [row for row in self._own_requests(context, audit)
                if row["tmdb_id"] == media["tmdb_id"] and row["media_type"] == media["media_type"]]
         entity = {**media, "user_id": context[1], "user_identity_fingerprint": user_identity,
                   "service": "seerr", "server_version": version, "seasons": [],
                   "api_root_digest": hashlib.sha256(context[0].base_url.encode()).hexdigest()}
-        return entity, availability, own
+        return entity, availability, own, available_seasons
 
     @staticmethod
-    def _existing(own):
+    def _existing(own, target_seasons: list[int] | None = None):
         standard = [row for row in own if not row["is_4k"]]
+        if target_seasons:
+            target_set = set(target_seasons)
+            matching = []
+            for row in standard:
+                row_seasons = set(row.get("seasons") or [])
+                if not row_seasons or target_set.issubset(row_seasons):
+                    matching.append(row)
+                elif row_seasons & target_set:
+                    raise _Clarify("partial_season_request_overlap_requires_review")
+            standard = matching
         if len(standard) > 1:
             raise _Clarify("multiple_own_requests_require_review")
         if standard and standard[0]["request_status"] in {"pending", "approved"}:
@@ -307,6 +386,105 @@ class NativeRequestAdapter:
         scope = "requests:read" if call.name == "request_status" else "requests:create"
         return bool(principal.subject and scope in principal.scopes)
 
+    def execute_tv_request(
+        self,
+        title: str,
+        principal: Principal,
+        *,
+        seasons: list[int] | str = "all",
+        year: int | None = None,
+    ) -> AdapterObservation:
+        args: dict[str, Any] = {"title": title, "media_type": "tv"}
+        if year is not None:
+            args["year"] = year
+        call = validate_call("request_media", args, allow_v3=False)
+        audit: list[dict[str, Any]] = []
+        if not self._permission(call, principal):
+            return _obs(call.name, "denied", {"error": "permission_required"}, audit, code=403)
+        if self.write_mode == "disabled":
+            return _obs(call.name, "denied", {"error": "writes_disabled"}, audit, code=403)
+        if seasons != "all" and (
+            not isinstance(seasons, list)
+            or not seasons
+            or not all(_id(s) for s in seasons)
+        ):
+            raise InvalidCall("seasons must be 'all' or a non-empty list of positive season numbers")
+        try:
+            context = self._context(principal)
+            entity, _availability, own, available_seasons = self._preflight(call, context, audit)
+            if not available_seasons:
+                raise _Clarify("tv_seasons_unavailable_on_detail")
+            if seasons == "all":
+                target_seasons = list(available_seasons)
+            else:
+                target_seasons = sorted(set(seasons))
+                if not set(target_seasons).issubset(set(available_seasons)):
+                    raise _Clarify("requested_season_unavailable")
+            entity["seasons"] = target_seasons
+            public_media = {key: entity[key] for key in ("tmdb_id", "title", "year", "media_type", "seasons")}
+            existing = self._existing(own, target_seasons=target_seasons)
+            if existing:
+                return _obs(call.name, "verified_ok", {**public_media, "request": existing, "changed": False,
+                    "already_requested": True, "completion_scope": "request_submission_not_download"}, audit)
+            season_label = ", ".join(str(s) for s in target_seasons)
+            summary = (f"Submit one standard-quality TV request for '{entity['title']}' "
+                       f"({entity['year'] or 'year unknown'}, seasons [{season_label}]) as Seerr user {context[1]}; "
+                       f"Seerr approval/download policy applies")
+            if self.write_mode == "shadow":
+                return _obs(call.name, "shadow_logged", {"summary": summary, "resolved_entity": entity}, audit)
+            token = self.confirmation_store.mint(principal, call, summary=summary, resolved_entity=entity)
+            return _obs(call.name, "confirmation_required", {"confirm_id": CONFIRMATION_PREFIX + token.confirm_id,
+                "summary": summary, "resolved_entity": entity, "expires_at": token.expires_at}, audit, code=202)
+        except _Clarify as exc:
+            return _obs(call.name, "clarify_required", {"slot": "reference", "reason": str(exc)}, audit, code=409)
+        except _UpstreamError as exc:
+            return _obs(call.name, "denied" if exc.status == 403 else "error", {"error": exc.code}, audit, code=exc.status)
+
+    def execute_cancel_request(
+        self,
+        title: str,
+        principal: Principal,
+        *,
+        media_type: str = "movie",
+        request_id: int | None = None,
+        year: int | None = None,
+    ) -> AdapterObservation:
+        args: dict[str, Any] = {"title": title, "media_type": media_type}
+        if year is not None:
+            args["year"] = year
+        call = validate_call("request_media", args, allow_v3=False)
+        audit: list[dict[str, Any]] = []
+        if not self._permission(call, principal):
+            return _obs("request_media", "denied", {"error": "permission_required"}, audit, code=403)
+        if self.write_mode == "disabled":
+            return _obs("request_media", "denied", {"error": "writes_disabled"}, audit, code=403)
+        if request_id is not None and not _id(request_id):
+            raise InvalidCall("request_id must be a positive integer when provided")
+        try:
+            context = self._context(principal)
+            entity, _availability, own, _avail_seasons = self._preflight(call, context, audit)
+            candidates = [r for r in own if request_id is None or r["request_id"] == request_id]
+            if not candidates:
+                raise _Clarify("own_request_not_found")
+            if len(candidates) > 1:
+                raise _Clarify("multiple_own_requests_require_review")
+            target = candidates[0]
+            if target["request_status"] != "pending":
+                raise _Clarify("request_not_cancellable_in_current_state")
+            entity["operation"] = "cancel_request"
+            entity["cancel_request_id"] = target["request_id"]
+            summary = (f"Cancel pending {entity['media_type']} request #{target['request_id']} for '{entity['title']}' "
+                       f"({entity['year'] or 'year unknown'}) as Seerr user {context[1]}")
+            if self.write_mode == "shadow":
+                return _obs("request_media", "shadow_logged", {"summary": summary, "resolved_entity": entity}, audit)
+            token = self.confirmation_store.mint(principal, call, summary=summary, resolved_entity=entity)
+            return _obs("request_media", "confirmation_required", {"confirm_id": CONFIRMATION_PREFIX + token.confirm_id,
+                "summary": summary, "resolved_entity": entity, "expires_at": token.expires_at}, audit, code=202)
+        except _Clarify as exc:
+            return _obs("request_media", "clarify_required", {"slot": "reference", "reason": str(exc)}, audit, code=409)
+        except _UpstreamError as exc:
+            return _obs("request_media", "denied" if exc.status == 403 else "error", {"error": exc.code}, audit, code=exc.status)
+
     def execute(self, call: Call, principal: Principal, *, idempotency_key: str | None = None) -> AdapterObservation:
         call = validate_call(call.name, call.arguments, allow_v3=False)
         if call.name not in REQUEST_ACTIONS:
@@ -317,10 +495,17 @@ class NativeRequestAdapter:
         if call.name == "request_media" and self.write_mode == "disabled":
             return _obs(call.name, "denied", {"error": "writes_disabled"}, audit, code=403)
         if call.name == "request_media" and call.arguments["media_type"] != "movie":
+            if self.allow_tv_creation and call.arguments["media_type"] == "tv":
+                return self.execute_tv_request(
+                    call.arguments["title"],
+                    principal,
+                    seasons="all",
+                    year=call.arguments.get("year"),
+                )
             return _obs(call.name, "unsupported", {"error": "native_tv_request_creation_not_qualified"}, audit, code=501)
         try:
             context = self._context(principal)
-            entity, availability, own = self._preflight(call, context, audit)
+            entity, availability, own, _avail_seasons = self._preflight(call, context, audit)
             public_media = {key: entity[key] for key in ("tmdb_id", "title", "year", "media_type")}
             if call.name == "request_status":
                 return _obs(call.name, "verified_ok", {**public_media, "requests": own, "own_request_count": len(own),
@@ -370,10 +555,43 @@ class NativeRequestAdapter:
             expected_identity = token.resolved_entity.get("user_identity_fingerprint")
             if not isinstance(expected_identity, str) or not re.fullmatch(r"[a-f0-9]{64}", expected_identity):
                 raise _UpstreamError("confirmation_account_binding_missing", 409)
-            entity, availability, own = self._preflight(call, context, audit, expected_identity=expected_identity)
-            if entity != token.resolved_entity or entity["media_type"] != "movie":
+            entity, _availability, own, available_seasons = self._preflight(call, context, audit, expected_identity=expected_identity)
+            if token.resolved_entity.get("operation") == "cancel_request":
+                cancel_id = token.resolved_entity.get("cancel_request_id")
+                entity_check = {**entity, "operation": "cancel_request", "cancel_request_id": cancel_id}
+                if not _id(cancel_id) or entity_check != token.resolved_entity:
+                    raise _UpstreamError("confirmation_entity_changed", 409)
+                matching = [r for r in own if r["request_id"] == cancel_id]
+                if not matching:
+                    return _obs(call.name, "verified_ok", {"cancelled_request_id": cancel_id, "changed": False,
+                        "already_cancelled": True, "confirmed_call": confirmed_call,
+                        "completion_scope": "caller_owned_pending_request_cancelled"}, audit)
+                if matching[0]["request_status"] != "pending":
+                    raise _UpstreamError("request_no_longer_pending", 409)
+                if self._identity(context, audit) != entity["user_identity_fingerprint"]:
+                    raise _UpstreamError("confirmation_account_identity_changed", 409)
+                post_attempted = True
+                self._http("DELETE", f"/api/v1/request/{cancel_id}", context, audit)
+                posted = {"request_id": cancel_id}
+                after_own = self._own_requests(context, audit)
+                if any(r["request_id"] == cancel_id for r in after_own):
+                    raise _UpstreamError("cancelled_request_still_present")
+                return _obs(call.name, "verified_ok", {"cancelled_request_id": cancel_id, "changed": True,
+                    "confirmed_call": confirmed_call, "completion_scope": "caller_owned_pending_request_cancelled"}, audit)
+
+            if entity["media_type"] == "tv":
+                tok_seasons = token.resolved_entity.get("seasons")
+                if (
+                    not isinstance(tok_seasons, list)
+                    or not tok_seasons
+                    or not all(_id(s) for s in tok_seasons)
+                    or not set(tok_seasons).issubset(set(available_seasons))
+                ):
+                    raise _UpstreamError("confirmation_entity_changed", 409)
+                entity["seasons"] = tok_seasons
+            if entity != token.resolved_entity or entity["media_type"] not in {"movie", "tv"}:
                 raise _UpstreamError("confirmation_entity_changed", 409)
-            existing = self._existing(own)
+            existing = self._existing(own, target_seasons=entity["seasons"] if entity["media_type"] == "tv" else None)
             if existing:
                 return _obs(call.name, "verified_ok", {"request": existing, "changed": False,
                     "already_requested": True, "confirmed_call": confirmed_call,
@@ -382,8 +600,10 @@ class NativeRequestAdapter:
             if self._identity(context, audit) != entity["user_identity_fingerprint"]:
                 raise _UpstreamError("confirmation_account_identity_changed", 409)
             post_attempted = True
-            body = self._http("POST", "/api/v1/request", context, audit,
-                              body={"mediaType": "movie", "mediaId": entity["tmdb_id"]})
+            req_payload: dict[str, Any] = {"mediaType": entity["media_type"], "mediaId": entity["tmdb_id"]}
+            if entity["media_type"] == "tv":
+                req_payload["seasons"] = entity["seasons"]
+            body = self._http("POST", "/api/v1/request", context, audit, body=req_payload)
             posted = self._verify_created(body, context[1], entity)
             current = self._http("GET", f"/api/v1/request/{posted['request_id']}", context, audit)
             verified = self._verify_created(current, context[1], entity)
@@ -407,5 +627,7 @@ class NativeRequestAdapter:
             raise _UpstreamError("invalid_created_request_response")
         row = self._owned_row(body, user_id)
         if row["tmdb_id"] != entity["tmdb_id"] or row["media_type"] != entity["media_type"] or row["is_4k"]:
+            raise _UpstreamError("created_request_identity_mismatch")
+        if entity["media_type"] == "tv" and "seasons" in row and set(row["seasons"]) != set(entity["seasons"]):
             raise _UpstreamError("created_request_identity_mismatch")
         return row

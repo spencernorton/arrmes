@@ -24,7 +24,7 @@ from arrmes.adapters import AdapterObservation, SandboxAdapter, _norm
 from arrmes.catalog import V2_BY_NAME, V3_BY_NAME, WRITE_EFFECT_ACTIONS, WRITE_EFFECT_ACTIONS_V3
 from arrmes.services.contract import SERVICE_PERMISSIONS, validate_service_query
 from arrmes.services.native import _public_row
-from arrmes.planner import Principal, ResolutionRequired, prepare, resolve_title, resolve_title_candidates
+from arrmes.planner import CatalogInvertedIndex, Principal, ResolutionRequired, prepare, resolve_title, resolve_title_candidates
 from arrmes.protocol import Call, normalized, validate_call
 
 _REDACT_QUERY_RE = re.compile(r"([?&](?:apikey|api_key|token|key)=)[^&#\s]+", re.IGNORECASE)
@@ -492,7 +492,13 @@ class LiveGatewayAdapter(SandboxAdapter):
         cacheable = (
             not self._is_sandbox_backend
             and method == "GET"
-            and path in {"/sonarr/api/v3/series", "/radarr/api/v3/movie", "/lidarr/api/v1/artist"}
+            and path in {
+                "/sonarr/api/v3/series",
+                "/radarr/api/v3/movie",
+                "/lidarr/api/v1/artist",
+                "/readarr/api/v1/author",
+                "/whisparr/api/v3/series",
+            }
         )
         # Confirmation must resolve the current upstream entity, even when the
         # preflight just populated this cache. Reusing that snapshot would hide
@@ -513,6 +519,8 @@ class LiveGatewayAdapter(SandboxAdapter):
                     raw = resp.read().decode("utf-8")
                     parsed = json.loads(raw) if raw else {}
                     if cacheable and status == 200:
+                        if isinstance(parsed, list):
+                            parsed = CatalogInvertedIndex(parsed)
                         self._catalog_cache[path] = (time.time(), status, parsed)
                     audit.append({"method": method, "path": safe_path, "status": status, "attempt": attempts})
                     return status, parsed
@@ -1345,10 +1353,10 @@ class LiveGatewayAdapter(SandboxAdapter):
         if not principal.subject or req_perm not in principal.scopes:
             return AdapterObservation("denied", service, "service_query", 403, False, {"error": "permission_required"}, audit)
 
-        if service in {"sonarr", "radarr", "lidarr"}:
-            version = "v1" if service == "lidarr" else "v3"
+        if service in {"sonarr", "radarr", "lidarr", "readarr", "whisparr"}:
+            version = "v1" if service in {"lidarr", "readarr"} else "v3"
             root = f"/{service}/api/{version}"
-            entity = {"sonarr": "series", "radarr": "movie", "lidarr": "artist"}[service]
+            entity = {"sonarr": "series", "whisparr": "series", "radarr": "movie", "lidarr": "artist", "readarr": "author"}[service]
             headers = self._auth_headers_for(service, principal=principal)
             if op == "health":
                 c1, status = self._request_json("GET", f"{root}/system/status", headers=headers, audit=audit)
@@ -1368,19 +1376,34 @@ class LiveGatewayAdapter(SandboxAdapter):
                     api_version=version, server_version=status["version"],
                     healthy=not issue_list, issues=issue_list,
                 )
-            if op in {"queue", "history", "missing"}:
-                endpoint = "/wanted/missing" if op == "missing" else f"/{op}"
-                inc = {"includeSeries": "true"} if service == "sonarr" else {"includeMovie": "true"} if service == "radarr" else {"includeArtist": "true"}
-                q = urllib.parse.urlencode({"page": 1, "pageSize": 50, **inc})
+            if op in {"queue", "history", "missing", "wanted"}:
+                endpoint = "/wanted/missing" if op == "missing" else ("/wanted/cutoff" if op == "wanted" else f"/{op}")
+                inc = (
+                    {"includeSeries": "true"} if service in {"sonarr", "whisparr"}
+                    else {"includeMovie": "true"} if service == "radarr"
+                    else {"includeAuthor": "true"} if service == "readarr"
+                    else {"includeArtist": "true"}
+                )
+                q = urllib.parse.urlencode({"page": 1, "pageSize": 50, **inc}, quote_via=urllib.parse.quote)
                 code, payload = self._request_json("GET", f"{root}{endpoint}?{q}", headers=headers, audit=audit)
                 if code != 200 or not isinstance(payload, dict) or not isinstance(payload.get("records"), list):
                     return AdapterObservation("error", service, "service_query", code if code != 200 else 502, False,
                                               {"error": "invalid_upstream_page"}, audit)
                 rows = [r for r in payload["records"] if isinstance(r, dict)]
+                if "monitored" in args and op in {"missing", "wanted"}:
+                    rows = [r for r in rows if r.get("monitored") is args["monitored"]]
                 total = int(payload.get("totalRecords", len(rows)))
                 return self._gateway_service_result(service, args, rows, total, len(rows) < total, audit, api_version=version)
+            if op in {"quality_profiles", "indexers", "calendar"}:
+                endpoint = "/qualityprofile" if op == "quality_profiles" else ("/indexer" if op == "indexers" else "/calendar")
+                code, rows_raw = self._request_json("GET", f"{root}{endpoint}", headers=headers, audit=audit)
+                if code != 200 or not isinstance(rows_raw, list):
+                    return AdapterObservation("error", service, "service_query", code if code != 200 else 502, False,
+                                              {"error": "invalid_upstream_records"}, audit)
+                rows = [r for r in rows_raw if isinstance(r, dict)]
+                return self._gateway_service_result(service, args, rows, len(rows), len(rows) > 50, audit, api_version=version)
             if op == "search":
-                q = urllib.parse.urlencode({"term": args["query"]})
+                q = urllib.parse.urlencode({"term": args["query"]}, quote_via=urllib.parse.quote)
                 code, rows_raw = self._request_json("GET", f"{root}/{entity}/lookup?{q}", headers=headers, audit=audit)
                 if code != 200 or not isinstance(rows_raw, list):
                     return AdapterObservation("error", service, "service_query", code if code != 200 else 502, False,
@@ -1393,10 +1416,53 @@ class LiveGatewayAdapter(SandboxAdapter):
                 return AdapterObservation("error", service, "service_query", code if code != 200 else 502, False,
                                           {"error": "invalid_upstream_records"}, audit)
             rows = [r for r in rows_raw if isinstance(r, dict)]
+            if "monitored" in args:
+                rows = [r for r in rows if r.get("monitored") is args["monitored"]]
             return self._gateway_service_result(
                 service, args, rows, len(rows), False if args.get("query") else (len(rows) > 50),
                 audit, api_version=version,
             )
+
+        if service == "prowlarr":
+            root = "/prowlarr/api/v1"
+            headers = self._auth_headers_for("prowlarr", principal=principal)
+            if op == "health":
+                c1, status = self._request_json("GET", f"{root}/system/status", headers=headers, audit=audit)
+                if c1 != 200 or not isinstance(status, dict) or not str(status.get("version", "")).strip():
+                    return AdapterObservation("error", "prowlarr", "service_query", c1 if c1 != 200 else 502, False,
+                                              {"error": "invalid_service_status"}, audit)
+                c2, issues = self._request_json("GET", f"{root}/health", headers=headers, audit=audit)
+                if c2 != 200 or not isinstance(issues, list):
+                    return AdapterObservation("error", "prowlarr", "service_query", c2 if c2 != 200 else 502, False,
+                                              {"error": "invalid_service_health_issue"}, audit)
+                issue_list = [{k: r[k] for k in ("source", "type", "message") if k in r} for r in issues if isinstance(r, dict)]
+                return self._gateway_service_result(
+                    "prowlarr", args, [], 0, False, audit,
+                    api_version="v1", server_version=status["version"], healthy=not issue_list, issues=issue_list,
+                )
+            if op in {"indexers", "applications"}:
+                code, rows_raw = self._request_json("GET", f"{root}/{'indexer' if op == 'indexers' else 'applications'}", headers=headers, audit=audit)
+                if code != 200 or not isinstance(rows_raw, list):
+                    return AdapterObservation("error", "prowlarr", "service_query", code if code != 200 else 502, False,
+                                              {"error": "invalid_upstream_records"}, audit)
+                rows = [r for r in rows_raw if isinstance(r, dict)]
+                return self._gateway_service_result("prowlarr", args, rows, len(rows), len(rows) > 50, audit, api_version="v1")
+            if op == "history":
+                q = urllib.parse.urlencode({"page": 1, "pageSize": 50}, quote_via=urllib.parse.quote)
+                code, payload = self._request_json("GET", f"{root}/history?{q}", headers=headers, audit=audit)
+                if code != 200 or not isinstance(payload, dict) or not isinstance(payload.get("records"), list):
+                    return AdapterObservation("error", "prowlarr", "service_query", code if code != 200 else 502, False,
+                                              {"error": "invalid_upstream_page"}, audit)
+                rows = [r for r in payload["records"] if isinstance(r, dict)]
+                total = int(payload.get("totalRecords", len(rows)))
+                return self._gateway_service_result("prowlarr", args, rows, total, len(rows) < total, audit, api_version="v1")
+            q = urllib.parse.urlencode({"query": args["query"], "type": "search"}, quote_via=urllib.parse.quote)
+            code, rows_raw = self._request_json("GET", f"{root}/search?{q}", headers=headers, audit=audit)
+            if code != 200 or not isinstance(rows_raw, list):
+                return AdapterObservation("error", "prowlarr", "service_query", code if code != 200 else 502, False,
+                                          {"error": "invalid_upstream_records"}, audit)
+            rows = [r for r in rows_raw if isinstance(r, dict)]
+            return self._gateway_service_result("prowlarr", args, rows, len(rows), len(rows) > 50, audit, api_version="v1")
 
         if service == "tautulli":
             if op == "health":

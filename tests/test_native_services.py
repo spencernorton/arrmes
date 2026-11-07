@@ -28,9 +28,19 @@ def _fixture_response(path, query):
         return {"data": []}
     if path.endswith("/health"):
         return []
-    if path.endswith("/wanted/missing"):
-        return {"records": [{"id": 77, "title": "Fixture title", "seriesId": 8, "artistId": 9,
+    if path.endswith(("/wanted/missing", "/wanted/cutoff")):
+        return {"records": [{"id": 77, "title": "Fixture title", "seriesId": 8, "artistId": 9, "authorId": 10,
                              "seasonNumber": 1, "episodeNumber": 2}], "totalRecords": 1}
+    if path.endswith("/qualityprofile"):
+        return [{"id": 1, "name": "HD-1080p", "upgradeAllowed": True, "cutoff": 4}]
+    if path.endswith("/indexerstatus"):
+        return []
+    if path.endswith("/indexer"):
+        return [{"id": 1, "name": "Fixture Indexer", "protocol": "torrents", "enableRss": True, "priority": 25}]
+    if path.endswith("/calendar"):
+        return [{"id": 1, "title": "Fixture title", "seriesId": 8, "airDateUtc": "2026-01-02T00:00:00Z"}]
+    if path.endswith("/applications"):
+        return [{"id": 1, "name": "Sonarr Sync", "syncLevel": "fullSync", "implementation": "Sonarr"}]
     if path in {"/api/v3/queue", "/api/v3/history", "/api/v1/queue", "/api/v1/history"}:
         row = {"id": 77, "sourceTitle": "Fixture title", "date": "2026-01-01T00:00:00Z"} if path.endswith("/history") else {"id": 77, "title": "Fixture title", "status": "queued"}
         return {"records": [row], "totalRecords": 1}
@@ -47,10 +57,12 @@ def _fixture_response(path, query):
         assert query["seriesid[]"] == ["8"]
         return {"data": [{"sonarrEpisodeId": 40, "sonarrSeriesId": 8, "title": "Pilot", "subtitles": [{"code2": "en"}], "missing_subtitles": [], "path": "/private/pilot.mkv"}]}
     if path.endswith("/lookup"):
-        return [{"id": 0, "title": "Fixture title", "artistName": "Fixture title", "tvdbId": 88, "tmdbId": 99,
-                 "foreignArtistId": "00000000-0000-0000-0000-000000000001"}]
-    if path.endswith(("/series", "/movie", "/artist")):
-        return [{"id": 1, "title": "Fixture title", "artistName": "Fixture title", "path": "/private/media", "statistics": {"episodeCount": 5, "api_key": "DO-NOT-EXPOSE"}}]
+        return [{"id": 0, "title": "Fixture title", "artistName": "Fixture title", "authorName": "Fixture title",
+                 "tvdbId": 88, "tmdbId": 99, "foreignArtistId": "00000000-0000-0000-0000-000000000001",
+                 "foreignAuthorId": "00000000-0000-0000-0000-000000000002"}]
+    if path.endswith(("/series", "/movie", "/artist", "/author")):
+        return [{"id": 1, "title": "Fixture title", "artistName": "Fixture title", "authorName": "Fixture title",
+                 "path": "/private/media", "statistics": {"episodeCount": 5, "api_key": "DO-NOT-EXPOSE"}}]
     if path == "/api/v2/app/version":
         return "v5.1.2"
     if path == "/api/v2/app/webapiVersion":
@@ -68,6 +80,8 @@ def _fixture_response(path, query):
     if path == "/api/v1/status":
         return {"version": "3.5.0"}
     if path == "/api/v1/search":
+        if query.get("type") == ["search"]:
+            return [{"title": "Fixture title", "guid": "https://indexer.invalid/1", "indexerId": 1, "seeders": 12}]
         return {"results": [{"id": 66, "title": "Fixture movie", "mediaType": "movie"}], "totalResults": 1}
     raise AssertionError("Unadvertised fixture endpoint: " + path)
 
@@ -382,8 +396,12 @@ def _record_adapter(service, operation, row, *, media_type="movie"):
         if media_type == "tv" and operation == "subtitles":
             args["query"] = "Fixture title"
     def response(_service, path, _audit, **_kwargs):
-        if service in {"sonarr", "radarr", "lidarr"}:
-            return [row] if operation in {"library", "search"} else {"records": [row], "totalRecords": 1}
+        if service in {"sonarr", "radarr", "lidarr", "readarr", "whisparr"}:
+            return [row] if operation in {"library", "search", "quality_profiles", "indexers", "calendar"} else {"records": [row], "totalRecords": 1}
+        if service == "prowlarr":
+            if path.endswith("/indexerstatus"):
+                return []
+            return [row] if operation in {"indexers", "applications", "search"} else {"records": [row], "totalRecords": 1}
         if service == "bazarr":
             if operation == "subtitles" and media_type == "tv" and path.startswith("/api/series?"):
                 return {"data": [{"sonarrSeriesId": 8, "title": "Fixture title"}], "total": 1}
@@ -579,3 +597,36 @@ def test_empty_version_is_not_a_verified_health_identity(service):
                                              if service == "tautulli" else {"version": ""})
     with NetworkIsolationGuard():
         assert adapter.execute(Call("service_query", {"service": service, "operation": "health"}), OWNER).status == "error"
+
+
+def test_unquoted_service_span_and_catalog_inverted_index_and_workflows():
+    from arrmes.catalog import manifest_v3, portable_tools_v2, portable_tools_v3, tools_v2, tools_v3
+    from arrmes.planner import CatalogInvertedIndex
+    from arrmes.services.routing import extract_unquoted_service_span
+    from arrmes.workflows import build_read_to_confirm_steps, execute_read_to_confirm_workflow
+
+    # 1. Portable vs estate extension tools
+    assert len(tools_v2()) == 20 and len(portable_tools_v2()) == 18
+    assert len(tools_v3()) == 23 and len(portable_tools_v3()) == 21
+    m_port = manifest_v3(portable_only=True)
+    assert m_port["portable_only"] is True and m_port["tool_count"] == 21
+
+    # 2. Unquoted span extraction with confidence & margin gating
+    span_ok = extract_unquoted_service_span("Look up Dune Part Two in Radarr catalog", service="radarr", operation="search")
+    assert span_ok is not None and span_ok[0] == "Dune Part Two" and span_ok[1] >= 0.75 and span_ok[2] >= 0.25
+    span_ambig = extract_unquoted_service_span("Look up Dune and Blade Runner in Radarr catalog", service="radarr", operation="search")
+    assert span_ambig[0] is None and span_ambig[1] < 0.75
+    call_unq = route_service_query("Look up Dune Part Two in Radarr catalog")
+    assert call_unq is not None and call_unq.arguments == {"service": "radarr", "operation": "search", "query": "Dune Part Two"}
+
+    # 3. CatalogInvertedIndex O(1) lookup with NFKD diacritic folding and alternateTitles
+    idx = CatalogInvertedIndex([
+        {"id": 10, "title": "Björk: Biophilia Live", "alternateTitles": [{"title": "Biophilia Live Concert"}]},
+        {"id": 20, "title": "Plagioclase Nocturne", "year": 1975},
+    ])
+    assert [r["id"] for r in idx.lookup("Bjork: Biophilia Live")] == [10]
+    assert [r["id"] for r in idx.lookup("Biophilia Live Concert")] == [10]
+
+    # 4. Bounded read-to-confirm workflow
+    steps = build_read_to_confirm_steps(Call("tv_missing", {"title": "Severance"}), season=1)
+    assert len(steps) == 2

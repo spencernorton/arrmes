@@ -51,9 +51,10 @@ def _read_npy_float32(raw_bytes: bytes) -> tuple[tuple[int, ...], array.array]:
     raise ValueError(f"Unsupported .npy descr in header: {header}")
 
 
-from .catalog import BY_NAME, V2_BY_NAME, V3_BY_NAME
+from .catalog import BY_NAME, V2_BY_NAME, V3_BY_NAME, WRITE_EFFECT_ACTIONS_V3
 from .model import finalize_output
 from .planner import (
+    _context_role_matches,
     _AFFIRMATIVE_PAUSE_RE,
     _AFFIRMATIVE_REQUEST_RE,
     _AFFIRMATIVE_RESUME_RE,
@@ -141,19 +142,56 @@ def _hash_token(token: str) -> tuple[int, float]:
     return idx, sign
 
 
+
+_NEG_TAG_RE = re.compile(
+    r"\b(do\s+not|don't|without|never|instead\s+of|rather\s+than|not\s+a|not\s+an|no\s+indexer)\s+([a-z0-9_'-]+(?:\s+[a-z0-9_'-]+){0,5})"
+)
+_WORD_TOK_RE = re.compile(r"[a-z0-9_<>'-]+")
+_TEMP_THIS_RE = re.compile(r"\bthis\s+(?:moment|week|time|month|year|evening|morning|series|film|movie|show|album)\b", re.I)
+_MISSING_GAP_RE = re.compile(r"\b(missing|absent|gaps?|holes?|unobtained|no\s+file|installments?)\b", re.I)
+_NOW_PLAYING_RE = re.compile(r"\b(now\s+playing|currently\s+streaming|active\s+streams?|active\s+sessions?|who'?s\s+streaming|playing\s+right\s+now)\b", re.I)
+_TORRENT_NOUN_RE = re.compile(r"\b(torrents?|transfers?|qbittorrent|stalled|seeding|paused|downloading)\b", re.I)
+_MUSIC_NOUN_RE = re.compile(r"\b(lidarr|albums?|artists?|discography|tracks?|music|performer)\b", re.I)
+_DISCOVER_CAT_RE = re.compile(r"\b(trending|popular|upcoming)\b", re.I)
+_DISCOVER_SVC_RE = re.compile(r"\b(discover|seer|seerr|overseerr|jellyseerr|week)\b", re.I)
+_ARMIGER_HINT_RE = re.compile(r"\barmiger\b|\bparse\b.*\brelease\b|\.mkv\b", re.I)
+_BITMAGNET_HINT_RE = re.compile(r"\bbitmagnet\b|\bdht\b", re.I)
+_WAYPOINT_HINT_RE = re.compile(r"\bwaypoint\b|\bdh-waypoint\b", re.I)
+_CONDITIONAL_WRITE_RE = re.compile(r"\b(if|unless|except|until|only\s+when|provided\s+that|as\s+long\s+as|fall\s+back\s+to)\b", re.I)
+_NARROW_SCOPE_MUTATION_RE = re.compile(
+    r"\b(4k|uhd|2160p|1080p|720p|480p|remux|hdr|flac|mp3|lossless|bitrate|mbps|kb/s|mib/s|"
+    r"quality|(?<!my\s)profiles?|quota|root\s+folder|private\s+indexers?|public\s+indexers?|on\s+behalf|"
+    r"tracks?|songs?|discs?|s\d{1,2}e\d{1,3}|episode\s+\d+|seasons?\s+\d+\s+(?:through|to|or)\s+(?:season\s+)?\d+|"
+    r"finale|pilot|premiere|(?:latest|newest|final)\s+season|rename|unmonitor|recheck|"
+    r"limit\s+the\s+(?:torrent\s+)?speed|move\s+the\s+torrent|different\s+save\s+path)\b",
+    re.I,
+)
+_ORDINAL_REF_RE = re.compile(
+    r"\b(?:no\s+selection\s+list\s+is\s+attached|(?:second|first|third)\s+(?:selected|torrent|one|movie|film|series|show|item|result)|"
+    r"(?:other|earlier|later|counterpart)\s+(?:version|remake|adaptation|edition))\b",
+    re.I,
+)
+_UNQUOTED_REL_RE = re.compile(r"\b([A-Za-z0-9_.()-]+\.(?:mkv|mp4|avi|ts|iso))\b", re.I)
+_UNQUOTED_TOR_RE = re.compile(r"\b([A-Za-z0-9_.-]+(?:\.S\d{1,2}(?:E\d{1,2})?|\.\d{4}\.)[A-Za-z0-9_().-]+)\b")
+_STOP_ENTITY_PAT = r"(?:\s+(?:in|on|from|through|via|by|using|within|inside|rather|instead|without|before|after|and|or|if|unless|leaving|including|excluding|season|episodes?|movies?|series|show|film|status|already|right\s+now|please|today|this\s+week|is\s+(?:missing|in|on|available|monitored|already|currently|held|present|downloaded|complete)|are\s+(?:missing|in|on|available|monitored|already|currently|held|present|downloaded|complete)|missing|monitored|available|downloaded)\b|[?.!,;:]|\s+\((?:18|19|20|21)\d{2}\)|$)"
+_UNQUOTED_ENT_PATS = (
+    re.compile(rf"\b(?:for|of|about|called|titled|named|series|movie|film|show|torrent|transfer|pause|resume|request|unmonitor|monitor)\s+([A-Z0-9\u00C0-\u024F][\w:'&.-]*(?:\s+(?:[\w:'&.-]+|\([A-Za-z]{{2,4}}\))){{0,6}}?){_STOP_ENTITY_PAT}"),
+    re.compile(r"^\s*(?:is|are|does|do|has|have)\s+([A-Z0-9\u00C0-\u024F][\w:'&.-]*(?:\s+(?:[\w:'&.-]+|\([A-Za-z]{2,4}\))){0,5}?)\s+(?:in|monitored|complete|missing|available|downloaded|stalled|paused|seeding|playing)\b"),
+    re.compile(r"\b(?i:(?:how\s+many|which|what|list|show|check|find|for|search(?:\s+sonarr)?(?:\s+indexers?)?(?:\s+for)?)\s+(?:(?:all|every|each)\s+)?(?:missing\s+)?(?:regular\s+)?)([A-Z0-9\u00C0-\u024F][\w:'&.-]*(?:\s+(?:[\w:'&.-]+|\([A-Za-z]{2,4}\))){0,5}?)\s+(?i:(?:regular\s+)?episodes?(?!\s+(?:of|for)\b))\b"),
+)
+
 def featurize_query(query: str, context: dict[str, Any] | None = None) -> Any:
     """Extract hashed word/char n-grams plus structural indicators (zero entity names)."""
     vec = np.zeros(TOTAL_FEATURES, dtype=np.float32) if np is not None else [0.0] * TOTAL_FEATURES
     q_unquoted = unicodedata.normalize("NFKC", _strip_quoted_and_releases(query)).translate(
         {0x2018: "'", 0x2019: "'", 0x02BC: "'"}
     )
-    q_neg_tagged = re.sub(
-        r"\b(do\s+not|don't|without|never|instead\s+of|rather\s+than|not\s+a|not\s+an|no\s+indexer)\s+([a-z0-9_'-]+(?:\s+[a-z0-9_'-]+){0,5})",
+    q_neg_tagged = _NEG_TAG_RE.sub(
         lambda m: m.group(1) + " " + " ".join("neg_" + tok for tok in m.group(2).split()),
         q_unquoted.casefold(),
     )
-    q_low = q_neg_tagged
-    words = re.findall(r"[a-z0-9_<>'-]+", q_low)
+    q_low = re.sub(r"\b(?:please|kindly)\b", " ", q_neg_tagged)
+    words = _WORD_TOK_RE.findall(q_low)
 
     for i, w in enumerate(words):
         idx, sign = _hash_token("w1:" + w)
@@ -191,7 +229,7 @@ def featurize_query(query: str, context: dict[str, Any] | None = None) -> Any:
     vec[base + 2] = 1.0 if has_selected else 0.0
     vec[base + 3] = 1.0 if isinstance(selected, dict) and selected.get("media_type") == "movie" else 0.0
     vec[base + 4] = 1.0 if isinstance(selected, dict) and selected.get("media_type") == "tv" else 0.0
-    q_no_temp = re.sub(r"\bthis\s+(?:moment|week|time|month|year|evening|morning|series|film|movie|show|album)\b", " ", q_unquoted, flags=re.I)
+    q_no_temp = _TEMP_THIS_RE.sub(" ", q_unquoted)
     has_unquoted_ent = bool(_extract_unquoted_entity(query))
     vec[base + 5] = 1.0 if (not quoted and not has_selected and not has_unquoted_ent and _DEICTIC_RE.search(q_no_temp)) else 0.0
     vec[base + 6] = 1.0 if _COMPLEX_RE.search(q_unquoted) else 0.0
@@ -203,20 +241,20 @@ def featurize_query(query: str, context: dict[str, Any] | None = None) -> Any:
     vec[base + 12] = 1.0 if _INTERROGATIVE_OR_HYPOTHETICAL_WRITE_RE.search(q_unquoted) else 0.0
     vec[base + 13] = 1.0 if _TV_WORD_RE.search(q_unquoted) else 0.0
     vec[base + 14] = 1.0 if _MOVIE_WORD_RE.search(q_unquoted) else 0.0
-    vec[base + 15] = 1.0 if re.search(r"\b(missing|absent|gaps?|holes?|unobtained|no\s+file|installments?)\b", q_unquoted, re.I) else 0.0
+    vec[base + 15] = 1.0 if _MISSING_GAP_RE.search(q_unquoted) else 0.0
     vec[base + 16] = 1.0 if _has_history_intent(q_unquoted) else 0.0
-    vec[base + 17] = 1.0 if re.search(r"\b(now\s+playing|currently\s+streaming|active\s+streams?|active\s+sessions?|who'?s\s+streaming|playing\s+right\s+now)\b", q_unquoted, re.I) else 0.0
+    vec[base + 17] = 1.0 if _NOW_PLAYING_RE.search(q_unquoted) else 0.0
     vec[base + 18] = 1.0 if _REQUEST_WORD_RE.search(q_unquoted) else 0.0
     vec[base + 19] = 1.0 if _REQUEST_TRACK_RE.search(q_unquoted) else 0.0
     vec[base + 20] = 1.0 if _AFFIRMATIVE_REQUEST_RE.search(q_unquoted) and not _NEGATED_REQUEST_RE.search(q_unquoted) else 0.0
     vec[base + 21] = 1.0 if _AFFIRMATIVE_PAUSE_RE.search(q_unquoted) and not _NEGATED_PAUSE_RE.search(q_unquoted) and not _PASSIVE_PAUSE_QUERY_RE.search(q_unquoted) else 0.0
     vec[base + 22] = 1.0 if _AFFIRMATIVE_RESUME_RE.search(q_unquoted) and not _NEGATED_RESUME_RE.search(q_unquoted) and not _PASSIVE_RESUME_QUERY_RE.search(q_unquoted) else 0.0
-    vec[base + 23] = 1.0 if _TORRENT_READ_VERB_RE.search(q_unquoted) and re.search(r"\b(torrents?|transfers?|qbittorrent|stalled|seeding|paused|downloading)\b", q_unquoted, re.I) else 0.0
-    vec[base + 24] = 1.0 if re.search(r"\b(lidarr|albums?|artists?|discography|tracks?|music|performer)\b", q_unquoted, re.I) else 0.0
-    vec[base + 25] = 1.0 if re.search(r"\b(trending|popular|upcoming)\b", q_unquoted, re.I) and re.search(r"\b(discover|seer|seerr|overseerr|jellyseerr|week)\b", q_unquoted, re.I) else 0.0
-    vec[base + 26] = 1.0 if re.search(r"\barmiger\b|\bparse\b.*\brelease\b|\.mkv\b", query, re.I) else 0.0
-    vec[base + 27] = 1.0 if re.search(r"\bbitmagnet\b|\bdht\b", q_unquoted, re.I) else 0.0
-    vec[base + 28] = 1.0 if re.search(r"\bwaypoint\b|\bdh-waypoint\b", q_unquoted, re.I) else 0.0
+    vec[base + 23] = 1.0 if _TORRENT_READ_VERB_RE.search(q_unquoted) and _TORRENT_NOUN_RE.search(q_unquoted) else 0.0
+    vec[base + 24] = 1.0 if _MUSIC_NOUN_RE.search(q_unquoted) else 0.0
+    vec[base + 25] = 1.0 if _DISCOVER_CAT_RE.search(q_unquoted) and _DISCOVER_SVC_RE.search(q_unquoted) else 0.0
+    vec[base + 26] = 1.0 if _ARMIGER_HINT_RE.search(query) else 0.0
+    vec[base + 27] = 1.0 if _BITMAGNET_HINT_RE.search(q_unquoted) else 0.0
+    vec[base + 28] = 1.0 if _WAYPOINT_HINT_RE.search(q_unquoted) else 0.0
     vec[base + 29] = 1.0 if route_service_query(query) is not None else 0.0
     vec[base + 30] = 1.0 if route_bazarr_subtitle_query(query) is not None else 0.0
     vec[base + 31] = 1.0 if _SEASON_MENTION_RE.search(q_unquoted) else 0.0
@@ -239,19 +277,14 @@ def label_from_call(call_dict: dict[str, Any]) -> str:
 
 def _extract_unquoted_entity(query: str) -> str | None:
     """Extract an unquoted capitalized entity title or release token when no quotes are present."""
-    m_rel = re.search(r"\b([A-Za-z0-9_.()-]+\.(?:mkv|mp4|avi|ts|iso))\b", query, re.I)
+    m_rel = _UNQUOTED_REL_RE.search(query)
     if m_rel:
         return m_rel.group(1).strip(".,?!:;\"'")
-    m_tor = re.search(r"\b([A-Za-z0-9_.-]+(?:\.S\d{1,2}(?:E\d{1,2})?|\.\d{4}\.)[A-Za-z0-9_().-]+)\b", query)
+    m_tor = _UNQUOTED_TOR_RE.search(query)
     if m_tor:
         return m_tor.group(1).strip(".,?!:;\"'")
-    stop = r"(?:\s+(?:in|on|from|through|via|by|using|within|inside|rather|instead|without|before|after|and|or|if|unless|leaving|including|excluding|season|episodes?|movies?|series|show|film|status|already|right\s+now|please|today|this\s+week|is\s+(?:missing|in|on|available|monitored|already|currently|held|present|downloaded|complete)|are\s+(?:missing|in|on|available|monitored|already|currently|held|present|downloaded|complete)|missing|monitored|available|downloaded)\b|[?.!,;:]|\s+\((?:18|19|20|21)\d{2}\)|$)"
-    for pat in (
-        rf"\b(?:for|of|about|called|titled|named|series|movie|film|show|torrent|transfer|pause|resume|request|unmonitor|monitor)\s+([A-Z0-9\u00C0-\u024F][\w:'&.-]*(?:\s+(?:[\w:'&.-]+|\([A-Za-z]{{2,4}}\))){{0,6}}?){stop}",
-        rf"^\s*(?:is|are|does|do|has|have)\s+([A-Z0-9\u00C0-\u024F][\w:'&.-]*(?:\s+(?:[\w:'&.-]+|\([A-Za-z]{{2,4}}\))){{0,5}}?)\s+(?:in|monitored|complete|missing|available|downloaded|stalled|paused|seeding|playing)\b",
-        rf"\b(?i:(?:how\s+many|which|what|list|show|check|find|for|search(?:\s+sonarr)?(?:\s+indexers?)?(?:\s+for)?)\s+(?:(?:all|every|each)\s+)?(?:missing\s+)?(?:regular\s+)?)([A-Z0-9\u00C0-\u024F][\w:'&.-]*(?:\s+(?:[\w:'&.-]+|\([A-Za-z]{{2,4}}\))){{0,5}}?)\s+(?i:(?:regular\s+)?episodes?(?!\s+(?:of|for)\b))\b",
-    ):
-        m = re.search(pat, query)
+    for pat in _UNQUOTED_ENT_PATS:
+        m = pat.search(query)
         if m:
             cand = m.group(1).strip(" .,?!:;\"'")
             if cand and _norm_alnum(cand) not in _GENERIC_DOMAIN_PLACEHOLDERS and _norm_alnum(cand) not in _DEICTIC_PLACEHOLDERS:
@@ -457,7 +490,7 @@ class ArrmesNeuralRouterV3:
             if pred_class != "torrent_resume":
                 pred_class = "torrent_resume"
                 used_structural = True
-        if re.search(r"\b(?:is\s+unrelated|is\s+background\s+only|aside\s+from\s+<QUOTED>|is\s+not\s+the\s+target|do\s+not\s+use\s+<QUOTED>|ignore\s+<QUOTED>).*?\b(?:different|separate|another|not\s+(?:supplied|given|provided)|have\s+not\s+(?:supplied|named|given|provided)|whose\s+(?:name|title)\s+(?:i\s+)?(?:left\s+(?:blank|out)|omitted|forgot|is\s+missing)|forgot\s+to\s+(?:include|name)|left\s+(?:blank|out))\b|\bwithout\s+giving\s+the\s+(?:series|movie|film|show|album|artist)\s+title\b|\b(?:film|movie|series|show|album|artist)\s+i\s+(?:haven't|have\s+not)\s+named\b", q_unquoted, re.I):
+        if re.search(r"\b(?:is\s+unrelated|is\s+background\s+only|aside\s+from\s+<QUOTED>|is\s+not\s+the\s+target|do\s+not\s+use\s+<QUOTED>|ignore\s+<QUOTED>).*?\b(?:different|separate|another|not\s+(?:supplied|given|provided)|have\s+not\s+(?:supplied|named|given|provided)|whose\s+(?:name|title)\s+(?:i\s+)?(?:left\s+(?:blank|out)|omitted|forgot|is\s+missing)|forgot\s+to\s+(?:include|name)|left\s+(?:blank|out))\b|\bwithout\s+(?:giving|naming)\s+(?:the|a|an)\s+(?:series|movie|film|show|album|artist)(?:\s+title|\s+name)?\b|\bwithout\s+specifying\s+which\s+one\b|\b(?:film|movie|series|show|album|artist)\s+i\s+(?:haven't|have\s+not)\s+named\b", q_unquoted, re.I):
             return validate_call("clarify", {"slot": "title"}), pred_class != "clarify:title"
         if re.search(r"\b(?:check|look\s+up|search|request|grab|trigger\s+a\s+download\s+search)\s+(?:for\s+)?the\s+(?:other|earlier|later)\s+(?:version|remake|adaptation|edition)\b", q_unquoted, re.I) and len(set(re.findall(r"\b(18[7-9]\d|19\d{2}|20\d{2}|21\d{2})\b", q_unquoted))) < 2:
             return validate_call("clarify", {"slot": "reference"}), pred_class != "clarify:reference"
@@ -472,18 +505,30 @@ class ArrmesNeuralRouterV3:
         if pred_class.startswith("clarify:") and has_entity and not _SCOPE_RE.search(q_unquoted):
             years_in_q = set(re.findall(r"\b(18[7-9]\d|19\d{2}|20\d{2}|21\d{2})\b", q_unquoted))
             seasons_in_q = _explicit_seasons(q_unquoted)
+            has_tv_w = bool(_TV_WORD_RE.search(q_unquoted))
+            has_mv_w = bool(_MOVIE_WORD_RE.search(q_unquoted))
+            ctx_role_mismatch = bool(
+                isinstance(selected, dict)
+                and not quoted
+                and not _extract_unquoted_entity(query)
+                and (
+                    (selected.get("media_type") == "tv" and has_mv_w and not has_tv_w)
+                    or (selected.get("media_type") == "movie" and has_tv_w and not has_mv_w)
+                )
+            )
             has_genuine_clarify_signal = (
-                (pred_class == "clarify:media_type" and not _MOVIE_WORD_RE.search(q_unquoted) and not _TV_WORD_RE.search(q_unquoted) and not (isinstance(selected, dict) and selected.get("media_type") in {"movie", "tv"}))
+                (pred_class == "clarify:media_type" and not has_mv_w and not has_tv_w and not (isinstance(selected, dict) and selected.get("media_type") in {"movie", "tv"}))
                 or len(years_in_q) > 1
                 or len(seasons_in_q) > 1
                 or len(quoted) > 2
+                or ctx_role_mismatch
+                or bool(_ORDINAL_REF_RE.search(q_unquoted))
+                or bool(_NARROW_SCOPE_MUTATION_RE.search(q_unquoted))
+                or (not _request_identity_scope_fits_schema(q_unquoted) and bool(_REQUEST_WORD_RE.search(q_unquoted)))
                 or bool(re.search(
-                    r"\b(?:no\s+selection\s+list\s+is\s+attached|(?:second|first|third)\s+(?:selected|torrent|one|result)|"
-                    r"(?:other|earlier|later)\s+(?:version|remake|adaptation|edition)|background\s+only|not\s+the\s+target|left\s+blank|omitted|forgot|"
+                    r"\b(?:background\s+only|not\s+the\s+target|left\s+blank|omitted|forgot|"
                     r"whose\s+title\s+is\s+missing|have\s+not\s+(?:named|supplied|chosen|decided|selected|picked|specified)|"
-                    r"without\s+(?:saying|specifying|knowing)|4k|uhd|2160p|1080p|720p|480p|remux|hdr|flac|mp3|lossless|"
-                    r"quality|(?<!my\s)profiles?|quota|root\s+folder|private\s+indexers?|public\s+indexers?|on\s+behalf|tracks?|songs?|discs?|"
-                    r"s\d{1,2}e\d{1,3}|finale|pilot|premiere|(?:latest|newest|final)\s+season|rename)\b",
+                    r"without\s+(?:saying|specifying|knowing))\b",
                     q_unquoted,
                     re.I,
                 ))
@@ -501,9 +546,18 @@ class ArrmesNeuralRouterV3:
             slot = pred_class.split(":", 1)[1]
             if slot not in {"title", "media_type", "reference", "scope"}:
                 slot = _infer_clarify_slot(query, selected)
+            if _NARROW_SCOPE_MUTATION_RE.search(q_unquoted) and slot in {"title", "media_type"}:
+                slot = "scope"
+                used_structural = True
+            elif slot == "reference" and re.search(r"\band\s+report\s+its\s+status\b", q_unquoted, re.I):
+                slot = "title"
+                used_structural = True
             return validate_call("clarify", {"slot": slot}), used_structural
 
         action = pred_class
+        if action in {"tv_status", "tv_missing", "tv_search_missing"} and re.search(r"\bradarr\b", q_unquoted, re.I) and not re.search(r"\bsonarr\b", q_unquoted, re.I):
+            action = "movie_search" if action == "tv_search_missing" else "movie_status"
+            used_structural = True
 
         # Zero-argument actions
         if action in {"now_playing", "waypoint_status"}:
@@ -535,6 +589,8 @@ class ArrmesNeuralRouterV3:
             return validate_call("bitmagnet_search", {"query": q_val}), used_structural
 
         if action == "watch_history":
+            if selected is None and not quoted and re.search(r"\bfor\s+(?:that|this)\s+(?:title|movie|film|series|show)\b", q_unquoted, re.I):
+                return validate_call("clarify", {"slot": "reference"}), True
             ent = quoted[0] if quoted else None
             if not ent and isinstance(selected, dict) and isinstance(selected.get("title"), str) and _DEICTIC_RE.search(q_unquoted):
                 ent = selected["title"]
@@ -562,6 +618,11 @@ class ArrmesNeuralRouterV3:
             args_m: dict[str, Any] = {"artist": artist}
             if album:
                 args_m["album"] = album
+            if action == "music_search":
+                if not _write_scope_fits_schema(action, args_m, query):
+                    return validate_call("clarify", {"slot": "scope"}), True
+                if re.search(r"\b(if|unless|except|until|only\s+when|provided\s+that|as\s+long\s+as)\b", q_unquoted, re.I):
+                    return validate_call("unsupported", {"reason": "complex"}), True
             return validate_call(action, args_m), used_structural
 
         if len(quoted) > 1:
@@ -633,6 +694,20 @@ class ArrmesNeuralRouterV3:
             else:
                 return validate_call("clarify", {"slot": "media_type"}), True
 
+        if re.search(r"\bcheck\s+the\s+(?:second|first|third)\s+one\b", q_unquoted, re.I):
+            return validate_call("clarify", {"slot": "reference"}), True
+        if used_selected and not _context_role_matches(action, "title", selected, q_unquoted):
+            return validate_call("clarify", {"slot": "reference"}), True
+        if action in {"request_status", "request_media"} and not _request_identity_scope_fits_schema(q_unquoted):
+            return validate_call("clarify", {"slot": "scope"}), True
+        if not _write_scope_fits_schema(action, args_out, query):
+            return validate_call("clarify", {"slot": "scope"}), True
+        if re.search(r"\b(?:unless\s+<QUOTED>\s+is\s+already\s+complete|unmonitor\s+season)\b", q_unquoted, re.I):
+            return validate_call("clarify", {"slot": "scope"}), True
+        if action in WRITE_EFFECT_ACTIONS_V3 and re.search(r"\b(if|unless|except|until|only\s+when|provided\s+that|as\s+long\s+as)\b", q_unquoted, re.I):
+            return validate_call("unsupported", {"reason": "complex"}), True
+        if action == "torrent_pause" and not (_AFFIRMATIVE_PAUSE_RE.search(q_unquoted) and not _NEGATED_PAUSE_RE.search(q_unquoted) and not _PASSIVE_PAUSE_QUERY_RE.search(q_unquoted)):
+            return validate_call("clarify", {"slot": "scope"}), True
         return validate_call(action, args_out), used_structural
 
     def infer(self, query: str, context: dict[str, Any] | None = None, max_tokens: int = 160) -> dict[str, Any]:
@@ -640,20 +715,30 @@ class ArrmesNeuralRouterV3:
         gen_start = time.perf_counter()
         pred_class, confidence, probs = self.predict_proba(query, context)
         raw_call, used_structural = self._build_call(pred_class, probs, query, context)
+        raw_router_proposal = encode(raw_call, family=self.family)
+        gen_seconds = time.perf_counter() - gen_start
         grounded_call = verify_proposal(raw_call, query, context, contract_version=self.contract_version)
         if grounded_call != raw_call:
             used_structural = True
-            raw_call = grounded_call
-        raw_unverified = encode(raw_call, family=self.family)
-        gen_seconds = time.perf_counter() - gen_start
-        raw = finalize_output(raw_unverified, query, context, self.family, self.contract_version)
+        raw = encode(grounded_call, family=self.family)
+        raw_unverified = raw_router_proposal
         wall_seconds = time.perf_counter() - t0
         return {
             "raw": raw,
             "raw_unverified": raw_unverified,
+            "raw_router_proposal": raw_router_proposal,
             "neural_top1_class": pred_class,
             "neural_confidence": round(confidence, 4),
             "used_structural_guard": used_structural,
+            "routing_source": (
+                "explicit_bazarr_deterministic"
+                if raw_call.name in {"bazarr_subtitle_search", "bazarr_subtitle_download"} and pred_class != raw_call.name
+                else (
+                    "explicit_service_query_deterministic"
+                    if raw_call.name == "service_query" and pred_class != "service_query"
+                    else "neural_router_mlp"
+                )
+            ),
             "seconds": round(gen_seconds, 6),
             "wall_seconds": round(wall_seconds, 6),
             "first_token_seconds": round(gen_seconds, 6),

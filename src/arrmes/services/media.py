@@ -116,7 +116,7 @@ class NativeMediaReadAdapter:
         series = rows[0]
         if type(series.get("monitored")) is not bool:
             raise _UpstreamError("invalid_series_monitoring")
-        path = "/api/v3/episode?" + urllib.parse.urlencode({"seriesId": series["id"]})
+        path = "/api/v3/episode?" + urllib.parse.urlencode({"seriesId": series["id"]}, quote_via=urllib.parse.quote)
         episodes = _rows(self.native._get("sonarr", path, audit))
         _validated_rows("sonarr", "missing", episodes)
         now = self._clock()
@@ -160,7 +160,7 @@ class NativeMediaReadAdapter:
             "as_of_utc": now.astimezone(timezone.utc).isoformat()}, audit)
 
     def _movie_status(self, args, audit) -> AdapterObservation:
-        title_matches = self._exact(self._catalog("radarr", audit), args["title"])
+        title_matches = resolve_title_candidates(args["title"], self._catalog("radarr", audit))
         for row in title_matches:
             _optional_year(row)
         matches = [row for row in title_matches if "year" not in args or row.get("year") == args["year"]]
@@ -187,7 +187,7 @@ class NativeMediaReadAdapter:
         if len(artists) != 1:
             return _clarify("music_status", "artist_not_uniquely_resolved", audit)
         artist = artists[0]
-        albums = _rows(self.native._get("lidarr", "/api/v1/album?" + urllib.parse.urlencode({"artistId": artist["id"]}), audit))
+        albums = _rows(self.native._get("lidarr", "/api/v1/album?" + urllib.parse.urlencode({"artistId": artist["id"]}, quote_via=urllib.parse.quote), audit))
         _validated_rows("lidarr", "missing", albums)
         if len({row["id"] for row in albums}) != len(albums):
             raise _UpstreamError("duplicate_album_identity")
@@ -218,7 +218,7 @@ class NativeMediaReadAdapter:
                 "total_records": result.data["total_records"], "truncated": result.data["truncated"]}, audit)
         rows, total, truncated = self.native._paged(lambda page: self.native._tautulli_data(
             "/api/v2?" + urllib.parse.urlencode({"cmd": "get_history", "start": page * self.native.page_size,
-                "length": self.native.page_size, "order_column": "date", "order_dir": "desc", "search": query}),
+                "length": self.native.page_size, "order_column": "date", "order_dir": "desc", "search": query}, quote_via=urllib.parse.quote),
             audit), records_key="data", total_key="recordsFiltered")
         _validated_rows("tautulli", "history", rows)
         matched = [row for row in rows if any(_text(row.get(key)) and _norm(row[key]) == _norm(query)

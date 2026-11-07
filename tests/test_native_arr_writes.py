@@ -40,11 +40,13 @@ def album(identity, **changes):
 
 @dataclass
 class ArrFixtureState:
-    versions: dict = field(default_factory=lambda:{"sonarr":"4.0.20.3014","radarr":"6.4.4.10685","lidarr":"3.1.6.5079"})
-    starts: dict = field(default_factory=lambda:{s:"2026-01-01T00:00:00Z" for s in ("sonarr","radarr","lidarr")})
+    versions: dict = field(default_factory=lambda:{"sonarr":"4.0.20.3014","radarr":"6.4.4.10685","lidarr":"3.1.6.5079","readarr":"0.4.18.2738"})
+    starts: dict = field(default_factory=lambda:{s:"2026-01-01T00:00:00Z" for s in ("sonarr","radarr","lidarr","readarr")})
     series: list = field(default_factory=lambda:[{"id":1,"title":"Fixture series","year":2020,"monitored":True,"path":"/fixture/private/series"}])
     movies: list = field(default_factory=lambda:[{"id":2,"title":"Fixture movie","year":2020,"monitored":True,"hasFile":False,"path":"/fixture/private/movie"}])
     artists: list = field(default_factory=lambda:[{"id":3,"artistName":"Fixture artist","monitored":True,"path":"/fixture/private/artist"}])
+    authors: list = field(default_factory=lambda:[{"id":4,"authorName":"Fixture author","monitored":True,"path":"/fixture/private/author"}])
+    books: list = field(default_factory=lambda:[{"id":15,"authorId":4,"title":"Fixture book","monitored":True,"releaseDate":"2020-01-01T00:00:00Z","statistics":{"bookFileCount":0,"bookCount":1}}])
     episodes: list = field(default_factory=lambda:[episode(1),episode(2,airDateUtc="2050-01-01T00:00:00Z"),episode(3,airDateUtc=None),
         episode(4,hasFile=True),episode(5,monitored=False),episode(6,seasonNumber=0),episode(7,seasonNumber=2)])
     albums: list = field(default_factory=lambda:[album(8),album(9,title="Complete album",statistics={"trackCount":10,"trackFileCount":10}),
@@ -78,6 +80,8 @@ def arr_fixture(state=None, **options):
             if path=="/api/v3/series":return self.respond(200,state.series)
             if path=="/api/v3/movie":return self.respond(200,state.movies)
             if path=="/api/v1/artist":return self.respond(200,state.artists)
+            if path=="/api/v1/author":return self.respond(200,state.authors)
+            if path=="/api/v1/book":return self.respond(200,state.books)
             if path=="/api/v3/episode":
                 assert query=={"seriesId":["1"]}
                 return self.respond(200,state.episodes)
@@ -387,3 +391,26 @@ def test_unavailable_service_and_unsigned_ids_fail_before_post():
         assert adapter(native).execute(MOVIE,OWNER).status=="error" and not posts(state)
         with pytest.raises(InvalidCall):adapter(native).execute(Call("movie_search",{**MOVIE.arguments,"movieIds":[999]}),OWNER)
         with pytest.raises(InvalidCall):adapter(native).execute(Call("tv_search_missing",{**TV.arguments,"season":False}),OWNER)
+
+
+def test_readarr_book_and_author_search_confirmation_and_allowed_majors():
+    with arr_fixture() as (native, state):
+        controller = adapter(native)
+        pending_book = controller.execute_book_search("Fixture author", OWNER, book="Fixture book")
+        assert pending_book.status == "confirmation_required" and not posts(state)
+        assert pending_book.data["resolved_entity"]["command"] == {"name": "BookSearch", "bookIds": [15]}
+        dispatched_book = controller.confirm_book_search(pending_book.data["confirm_id"], OWNER)
+        assert dispatched_book.status == "dispatched" and len(posts(state)) == 1
+        assert posts(state)[0]["body"] == {"name": "BookSearch", "bookIds": [15]}
+        assert controller.confirm_book_search(pending_book.data["confirm_id"], OWNER).status == "denied"
+
+        pending_author = controller.execute_book_search("Fixture author", OWNER)
+        assert pending_author.status == "confirmation_required"
+        assert pending_author.data["resolved_entity"]["command"] == {"name": "BookSearch", "bookIds": [15]}
+        dispatched_author = controller.confirm_book_search(pending_author.data["confirm_id"], OWNER)
+        assert dispatched_author.status == "dispatched" and len(posts(state)) == 2
+
+        state.versions["radarr"] = "5.14.0.9383"
+        controller_v5 = adapter(native, allowed_majors={"radarr": (5, 6)})
+        pending_v5 = controller_v5.execute(MOVIE, OWNER)
+        assert pending_v5.status == "confirmation_required"

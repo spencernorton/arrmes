@@ -1,53 +1,104 @@
-"""Small, read-only native service contract, separate from the frozen v2 model tools."""
+"""Explicit, operator-configured native service read contract."""
 from __future__ import annotations
 
-from types import MappingProxyType
 from typing import Any
 
-SUPPORTED_OPERATIONS = MappingProxyType({
-    "sonarr": frozenset({"health", "queue", "history", "library", "missing", "search"}),
-    "radarr": frozenset({"health", "queue", "history", "library", "missing", "search"}),
-    "lidarr": frozenset({"health", "queue", "history", "library", "missing", "search"}),
+from arrmes.protocol import InvalidCall
+
+_ARR_OPS = frozenset({
+    "health", "queue", "history", "library", "missing", "search",
+    "wanted", "calendar", "quality_profiles", "indexers",
+})
+
+SUPPORTED_OPERATIONS: dict[str, frozenset[str]] = {
+    "sonarr": _ARR_OPS,
+    "radarr": _ARR_OPS,
+    "lidarr": _ARR_OPS,
+    "prowlarr": frozenset({"health", "indexers", "search", "applications", "history"}),
+    "readarr": _ARR_OPS,
+    "whisparr": _ARR_OPS,
     "bazarr": frozenset({"health", "missing", "subtitles"}),
-    "qbittorrent": frozenset({"health", "queue", "activity"}),
     "tautulli": frozenset({"health", "activity", "history"}),
     "seerr": frozenset({"health", "search"}),
+    "qbittorrent": frozenset({"health", "activity", "queue"}),
     "bitmagnet": frozenset({"health", "search"}),
-})
-SERVICE_PERMISSIONS = MappingProxyType({
-    "sonarr": "media:read", "radarr": "media:read", "lidarr": "media:read",
-    "bazarr": "media:read", "seerr": "media:read",
-    "qbittorrent": "torrents:read", "tautulli": "activity:read",
+}
+
+SERVICE_PERMISSIONS: dict[str, str] = {
+    "sonarr": "media:read",
+    "radarr": "media:read",
+    "lidarr": "media:read",
+    "prowlarr": "releases:read",
+    "readarr": "media:read",
+    "whisparr": "media:read",
+    "bazarr": "media:read",
+    "tautulli": "activity:read",
+    "seerr": "requests:read",
+    "qbittorrent": "torrents:read",
     "bitmagnet": "releases:read",
+}
+
+BITMAGNET_CONTENT_TYPES = frozenset({
+    "movie", "tv_show", "music", "ebook", "audiobook", "comic", "software", "game", "xxx",
 })
+
+_ARR_SERVICES = frozenset({"sonarr", "radarr", "lidarr", "readarr", "whisparr"})
+_OPTIONAL_QUERY_PAIRS = frozenset({
+    *((s, op) for s in _ARR_SERVICES for op in ("library", "quality_profiles", "indexers", "calendar")),
+    ("prowlarr", "indexers"),
+    ("prowlarr", "applications"),
+    ("qbittorrent", "queue"),
+    ("tautulli", "history"),
+})
+_MONITORED_FILTER_PAIRS = frozenset(
+    (s, op) for s in _ARR_SERVICES for op in ("library", "missing", "wanted")
+)
 
 
 def validate_service_query(arguments: dict[str, Any]) -> dict[str, Any]:
-    """Validate the service/operation pair and pair-specific optional arguments.
-
-    This boundary is also used by the adapter. A permissive union of JSON tool
-    enums alone cannot express these constraints safely.
-    """
-    from arrmes.protocol import InvalidCall
-
-    if not isinstance(arguments, dict) or set(arguments) - {"service", "operation", "query", "media_type"}:
-        raise InvalidCall("Invalid service query arguments")
-    service, operation = arguments.get("service"), arguments.get("operation")
+    """Validate service_query cross-field invariants."""
+    if not isinstance(arguments, dict):
+        raise InvalidCall("service_query arguments must be an object")
+    allowed = {"service", "operation", "query", "media_type", "monitored", "content_type"}
+    if set(arguments) - allowed:
+        raise InvalidCall("Unexpected service_query argument")
+    service = arguments.get("service")
+    operation = arguments.get("operation")
     if not isinstance(service, str) or service not in SUPPORTED_OPERATIONS:
-        raise InvalidCall("Unsupported native service")
+        raise InvalidCall("Unsupported service")
     if not isinstance(operation, str) or operation not in SUPPORTED_OPERATIONS[service]:
-        raise InvalidCall("Unsupported operation for this service")
+        raise InvalidCall("Unsupported service read operation")
+
+    out: dict[str, Any] = {"service": service, "operation": operation}
     query = arguments.get("query")
-    if "query" in arguments:
-        if not isinstance(query, str) or not query.strip() or len(query) > 200 or any(ord(c) < 32 for c in query):
+    if operation in {"search", "subtitles"}:
+        if not isinstance(query, str) or not query.strip():
+            raise InvalidCall("Operation requires a non-empty query")
+    elif query is not None and (service, operation) not in _OPTIONAL_QUERY_PAIRS:
+        raise InvalidCall("Query is not supported for this service read")
+    if query is not None:
+        if not isinstance(query, str) or not query.strip() or len(query.strip()) > 256 or any(ord(c) < 32 for c in query):
             raise InvalidCall("Invalid service query text")
-        if operation not in {"search", "library", "subtitles", "queue"} or (operation == "queue" and service != "qbittorrent"):
-            raise InvalidCall("This operation does not accept a text filter")
-    if operation in {"search", "subtitles"} and query is None:
-        raise InvalidCall("This operation requires query text")
+        out["query"] = query.strip()
+
+    media_type = arguments.get("media_type")
     if service == "bazarr" and operation in {"missing", "subtitles"}:
-        if arguments.get("media_type") not in {"movie", "tv"}:
-            raise InvalidCall("Bazarr requires an explicit movie or TV scope")
-    elif "media_type" in arguments:
-        raise InvalidCall("This operation does not accept a media type")
-    return dict(arguments)
+        if media_type not in {"movie", "tv"}:
+            raise InvalidCall("Bazarr subtitle reads require media_type")
+        out["media_type"] = media_type
+    elif media_type is not None:
+        raise InvalidCall("media_type is only valid for Bazarr subtitle reads")
+
+    monitored = arguments.get("monitored")
+    if monitored is not None:
+        if (service, operation) not in _MONITORED_FILTER_PAIRS or type(monitored) is not bool:
+            raise InvalidCall("monitored filter is only valid as a boolean on Arr library/missing/wanted reads")
+        out["monitored"] = monitored
+
+    content_type = arguments.get("content_type")
+    if content_type is not None:
+        if (service, operation) != ("bitmagnet", "search") or not isinstance(content_type, str) or content_type not in BITMAGNET_CONTENT_TYPES:
+            raise InvalidCall("content_type filter is only valid for Bitmagnet search")
+        out["content_type"] = content_type
+
+    return out

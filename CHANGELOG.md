@@ -1,5 +1,19 @@
 # Changelog
 
+## [1.5.0] - 2026-11-06
+
+### Added
+- Native `*Arr` and companion service expansion (`src/arrmes/services/contract.py`, `src/arrmes/services/native.py`, `src/arrmes/services/arr_writes.py`, `src/arrmes/catalog.py`) adding `prowlarr` (`api/v1`: `health`, `indexers`, `search`, `applications`, `history`), `readarr` / Chaptarr (`api/v1`), and `whisparr` (`api/v3`), plus richer read operations across `*Arr` services (`wanted` cutoff-unmet, `calendar` upcoming airings, `quality_profiles`, `indexers`, and boolean `monitored` filtering) for 68 validated `(service, operation)` pairs while preserving the immutable `arrmes.tools.v2` hash (`e34f94ec5110423f7e5dfc0309c5e8f10988f158253559f88f34d9d977a2efe8`) and 23-tool `arrmes.tools.v3` surface.
+- Caller-bound Seerr TV series/season request creation (`execute_tv_request`) and pending request cancellation (`execute_cancel_request`) in `src/arrmes/services/requests.py` with per-principal isolation and account-incarnation checks.
+- Bounded two-step read-to-confirm workflows (`src/arrmes/workflows.py`: `build_read_to_confirm_steps`, `execute_read_to_confirm_workflow`), confirmed Readarr book/author indexer search (`execute_book_search`, `confirm_book_search`), and Bitmagnet `content_type` facet filtering (`src/arrmes/services/bitmagnet.py`) plus portable tool filtering (`portable_tools_v2`, `portable_tools_v3`).
+- `CatalogInvertedIndex` (`src/arrmes/planner.py`, `src/arrmes/live_adapter.py`) providing O(1) normalized title, `originalTitle`, and `alternateTitles` lookup (`1.17 us` p50 across 5,000 Radarr movies; `22,495.7x` faster than linear scan).
+- Unquoted natural-language span extraction with confidence and margin gating (`extract_unquoted_service_span` in `src/arrmes/services/routing.py`), updated `ArrmesNeuralRouterV3` (`models/arrmes-neural-router-v3`), and mixed-precision QLoRA + router-assisted constrained decoding for `Qwen3-0.6B v8` and `FunctionGemma-270M v8` (`src/arrmes/model.py`, `experiments/mlx-lora-v8-provenance.json`).
+- Locked 2,580-case `acceptance-v6` benchmark suite (`data/acceptance-v6/`, `experiments/acceptance-v6/summary.json`, `seed=8008`, 516 clusters, 0 query and 0 entity overlap) and reproducible upstream Docker container binary qualification (`scripts/qualify_upstream_lab.py`, `experiments/upstream-lab-v1/summary.json`).
+
+### Fixed
+- Eliminated the 3 residual positive misses on `acceptance-v5` (now retired to `data/dev-v6/` at `1,260/1,260` = `100.00%`) and recovered 4-bit post-training quantization span-copying accuracy on `Qwen3-0.6B` from `53/100` (`v7` 4-bit) to `82/100` unassisted mixed-precision QLoRA and `100/100` router-assisted constrained decoding.
+- Hardened upstream container compatibility (`src/arrmes/services/native.py`, `src/arrmes/services/transfers.py`) for qBittorrent v5.1.4 `QBT_SID_<port>` base64 session cookies and Tautulli v2.18.2 empty `get_activity` payloads.
+
 ## [1.4.4] - 2026-11-05
 
 ### Fixed
