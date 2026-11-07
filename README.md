@@ -5,7 +5,7 @@ Local control for your self-hosted media stack.
 [![CI](https://github.com/spencernorton/arrmes/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/spencernorton/arrmes/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/spencernorton/arrmes?label=release)](https://github.com/spencernorton/arrmes/releases)
 [![MIT licence](https://img.shields.io/badge/licence-MIT-blue.svg)](LICENSE)
-[![Arrmes on NorviTech](https://img.shields.io/badge/NorviTech-Suite-FD8024.svg)](https://norvitech.com/ai-models/#arrmes)
+[![Arrmes on NorviTech](https://img.shields.io/badge/NorviTech-Suite-FD8024.svg)](https://norvitech.com/arrmes/)
 [![Hugging Face models](https://img.shields.io/badge/Hugging_Face-models-FFD21E.svg)](https://huggingface.co/NorviTech/arrmes-qwen3-0.6b)
 
 Arrmes turns plain-language requests into API calls to Sonarr, Radarr, Lidarr,
