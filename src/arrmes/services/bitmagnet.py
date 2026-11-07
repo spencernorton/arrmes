@@ -206,12 +206,18 @@ def _search(native, args, audit) -> AdapterObservation:
     reason = "page_limit"
     complete = False
     pages = 0
+    content_type_filter = args.get("content_type")
     for page in range(native.max_pages):
         limit = min(native.page_size, native.max_records - len(rows))
-        data = _post_read(native, "search", {"input": {"queryString": args["query"],
+        search_input: dict[str, Any] = {
+            "queryString": args["query"],
             "limit": limit, "offset": page * native.page_size, "totalCount": True,
             "hasNextPage": True, "cached": False,
-            "orderBy": [{"field": "relevance", "descending": True}, {"field": "info_hash", "descending": False}]}}, audit)
+            "orderBy": [{"field": "relevance", "descending": True}, {"field": "info_hash", "descending": False}],
+        }
+        if content_type_filter is not None:
+            search_input["facets"] = {"contentType": {"filter": [content_type_filter]}}
+        data = _post_read(native, "search", {"input": search_input}, audit)
         pages += 1
         version = _version(data)
         if first_version is not None and version != first_version:
@@ -226,6 +232,8 @@ def _search(native, args, audit) -> AdapterObservation:
             raise _UpstreamError("invalid_bitmagnet_search_pagination")
         reported, estimated = _count(result.get("totalCount")), result["totalCountIsEstimate"]
         parsed = [_item(row) for row in incoming]
+        if content_type_filter is not None and any(row["content_type"] != content_type_filter for row in parsed):
+            raise _UpstreamError("bitmagnet_content_type_filter_mismatch")
         repeated = any(row["id"] in seen for row in parsed) or len({row["id"] for row in parsed}) != len(parsed)
         for row in parsed:
             if row["id"] not in seen:
@@ -251,7 +259,8 @@ def _search(native, args, audit) -> AdapterObservation:
             reason = "record_limit"
             break
     return _observation("verified_ok" if complete else "partial", args, {
-        "query": args["query"], "server_version": first_version, "items": rows, "returned_count": len(rows),
+        "query": args["query"], **({"content_type": content_type_filter} if content_type_filter is not None else {}),
+        "server_version": first_version, "items": rows, "returned_count": len(rows),
         "total_records": len(rows) if complete else None, "reported_total_count": reported,
         "total_count_is_estimate": estimated, "truncated": not complete, "complete_listing": complete,
         "pagination_end": reason, "pages_read": pages,

@@ -111,6 +111,8 @@ def request_fixture(state=None, *, mapping=None, mode="confirm", store=None, **n
                     "serviceErrors": {"radarr": [{"name": "DO-NOT-EXPOSE"}]}});return
             if path.startswith("/api/v1/request/"):
                 row = next((row for row in state.requests if row["id"] == int(path.split("/")[-1])), None)
+                if row is None and not state.after_transform:
+                    self.respond(404, {"message": "Request not found"});return
                 payload = deepcopy(row)
                 if state.after_transform: payload = state.after_transform(payload)
                 self.respond(state.after_status, payload);return
@@ -121,13 +123,22 @@ def request_fixture(state=None, *, mapping=None, mode="confirm", store=None, **n
             if user is None: return
             payload = json.loads(self.rfile.read(int(self.headers["Content-Length"])))
             call["body"] = payload
-            assert call["path"] == "/api/v1/request" and set(payload) == {"mediaType", "mediaId"}
-            row = _request(max([r["id"] for r in state.requests] + [0]) + 1, owner=user, tmdb=payload["mediaId"], kind=payload["mediaType"])
+            assert call["path"] == "/api/v1/request" and set(payload) <= {"mediaType", "mediaId", "seasons"}
+            extra = {"seasons": [{"seasonNumber": s, "status": 1} for s in payload["seasons"]]} if "seasons" in payload else {}
+            row = _request(max([r["id"] for r in state.requests] + [0]) + 1, owner=user, tmdb=payload["mediaId"], kind=payload["mediaType"], **extra)
             if state.post_transform: row = state.post_transform(row)
             if 400 <= state.post_status < 500:
                 self.respond(state.post_status, {"error": "DO-NOT-EXPOSE"});return
             state.requests.append(deepcopy(row));state.posted = True
             self.respond(state.post_status, row)
+
+        def do_DELETE(self):
+            user, call = self.identity("DELETE")
+            if user is None: return
+            assert call["path"].startswith("/api/v1/request/")
+            req_id = int(call["path"].split("/")[-1])
+            state.requests = [r for r in state.requests if r["id"] != req_id]
+            self.respond(204, b"")
 
         def log_message(self, *_args): pass
 
@@ -532,3 +543,70 @@ def test_implemented_three_x_version_syntax_still_requires_exact_bound_version(v
         executor, confirmation = _pending(adapter)
         assert executor.confirm_write(confirmation, VIEWER).terminal_state == "completed"
         assert len(_posts(state)) == 1
+
+
+def test_tv_season_request_creation_gated_and_confirmed_with_season_validation():
+    tv_state = RequestFixture(
+        search=[{"id": 202, "mediaType": "tv", "name": "Fixture series", "firstAirDate": "2021-01-01"}],
+        details={("tv", 202): {
+            "id": 202,
+            "name": "Fixture series",
+            "firstAirDate": "2021-01-01",
+            "seasons": [
+                {"seasonNumber": 0, "episodeCount": 2},
+                {"seasonNumber": 1, "episodeCount": 10},
+                {"seasonNumber": 2, "episodeCount": 8},
+            ],
+            "mediaInfo": None,
+        }},
+    )
+    tv_call = Call("request_media", {"title": "Fixture series", "media_type": "tv", "year": 2021})
+    with request_fixture(tv_state) as (adapter_disabled, state_d):
+        denied = adapter_disabled.execute(tv_call, VIEWER)
+        assert denied.status == "unsupported" and denied.data["error"] == "native_tv_request_creation_not_qualified"
+        assert not _posts(state_d)
+
+    tv_state2 = RequestFixture(
+        search=[{"id": 202, "mediaType": "tv", "name": "Fixture series", "firstAirDate": "2021-01-01"}],
+        details={("tv", 202): {
+            "id": 202,
+            "name": "Fixture series",
+            "firstAirDate": "2021-01-01",
+            "seasons": [
+                {"seasonNumber": 1, "episodeCount": 10},
+                {"seasonNumber": 2, "episodeCount": 8},
+            ],
+            "mediaInfo": None,
+        }},
+    )
+    with request_fixture(tv_state2) as (adapter_enabled, state_e):
+        adapter_enabled.allow_tv_creation = True
+        bad_season = adapter_enabled.execute_tv_request("Fixture series", VIEWER, seasons=[9], year=2021)
+        assert bad_season.status == "clarify_required" and bad_season.data["reason"] == "requested_season_unavailable"
+        pending = adapter_enabled.execute_tv_request("Fixture series", VIEWER, seasons=[1, 2], year=2021)
+        assert pending.status == "confirmation_required"
+        assert pending.data["resolved_entity"]["seasons"] == [1, 2]
+        confirmed = adapter_enabled.confirm_write(pending.data["confirm_id"], VIEWER)
+        assert confirmed.status == "verified_ok" and confirmed.verified_complete
+        assert _posts(state_e)[0]["body"] == {"mediaType": "tv", "mediaId": 202, "seasons": [1, 2]}
+
+
+def test_request_cancellation_deletes_caller_owned_pending_and_blocks_foreign_or_approved():
+    state = RequestFixture(requests=[
+        _request(11, owner=7, state=1),
+        _request(12, owner=8, state=1),
+        _request(13, owner=7, state=2),
+    ])
+    with request_fixture(state) as (adapter, st):
+        # Foreign request is invisible/not found for caller 7
+        foreign = adapter.execute_cancel_request("Fixture movie", VIEWER, request_id=12, year=2020)
+        assert foreign.status == "clarify_required" and foreign.data["reason"] == "own_request_not_found"
+        # Approved request (state=2) cannot be cancelled
+        approved = adapter.execute_cancel_request("Fixture movie", VIEWER, request_id=13, year=2020)
+        assert approved.status == "clarify_required" and approved.data["reason"] == "request_not_cancellable_in_current_state"
+        # Caller-owned pending request (state=1) is gated then deleted on confirmation
+        pending = adapter.execute_cancel_request("Fixture movie", VIEWER, request_id=11, year=2020)
+        assert pending.status == "confirmation_required"
+        done = adapter.confirm_write(pending.data["confirm_id"], VIEWER)
+        assert done.status == "verified_ok" and done.verified_complete and done.data["cancelled_request_id"] == 11 and done.data["changed"] is True
+        assert all(r["id"] != 11 for r in st.requests)

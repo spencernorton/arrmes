@@ -8,17 +8,17 @@ Local control for your self-hosted media stack.
 [![Arrmes on NorviTech](https://img.shields.io/badge/NorviTech-Suite-FD8024.svg)](https://norvitech.com/arrmes/)
 [![Hugging Face models](https://img.shields.io/badge/Hugging_Face-models-FFD21E.svg)](https://huggingface.co/NorviTech/arrmes-qwen3-0.6b)
 
-Arrmes turns plain-language requests into API calls to Sonarr, Radarr, Lidarr,
-Bazarr, qBittorrent, Tautulli, Seerr and Bitmagnet. Routing runs locally; service
-credentials stay in the application.
+Arrmes turns plain-language requests into validated API calls across Sonarr, Radarr,
+Lidarr, Prowlarr, Readarr/Chaptarr, Whisparr, Bazarr, qBittorrent, Tautulli, Seerr,
+and Bitmagnet. Routing runs locally; service credentials stay in the application.
 
 ## What it does
 
-- Check libraries, missing media, queues, watch history and current activity.
-- Search Bitmagnet's torrent index.
+- Check libraries, missing or cutoff-unmet media, quality profiles, indexers, upcoming calendar airings, queues, watch history, and current activity.
+- Search Prowlarr indexers and Bitmagnet's torrent index (with optional content-type filtering).
 - Pause or resume a specific qBittorrent transfer.
-- Search for missing episodes, movies, albums or subtitles.
-- Submit a movie request through Seerr and check your own requests.
+- Search for missing episodes, movies, albums, books, or subtitles, including bounded read-to-confirm workflows.
+- Submit movie or TV series/season requests through Seerr, check caller-isolated request status, and cancel pending requests.
 
 For example:
 
@@ -26,9 +26,11 @@ For example:
 Show Sonarr queue
 Show Radarr history
 What episodes of Severance are missing in Sonarr?
+Search Prowlarr for Ubuntu
+Check Readarr missing books
 ```
 
-Writes require explicit, single-use confirmation. Ambiguous targets prompt for
+Writes require explicit, single-use HMAC confirmation. Ambiguous targets prompt for
 clarification. Supported operations vary by service; see the
 [capability guide](docs/capabilities.md) for versions and limits.
 
@@ -44,7 +46,7 @@ python3 -m venv .venv
 ```
 
 Follow the [HTTP setup](docs/portable-runtime.md#authenticated-http-service) to
-create private client and service registries, start the server and make a first
+create private client and service registries, start the server, and make a first
 request. It starts in model-free mode with read-only permissions.
 
 For learned routing, use the [7.52 MiB neural router](docs/portable-runtime.md#neural-router).
@@ -55,37 +57,29 @@ and [Docker](docs/portable-runtime.md#linux-containers) setup.
 
 ## Benchmarks
 
-Recorded neural-router results on the synthetic `acceptance-v5` suite:
+Recorded neural-router and system results on the locked `acceptance-v6` (`N=2,580`) and retired `dev-v6` (`acceptance-v5`, `N=2,460`) suites:
 
-| Check | Result |
-| --- | --- |
-| Exact calls, positive cases (raw and verified) | 1,257 / 1,260 |
-| Expected decisions, negative cases (raw and verified) | 1,200 / 1,200 |
-| Controlled execution workflows | 52 / 52 |
+- **Locked `acceptance-v6` positive calls (`v3` contract, 276 clusters):** `1,380 / 1,380` (`100.00%` Track A raw and Track B verified; 95% Wilson LB `99.72%`, 95% cluster-bootstrap LB `100.00%`).
+- **Locked `acceptance-v6` positive calls (`v2` contract, 212 clusters):** `1,060 / 1,060` (`100.00%` Track A raw and Track B verified; 95% Wilson LB `99.64%`, 95% cluster-bootstrap LB `100.00%`).
+- **Locked `acceptance-v6` hard-negative & safety cases (240 clusters):** `1,200 / 1,200` (`100.00%` Track A raw and Track B verified; `0` damaged raw predictions, `0` unauthorized writes).
+- **Retired `dev-v6` (`acceptance-v5`) positive calls:** `1,260 / 1,260` (`100.00%`, eliminating all 3 residual misses from `v1.4.4`).
+- **Track C end-to-end execution workflows (HTTP fixtures):** `93 / 93` (`100.00%` across `v2` reads/writes, all `68` native `service_query` pairs, Readarr book search, Seerr TV season request/cancellation, and bounded read-to-confirm workflows).
+- **Upstream Docker container binary qualification (`experiments/upstream-lab-v1/summary.json`):** `45 / 45` (`100.00%` live checks against official Sonarr v4, Radarr v5/v6 with 320 seeded multi-page movies, Lidarr v2, Prowlarr v1, Bazarr 1.6+, Tautulli v2, and qBittorrent v5 container binaries on an isolated loopback bridge).
 
-The execution tests use HTTP fixtures; qualification against actual upstream
-applications is partial. [Results and methodology](docs/benchmark-acceptance-v5.md)
-include confidence bounds and model comparisons.
+![Model accuracy and generative/router convergence across locked acceptance-v6 and historical benchmarks](docs/figures/arrmes-model-accuracy-comparison.png)
 
-![Raw and verified accuracy for five Arrmes generative checkpoints on the same 200-case acceptance-v5 slice](docs/figures/arrmes-model-accuracy-comparison.png)
+[Recorded `acceptance-v6` scores](experiments/acceptance-v6/summary.json) and [MLX LoRA v8 provenance](experiments/mlx-lora-v8-provenance.json) report Track A direct model output separately from Track B verified system proposals and explicit deterministic routes.
 
-Five generative checkpoints on the same 100 positive and 100 negative cases.
-[Recorded scores](experiments/acceptance-v5/summary.json) separate raw model
-output from verified proposals; these are separate from the full neural-router
-results above.
+![Warm routing latency, 5,000-movie CatalogInvertedIndex lookup throughput, and model footprint](docs/figures/arrmes-local-runtime-comparison.png)
 
-![Warm routing latency and model size for the neural router, FunctionGemma and Qwen3 on Apple M4 Pro](docs/figures/arrmes-local-runtime-comparison.png)
-
-[Recorded Apple M4 Pro profiles](experiments/runtime-profile-v7.json): warm
-routing plus verification, excluding service and network time. Disk size is
-separate from runtime memory; sample counts and axis scales are labeled.
+[Recorded runtime profiles](experiments/runtime-profile-v8.json): `0.597 ms` warm p50 / `0.885 ms` warm p95 routing + verification on Apple M4 Pro (`7.52 MiB` weights), and `1.17 us` p50 title lookup across a 5,000-movie library via `CatalogInvertedIndex` (`22,495.7x` faster than linear scan).
 
 ## Documentation
 
 - [Supported services and configuration](docs/capabilities.md)
 - [Runtime setup and measured performance](docs/portable-runtime.md)
-- [Subtitle operations](docs/bazarr-subtitles.md), [movie requests](docs/native-requests.md), [media searches](docs/native-arr-writes.md) and [Bitmagnet](docs/native-bitmagnet.md)
-- [Contributing](CONTRIBUTING.md), [changelog](CHANGELOG.md) and [security](SECURITY.md)
+- [Subtitle operations](docs/bazarr-subtitles.md), [movie & TV requests](docs/native-requests.md), [media searches](docs/native-arr-writes.md), and [Bitmagnet](docs/native-bitmagnet.md)
+- [Contributing](CONTRIBUTING.md), [changelog](CHANGELOG.md), and [security](SECURITY.md)
 
 Questions: [Discussions](https://github.com/spencernorton/arrmes/discussions).
 Bugs: [Issues](https://github.com/spencernorton/arrmes/issues).

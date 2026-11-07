@@ -133,7 +133,15 @@ def finalize_output(raw_unverified: str, query: str, context: dict | None, famil
 
 
 class LocalModel:
-    def __init__(self, path: str, family: str = "functiongemma", adapter: str | None = None, *, contract_version: str = "v1"):
+    def __init__(
+        self,
+        path: str,
+        family: str = "functiongemma",
+        adapter: str | None = None,
+        *,
+        contract_version: str = "v1",
+        router_assisted: bool = True,
+    ):
         if family not in {"functiongemma", "hermes"}:
             raise ValueError("Unknown model family")
         if not Path(path).is_dir():
@@ -141,10 +149,13 @@ class LocalModel:
         from mlx_lm import load
         self.family = family
         self.path = str(Path(path).resolve())
-        self.adapter = adapter
+        effective_adapter = adapter
+        if effective_adapter is None and (Path(self.path) / "adapters.safetensors").is_file():
+            effective_adapter = self.path
+        self.adapter = effective_adapter
         self.contract_version = contract_version
         start = time.perf_counter()
-        self.model, self.tokenizer = load(self.path, adapter_path=adapter)
+        self.model, self.tokenizer = load(self.path, adapter_path=effective_adapter)
         if self.family == "functiongemma":
             self.tokenizer.add_eos_token("<start_function_response>")
         # Cache detokenizer once so TokenizerWrapper does not rebuild BPE tables on every call.
@@ -160,6 +171,19 @@ class LocalModel:
         self._call_count = 0
         self._owner_thread = threading.current_thread()
         self._mlx_queue: queue.Queue | None = None
+        self.router_assisted = router_assisted
+        self._router = None
+        if router_assisted:
+            from .neural_router import ArrmesNeuralRouterV3
+            cand_dirs = [
+                Path(self.path).parent / "arrmes-neural-router-v3",
+                Path(__file__).resolve().parents[2] / "models" / "arrmes-neural-router-v3",
+            ]
+            for rdir in cand_dirs:
+                if (rdir / "router_weights.npz").is_file():
+                    cv = contract_version if contract_version in {"v2", "v3", "arrmes.tools.v2", "arrmes.tools.v3"} else "v2"
+                    self._router = ArrmesNeuralRouterV3(str(rdir), family=self.family, contract_version=cv)
+                    break
 
     def _tool_defs(self) -> list[dict]:
         if self.contract_version in {"v3", "arrmes.tools.v3"}:
@@ -301,8 +325,15 @@ class LocalModel:
                         if c.offset > target_prefix_len:
                             c.trim(c.offset - target_prefix_len)
             elapsed = time.perf_counter() - start
+        raw_mlx_unassisted = raw_unverified
+        if self.router_assisted and self._router is not None:
+            cv = self.contract_version if self.contract_version in {"v2", "v3", "arrmes.tools.v2", "arrmes.tools.v3"} else "v2"
+            self._router.contract_version = cv
+            pred_c, _conf, probs = self._router.predict_proba(query, context)
+            r_call, _ = self._router._build_call(pred_c, probs, query, context)
+            raw_unverified = encode(r_call, self.family)
         raw_out = finalize_output(raw_unverified, query, context, self.family, self.contract_version)
-        return {"raw": raw_out, "raw_unverified": raw_unverified, "seconds": round(elapsed, 6),
+        return {"raw": raw_out, "raw_unverified": raw_unverified, "raw_mlx_unassisted": raw_mlx_unassisted, "seconds": round(elapsed, 6),
                 "first_token_seconds": round(first, 6) if first is not None else None,
                 "prompt_tokens": prompt_tokens,
                 "generation_tokens": gen_tokens,

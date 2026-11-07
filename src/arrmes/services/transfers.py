@@ -148,7 +148,7 @@ class NativeTransferAdapter:
         if cfg.api_key:
             headers["Authorization"] = "Bearer " + cfg.api_key
         if cfg.session_id:
-            headers["Cookie"] = "SID=" + cfg.session_id
+            headers["Cookie"] = cfg.session_id if cfg.session_id.startswith("QBT_SID_") else ("SID=" + cfg.session_id)
         body = urllib.parse.urlencode({"hashes": info_hash}).encode("ascii")
         req = urllib.request.Request(cfg.base_url.rstrip("/") + endpoint, data=body, headers=headers, method="POST")
         try:

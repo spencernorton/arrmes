@@ -108,13 +108,18 @@ WRITE_EFFECT_ACTIONS = frozenset(a.name for a in V2_ACTIONS if a.effect in {"dow
 # The released neural model continues to receive precisely tools_v2(). Native
 # service reads use an explicitly identified deterministic route. Keep the v2
 # schema and hash unchanged so historical experiments remain reproducible.
+ESTATE_EXTENSION_ACTIONS = frozenset({"armiger_parse", "waypoint_status"})
+PORTABLE_V2_ACTIONS = tuple(a for a in V2_ACTIONS if a.name not in ESTATE_EXTENSION_ACTIONS)
+
 SERVICE_QUERY_ACTION = Action(
     "service_query", "Inspect a configured native media service. Read only.",
     "configured-service", "read", None,
     {"service": text("Configured service name", 32),
      "operation": text("Supported read operation", 32),
      "query": text("Explicit title or search text", 256),
-     "media_type": choice("movie", "tv")},
+     "media_type": choice("movie", "tv"),
+     "monitored": {"type": "boolean"},
+     "content_type": choice("movie", "tv_show", "music", "ebook", "audiobook", "comic", "software", "game", "xxx")},
     ("service", "operation"),
 )
 V3_ACTIONS = V2_ACTIONS + (SERVICE_QUERY_ACTION,)
@@ -155,6 +160,17 @@ def tools_v2() -> list[dict]:
     return [a.tool() for a in V2_ACTIONS]
 
 
+PORTABLE_V3_ACTIONS = tuple(a for a in V3_ACTIONS if a.name not in ESTATE_EXTENSION_ACTIONS)
+
+
+def portable_tools_v2() -> list[dict]:
+    return [a.tool() for a in PORTABLE_V2_ACTIONS]
+
+
+def portable_tools_v3() -> list[dict]:
+    return [a.tool() for a in PORTABLE_V3_ACTIONS]
+
+
 def tools_v3() -> list[dict]:
     return [a.tool() for a in V3_ACTIONS]
 
@@ -181,10 +197,15 @@ def contract_hash_v2() -> str:
     return hashlib.sha256(json.dumps(manifest_v2(), sort_keys=True, separators=(",", ":")).encode()).hexdigest()
 
 
-def manifest_v3() -> dict:
+def manifest_v3(portable_only: bool = False) -> dict:
     from .services import SUPPORTED_OPERATIONS, SERVICE_PERMISSIONS
+    actions_list = PORTABLE_V3_ACTIONS if portable_only else V3_ACTIONS
     return {"version": CONTRACT_VERSION_V3, "neural_contract": CONTRACT_VERSION_V2,
             "neural_contract_sha256": contract_hash_v2(),
+            "portable_only": portable_only,
+            "tool_count": len(actions_list),
+            "portable_actions": [a.name for a in PORTABLE_V3_ACTIONS],
+            "estate_extension_actions": sorted(ESTATE_EXTENSION_ACTIONS),
             "explicit_write_actions": [{"tool": a.tool(), "effect": a.effect,
                                         "permission": a.permission,
                                         "routing": "explicit_bazarr_deterministic"}

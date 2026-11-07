@@ -1,0 +1,69 @@
+{
+  "version": "v8",
+  "trained_at": "2026-11-06",
+  "neural_router_v8": {
+    "weights_sha256": "827a4c3c519a126bc9071a599cf25fc9d0f513826f90b78783a6469a786ad375",
+    "train_examples": 6476,
+    "epochs": 30
+  },
+  "functiongemma_270m_v8": {
+    "base_sha256": null,
+    "trained_sha256": "c898bb32d8af1ca9399720c74ad460c20f2c42d5af73fda165e2fdd197deeae1",
+    "num_tensors": 112,
+    "all_finite": true,
+    "max_abs_delta": 0.03964454,
+    "mean_abs_delta": 0.00991113,
+    "evaluation": {
+      "dev_v6_pos_100": {
+        "raw_mlx_unassisted_exact": 82,
+        "raw_exact": 100,
+        "verified_exact": 100
+      },
+      "dev_v6_neg_100": {
+        "raw_mlx_unassisted_exact": 11,
+        "raw_exact": 100,
+        "verified_exact": 100
+      },
+      "acceptance_v6_pos_100": {
+        "raw_mlx_unassisted_exact": 86,
+        "raw_exact": 100,
+        "verified_exact": 100
+      },
+      "acceptance_v6_neg_100": {
+        "raw_mlx_unassisted_exact": 12,
+        "raw_exact": 100,
+        "verified_exact": 100
+      }
+    }
+  },
+  "qwen3_06b_v8": {
+    "base_sha256": "bd65e5d8469cbcc4332234f4ed5f2ddad9506950ea34e953ae77bc89ba85c256",
+    "trained_sha256": "c8e498a909428b731f480cb4def51ac517ceb6c6e51cf762458e16848cfab573",
+    "num_tensors": 112,
+    "all_finite": true,
+    "max_abs_delta": 0.00012678,
+    "mean_abs_delta": 0.00010117,
+    "evaluation": {
+      "dev_v6_pos_100": {
+        "raw_mlx_unassisted_exact": 82,
+        "raw_exact": 100,
+        "verified_exact": 100
+      },
+      "dev_v6_neg_100": {
+        "raw_mlx_unassisted_exact": 5,
+        "raw_exact": 100,
+        "verified_exact": 100
+      },
+      "acceptance_v6_pos_100": {
+        "raw_mlx_unassisted_exact": 81,
+        "raw_exact": 100,
+        "verified_exact": 100
+      },
+      "acceptance_v6_neg_100": {
+        "raw_mlx_unassisted_exact": 5,
+        "raw_exact": 100,
+        "verified_exact": 100
+      }
+    }
+  }
+}

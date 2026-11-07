@@ -15,7 +15,7 @@ import urllib.parse
 import urllib.request
 
 from arrmes.adapters import AdapterObservation
-from arrmes.planner import Principal
+from arrmes.planner import Principal, resolve_title_candidates
 from arrmes.protocol import Call, InvalidCall
 from .contract import SERVICE_PERMISSIONS, SUPPORTED_OPERATIONS, validate_service_query
 
@@ -39,7 +39,7 @@ class ServiceConfig:
             raise ValueError("Invalid service port") from exc
         if not isinstance(self.api_key, str) or any(ord(c) < 32 or ord(c) == 127 for c in self.api_key):
             raise ValueError("Invalid API key encoding")
-        if not isinstance(self.session_id, str) or (self.session_id and not re.fullmatch(r"[A-Za-z0-9._-]+", self.session_id)):
+        if not isinstance(self.session_id, str) or (self.session_id and not re.fullmatch(r"(?:QBT_SID_\d+=)?[A-Za-z0-9._/+=-]+", self.session_id)):
             raise ValueError("Invalid session cookie encoding")
         if (not isinstance(self.user_ids, Mapping) or len(self.user_ids) > 256
                 or any(not isinstance(subject, str) or not 1 <= len(subject) <= 200
@@ -93,7 +93,9 @@ class _UpstreamError(ValueError):
 
 
 def _norm(value: str) -> str:
-    return " ".join(unicodedata.normalize("NFKC", value).casefold().split())
+    decomposed = unicodedata.normalize("NFKD", value)
+    stripped = "".join(ch for ch in decomposed if not unicodedata.combining(ch))
+    return " ".join(unicodedata.normalize("NFKC", stripped).casefold().split())
 
 
 def _count(value: Any) -> int:
@@ -117,10 +119,27 @@ def _text(value: Any) -> bool:
 
 
 def _display(row: dict[str, Any]) -> bool:
-    if any(_text(row.get(key)) for key in ("title", "sourceTitle", "artistName", "full_title", "grandparent_title")):
+    if any(_text(row.get(key)) for key in ("title", "sourceTitle", "artistName", "authorName", "bookTitle", "full_title", "grandparent_title")):
         return True
-    return any(isinstance(row.get(key), dict) and any(_text(row[key].get(field)) for field in ("title", "artistName"))
-               for key in ("series", "movie", "artist", "album", "episode"))
+    return any(isinstance(row.get(key), dict) and any(_text(row[key].get(field)) for field in ("title", "artistName", "authorName"))
+               for key in ("series", "movie", "artist", "album", "episode", "author", "book"))
+
+
+_ARR_SERVICES = frozenset({"sonarr", "radarr", "lidarr", "readarr", "whisparr"})
+_ARR_DISPLAY_FIELD = {
+    "sonarr": "title",
+    "radarr": "title",
+    "lidarr": "artistName",
+    "readarr": "authorName",
+    "whisparr": "title",
+}
+_ARR_PROVIDER_FIELD = {
+    "sonarr": "tvdbId",
+    "radarr": "tmdbId",
+    "lidarr": "foreignArtistId",
+    "readarr": "foreignAuthorId",
+    "whisparr": "tvdbId",
+}
 
 
 def _validated_rows(service: str, operation: str, rows: list[dict[str, Any]], *, media_type: str | None = None) -> list[dict[str, Any]]:
@@ -132,29 +151,49 @@ def _validated_rows(service: str, operation: str, rows: list[dict[str, Any]], *,
     """
     for row in rows:
         valid = False
-        if service in {"sonarr", "radarr", "lidarr"}:
-            title = "artistName" if service == "lidarr" else "title"
+        if service in _ARR_SERVICES:
+            title = _ARR_DISPLAY_FIELD[service]
             if operation == "search":
                 internal = row.get("id")
                 valid_internal = internal is None or _id(internal, zero=True)
-                provider = row.get({"sonarr": "tvdbId", "radarr": "tmdbId", "lidarr": "foreignArtistId"}[service])
-                valid_provider = _text(provider) if service == "lidarr" else _id(provider)
-                provider_shape = provider is None or (isinstance(provider, str) if service == "lidarr" else _id(provider, zero=True))
-                valid = valid_internal and provider_shape and (_id(internal) or valid_provider) and _text(row.get(title))
+                provider_key = _ARR_PROVIDER_FIELD[service]
+                provider = row.get(provider_key)
+                if service == "readarr" and provider is None and isinstance(row.get("author"), dict):
+                    provider = row["author"].get("foreignAuthorId")
+                if service == "readarr" and provider is None:
+                    provider = row.get("foreignBookId")
+                is_str_provider = service in {"lidarr", "readarr"}
+                valid_provider = _text(provider) if is_str_provider else _id(provider)
+                provider_shape = provider is None or (isinstance(provider, str) if is_str_provider else _id(provider, zero=True))
+                has_text = _text(row.get(title)) or (service == "readarr" and _text(row.get("title")))
+                valid = valid_internal and provider_shape and (_id(internal) or valid_provider) and has_text
             elif operation == "queue":
-                # Upstream GetHashInt31 can produce zero; null series/album IDs
-                # are valid for downloads not yet identified as library media.
                 valid = _id(row.get("id"), zero=True) and _display(row)
             elif operation == "history":
                 valid = _id(row.get("id")) and _display(row)
-            elif operation == "missing" and service == "sonarr":
+            elif operation in {"missing", "wanted"} and service in {"sonarr", "whisparr"}:
                 valid = (_id(row.get("id")) and _id(row.get("seriesId"))
                          and _id(row.get("seasonNumber"), zero=True) and _id(row.get("episodeNumber"), zero=True)
                          and (row.get("title") is None or isinstance(row.get("title"), str)))
-            else:
-                valid = _id(row.get("id")) and _text(row.get("title" if operation == "missing" else title))
-                if operation == "missing" and service == "lidarr":
+            elif operation in {"missing", "wanted"}:
+                valid = _id(row.get("id")) and _text(row.get("title"))
+                if service == "lidarr":
                     valid = valid and _id(row.get("artistId"))
+                elif service == "readarr":
+                    valid = valid and (_id(row.get("authorId")) or (isinstance(row.get("author"), dict) and _id(row["author"].get("id"))))
+            elif operation in {"quality_profiles", "indexers"}:
+                valid = _id(row.get("id")) and _text(row.get("name"))
+            elif operation == "calendar":
+                valid = _id(row.get("id")) and (_text(row.get("title")) or _display(row))
+            else:
+                valid = _id(row.get("id")) and (_text(row.get(title)) or (service == "readarr" and _text(row.get("title"))))
+        elif service == "prowlarr":
+            if operation in {"indexers", "applications"}:
+                valid = _id(row.get("id")) and _text(row.get("name"))
+            elif operation == "search":
+                valid = _text(row.get("title")) and (_text(row.get("guid")) or _id(row.get("indexerId"), zero=True))
+            elif operation == "history":
+                valid = _id(row.get("id")) and (_display(row) or _text(row.get("eventType")) or isinstance(row.get("data"), dict))
         elif service == "bazarr":
             if operation == "series_library":
                 valid = _id(row.get("sonarrSeriesId")) and _text(row.get("title"))
@@ -186,11 +225,11 @@ def _validated_rows(service: str, operation: str, rows: list[dict[str, Any]], *,
 
 
 _SAFE_FIELDS = frozenset({
-    "id", "title", "name", "artistName", "artistId", "seriesId", "movieId", "albumId",
+    "id", "title", "name", "artistName", "authorName", "artistId", "authorId", "seriesId", "movieId", "albumId", "bookId",
     "year", "monitored", "hasFile", "statistics", "seasonNumber", "episodeNumber",
     "status", "trackedDownloadStatus", "trackedDownloadState", "statusMessages", "errorMessage",
     "eventType", "date", "sourceTitle", "size", "sizeleft", "timeleft", "estimatedCompletionTime",
-    "protocol", "downloadClient", "quality", "releaseDate", "inCinemas", "airDateUtc",
+    "protocol", "downloadClient", "quality", "releaseDate", "inCinemas", "airDateUtc", "airDate", "physicalRelease", "digitalRelease",
     "hash", "state", "progress", "dlspeed", "upspeed", "eta", "ratio", "amount_left",
     "downloaded", "uploaded", "availability", "num_seeds", "num_leechs", "priority", "category",
     "sonarrSeriesId", "sonarrEpisodeId", "radarrId", "seriesTitle", "episodeTitle", "episode_number",
@@ -199,9 +238,13 @@ _SAFE_FIELDS = frozenset({
     "duration", "play_duration", "player", "platform", "transcode_decision", "stream_count",
     "mediaType", "originalTitle", "originalName", "firstAirDate", "mediaInfo",
     "language", "code2", "code3", "forced", "hi", "hearing_impaired", "source", "resolution",
-    "modifier", "episodeFileCount", "episodeCount", "trackFileCount", "trackCount", "albumCount",
-    "series", "movie", "artist", "album",
-    "tvdbId", "tmdbId", "foreignArtistId", "row_id", "rating_key", "session_key", "session_id",
+    "modifier", "episodeFileCount", "episodeCount", "trackFileCount", "trackCount", "albumCount", "bookFileCount", "bookCount",
+    "series", "movie", "artist", "album", "author", "book", "alternateTitles",
+    "tvdbId", "tmdbId", "foreignArtistId", "foreignAuthorId", "foreignBookId",
+    "row_id", "rating_key", "session_key", "session_id",
+    "upgradeAllowed", "cutoff", "enable", "enableRss", "enableAutomaticSearch", "enableInteractiveSearch",
+    "indexerId", "indexer", "guid", "age", "seeders", "leechers", "grabs", "categories",
+    "appProfileId", "syncLevel", "implementation", "implementationName", "disabledTill", "mostRecentFailure",
 })
 
 
@@ -220,6 +263,19 @@ def _public_row(row: dict[str, Any]) -> dict[str, Any]:
             return value
         return None
     return safe(row)
+
+
+def _matches_row_query(row: dict[str, Any], needle: str) -> bool:
+    for field_name in ("title", "artistName", "authorName", "name", "sourceTitle"):
+        val = row.get(field_name)
+        if isinstance(val, str) and needle in _norm(val):
+            return True
+    alts = row.get("alternateTitles")
+    if isinstance(alts, list):
+        for alt in alts:
+            if isinstance(alt, dict) and isinstance(alt.get("title"), str) and needle in _norm(alt["title"]):
+                return True
+    return False
 
 
 class ServiceQueryAdapter:
@@ -252,15 +308,13 @@ class ServiceQueryAdapter:
         headers = {"Accept": "application/json", "User-Agent": "arrmes-native-read/1"}
         if cfg.api_key:
             if service == "qbittorrent":
-                # Native stateless keys arrived in qBittorrent 5.2 / WebAPI
-                # 2.14.1 and use Bearer, unlike the *arr API-key header.
                 headers["Authorization"] = "Bearer " + cfg.api_key
             else:
                 headers["X-Api-Key"] = cfg.api_key
         if service == "qbittorrent":
             headers["Referer"] = cfg.base_url.rstrip("/") + "/"
             if cfg.session_id:
-                headers["Cookie"] = "SID=" + cfg.session_id
+                headers["Cookie"] = cfg.session_id if cfg.session_id.startswith("QBT_SID_") else ("SID=" + cfg.session_id)
         req = urllib.request.Request(cfg.base_url.rstrip("/") + path, method="GET", headers=headers)
         try:
             with self._opener.open(req, timeout=self.timeout_seconds) as resp:
@@ -345,12 +399,19 @@ class ServiceQueryAdapter:
     def _result(self, service: str, args: dict[str, Any], rows: list[dict[str, Any]],
                 total: int, truncated: bool, audit: list[dict[str, Any]], **extra: Any) -> AdapterObservation:
         query = args.get("query")
-        filtered = bool(query and args["operation"] in {"library", "queue"})
+        monitored = args.get("monitored")
+        op = args["operation"]
+        filtered = bool(
+            (query and op in {"library", "queue", "quality_profiles", "indexers", "calendar", "applications"})
+            or (monitored is not None and op in {"library", "missing", "wanted"})
+        )
         scanned_count = len(rows)
-        if filtered:
+        if monitored is not None and op in {"library", "missing", "wanted"}:
+            rows = [r for r in rows if r.get("monitored") is monitored]
+        if query and op in {"library", "queue", "quality_profiles", "indexers", "calendar", "applications"}:
             needle = _norm(query)
-            rows = [r for r in rows if needle in _norm(str(r.get("title", r.get("artistName", r.get("name", "")))))]
-        data = {"source": "native_api", "operation": args["operation"], "items": [_public_row(r) for r in rows],
+            rows = [r for r in rows if _matches_row_query(r, needle)]
+        data = {"source": "native_api", "operation": op, "items": [_public_row(r) for r in rows],
                 "returned_count": len(rows), "total_records": total, "truncated": truncated,
                 "complete_listing": not truncated, **extra}
         if filtered:
@@ -358,6 +419,8 @@ class ServiceQueryAdapter:
                         total_records=None if truncated else len(rows))
         if query:
             data["query"] = query
+        if monitored is not None:
+            data["monitored"] = monitored
         return AdapterObservation("partial" if truncated else "verified_ok", service, "service_query", 200,
                                   not truncated, data, audit)
 
@@ -372,17 +435,24 @@ class ServiceQueryAdapter:
         if service not in self.configs:
             return AdapterObservation("error", service, call.name, 503, False, {"error": "service_not_configured"}, audit)
         try:
-            if service in {"sonarr", "radarr", "lidarr"}:
+            if service in _ARR_SERVICES:
                 return self._arr(service, args, audit)
             return getattr(self, "_" + service)(args, audit)
         except _UpstreamError as exc:
             return AdapterObservation("error", service, call.name, exc.status, False, {"error": exc.code}, audit)
 
     def _arr(self, service: str, args: dict[str, Any], audit: list[dict[str, Any]]) -> AdapterObservation:
-        version = "v1" if service == "lidarr" else "v3"
+        version = "v1" if service in {"lidarr", "readarr"} else "v3"
         root = "/api/" + version
         op = args["operation"]
-        entity = {"sonarr": "series", "radarr": "movie", "lidarr": "artist"}[service]
+        entity = {
+            "sonarr": "series",
+            "radarr": "movie",
+            "lidarr": "artist",
+            "readarr": "author",
+            "whisparr": "series",
+        }[service]
+        valid_app_names = {service} | ({"chaptarr"} if service == "readarr" else set())
         if op == "health":
             status = self._get(service, root + "/system/status", audit)
             issues = _rows(self._get(service, root + "/health", audit))
@@ -390,24 +460,105 @@ class ServiceQueryAdapter:
                 raise _UpstreamError("invalid_service_status")
             if any(not _text(row.get("message")) or not _text(row.get("type")) for row in issues):
                 raise _UpstreamError("invalid_service_health_issue")
-            if "appName" in status and str(status["appName"]).casefold() != service:
+            if "appName" in status and str(status["appName"]).strip().casefold() not in valid_app_names:
                 raise _UpstreamError("service_identity_mismatch")
             return self._result(service, args, [], 0, False, audit, api_version=version,
                                 server_version=status["version"], healthy=not issues,
                                 issues=[{k: r[k] for k in ("source", "type", "message") if k in r} for r in issues])
-        if op in {"queue", "history", "missing"}:
-            endpoint = "/wanted/missing" if op == "missing" else "/" + op
+        if op in {"queue", "history", "missing", "wanted"}:
+            endpoint = "/wanted/missing" if op == "missing" else "/wanted/cutoff" if op == "wanted" else "/" + op
+            inc_param = {
+                "sonarr": {"includeSeries": "true"},
+                "whisparr": {"includeSeries": "true"},
+                "radarr": {"includeMovie": "true"},
+                "lidarr": {"includeArtist": "true"},
+                "readarr": {"includeAuthor": "true"},
+            }[service]
+            if args.get("monitored") is not None and op in {"missing", "wanted"}:
+                inc_param = {**inc_param, "monitored": "true" if args["monitored"] else "false"}
             rows, total, truncated = self._paged(lambda page: self._get(service, root + endpoint + "?" + urllib.parse.urlencode({
-                "page": page + 1, "pageSize": self.page_size,
-                **({"includeSeries": "true"} if service == "sonarr" else {"includeMovie": "true"} if service == "radarr" else {"includeArtist": "true"}),
-            }), audit))
+                "page": page + 1, "pageSize": self.page_size, **inc_param,
+            }, quote_via=urllib.parse.quote), audit))
+        elif op in {"quality_profiles", "indexers", "calendar"}:
+            endpoint_map = {
+                "quality_profiles": "/qualityprofile",
+                "indexers": "/indexer",
+                "calendar": "/calendar",
+            }
+            all_rows = _rows(self._get(service, root + endpoint_map[op], audit))
+            _validated_rows(service, op, all_rows)
+            if args.get("query"):
+                rows, total, truncated = all_rows, len(all_rows), len(all_rows) > self.max_records
+            else:
+                rows, total = all_rows[:self.max_records], len(all_rows)
+                truncated = total > len(rows)
+            return self._result(service, args, rows, total, truncated, audit, api_version=version)
         else:
-            suffix = "/lookup?" + urllib.parse.urlencode({"term": args["query"]}) if op == "search" else ""
+            suffix = ("/lookup?" + urllib.parse.urlencode({"term": args["query"]}, quote_via=urllib.parse.quote)
+                      if op == "search" else "")
             all_rows = _rows(self._get(service, root + "/" + entity + suffix, audit))
-            rows, total = all_rows[:self.max_records], len(all_rows)
-            truncated = total > len(rows)
+            _validated_rows(service, op, all_rows)
+            if op == "library" and (args.get("query") or args.get("monitored") is not None):
+                # Scan the full in-budget library before applying query/monitored filter in _result
+                rows, total, truncated = all_rows, len(all_rows), len(all_rows) > self.max_records
+            else:
+                rows, total = all_rows[:self.max_records], len(all_rows)
+                truncated = total > len(rows)
+            return self._result(service, args, rows, total, truncated, audit, api_version=version)
         _validated_rows(service, op, rows)
         return self._result(service, args, rows, total, truncated, audit, api_version=version)
+
+    def _prowlarr(self, args: dict[str, Any], audit: list[dict[str, Any]]) -> AdapterObservation:
+        root = "/api/v1"
+        op = args["operation"]
+        if op == "health":
+            status = self._get("prowlarr", root + "/system/status", audit)
+            issues = _rows(self._get("prowlarr", root + "/health", audit))
+            if not isinstance(status, dict) or not _text(status.get("version")):
+                raise _UpstreamError("invalid_service_status")
+            if any(not _text(row.get("message")) or not _text(row.get("type")) for row in issues):
+                raise _UpstreamError("invalid_service_health_issue")
+            if "appName" in status and str(status["appName"]).strip().casefold() != "prowlarr":
+                raise _UpstreamError("service_identity_mismatch")
+            return self._result("prowlarr", args, [], 0, False, audit, api_version="v1",
+                                server_version=status["version"], healthy=not issues,
+                                issues=[{k: r[k] for k in ("source", "type", "message") if k in r} for r in issues])
+        if op == "indexers":
+            all_rows = _rows(self._get("prowlarr", root + "/indexer", audit))
+            _validated_rows("prowlarr", "indexers", all_rows)
+            statuses = _rows(self._get("prowlarr", root + "/indexerstatus", audit))
+            status_by_id: dict[int, dict[str, Any]] = {}
+            for st in statuses:
+                idx_id = st.get("indexerId")
+                if _id(idx_id):
+                    status_by_id[idx_id] = {
+                        k: st[k] for k in ("disabledTill", "mostRecentFailure") if k in st
+                    }
+            merged = [
+                {**r, **(status_by_id.get(r["id"], {}))}
+                for r in all_rows
+            ]
+            rows, total = merged[:self.max_records], len(merged)
+            return self._result("prowlarr", args, rows, total, total > len(rows), audit, api_version="v1",
+                                failing_indexer_count=len(status_by_id))
+        if op == "applications":
+            all_rows = _rows(self._get("prowlarr", root + "/applications", audit))
+            _validated_rows("prowlarr", "applications", all_rows)
+            rows, total = all_rows[:self.max_records], len(all_rows)
+            return self._result("prowlarr", args, rows, total, total > len(rows), audit, api_version="v1")
+        if op == "history":
+            rows, total, truncated = self._paged(lambda page: self._get("prowlarr", root + "/history?" + urllib.parse.urlencode({
+                "page": page + 1, "pageSize": self.page_size,
+            }, quote_via=urllib.parse.quote), audit))
+            _validated_rows("prowlarr", "history", rows)
+            return self._result("prowlarr", args, rows, total, truncated, audit, api_version="v1")
+        # op == "search"
+        all_rows = _rows(self._get("prowlarr", root + "/search?" + urllib.parse.urlencode({
+            "query": args["query"], "type": "search",
+        }, quote_via=urllib.parse.quote), audit))
+        _validated_rows("prowlarr", "search", all_rows)
+        rows, total = all_rows[:self.max_records], len(all_rows)
+        return self._result("prowlarr", args, rows, total, total > len(rows), audit, api_version="v1")
 
     def _bazarr(self, args: dict[str, Any], audit: list[dict[str, Any]]) -> AdapterObservation:
         if args["operation"] == "health":
@@ -419,17 +570,25 @@ class ServiceQueryAdapter:
                 raise _UpstreamError("invalid_service_health_issue")
             return self._result("bazarr", args, [], 0, False, audit, api_version="unversioned /api",
                                 healthy=not issues, issues=[{k: r[k] for k in ("object", "issue") if k in r} for r in issues])
+        if args["operation"] == "history":
+            rows, total, truncated = self._paged(lambda page: self._get("bazarr", "/api/history/series?" + urllib.parse.urlencode({
+                "start": page * self.page_size, "length": self.page_size}, quote_via=urllib.parse.quote), audit),
+                records_key="data", total_key="total")
+            _validated_rows("bazarr", "history", rows)
+            return self._result("bazarr", args, rows, total, truncated, audit, api_version="unversioned /api")
         movie = args["media_type"] == "movie"
         kind = "movies" if movie else "episodes"
         if args["operation"] == "missing":
             rows, total, truncated = self._paged(lambda page: self._get("bazarr", "/api/" + kind + "/wanted?" + urllib.parse.urlencode({
-                "start": page * self.page_size, "length": self.page_size}), audit), records_key="data", total_key="total")
+                "start": page * self.page_size, "length": self.page_size}, quote_via=urllib.parse.quote), audit),
+                records_key="data", total_key="total")
         else:
             library = "movies" if movie else "series"
             entities, _, incomplete = self._paged(lambda page: self._get("bazarr", "/api/" + library + "?" + urllib.parse.urlencode({
-                "start": page * self.page_size, "length": self.page_size}), audit), records_key="data", total_key="total")
+                "start": page * self.page_size, "length": self.page_size}, quote_via=urllib.parse.quote), audit),
+                records_key="data", total_key="total")
             _validated_rows("bazarr", "movie_library" if movie else "series_library", entities)
-            exact = [r for r in entities if _norm(str(r.get("title", ""))) == _norm(args["query"])]
+            exact = resolve_title_candidates(args["query"], entities)
             if incomplete:
                 return self._result("bazarr", args, [], 0, True, audit, reason="entity_lookup_incomplete")
             if len(exact) != 1:
@@ -441,7 +600,8 @@ class ServiceQueryAdapter:
                 series_id = exact[0].get("sonarrSeriesId")
                 if type(series_id) is not int or series_id <= 0:
                     raise _UpstreamError("invalid_resolved_entity_id")
-                payload = self._get("bazarr", "/api/episodes?" + urllib.parse.urlencode({"seriesid[]": series_id}), audit)
+                payload = self._get("bazarr", "/api/episodes?" + urllib.parse.urlencode(
+                    {"seriesid[]": series_id}, quote_via=urllib.parse.quote), audit)
                 if not isinstance(payload, dict):
                     raise _UpstreamError("invalid_upstream_page")
                 rows = _rows(payload.get("data"))
@@ -470,7 +630,7 @@ class ServiceQueryAdapter:
         for page in range(self.max_pages):
             incoming = _rows(self._get("qbittorrent", "/api/v2/torrents/info?" + urllib.parse.urlencode({
                 "filter": args.get("torrent_filter", "all"), "limit": self.page_size,
-                "offset": page * self.page_size, "sort": "hash"}), audit))
+                "offset": page * self.page_size, "sort": "hash"}, quote_via=urllib.parse.quote), audit))
             hashes = [r.get("hash") for r in incoming]
             if any(not isinstance(h, str) or not re.fullmatch(r"[a-fA-F0-9]{40}|[a-fA-F0-9]{64}", h) for h in hashes):
                 raise _UpstreamError("invalid_torrent_identity")
@@ -509,12 +669,13 @@ class ServiceQueryAdapter:
             return self._result("tautulli", args, [], 0, False, audit, api_version="v2", server_version=version)
         if op == "activity":
             payload = self._tautulli_data(root + "cmd=get_activity", audit)
-            rows = _rows(payload.get("sessions"))
+            rows = [] if payload == {} else _rows(payload.get("sessions"))
             _validated_rows("tautulli", "activity", rows)
             return self._result("tautulli", args, rows[:self.max_records], len(rows), len(rows) > self.max_records, audit, api_version="v2")
         rows, total, truncated = self._paged(lambda page: self._tautulli_data(root + urllib.parse.urlencode({
             "cmd": "get_history", "start": page * self.page_size, "length": self.page_size,
-            "order_column": "date", "order_dir": "desc"}), audit), records_key="data", total_key="recordsFiltered")
+            "order_column": "date", "order_dir": "desc"}, quote_via=urllib.parse.quote), audit),
+            records_key="data", total_key="recordsFiltered")
         _validated_rows("tautulli", "history", rows)
         return self._result("tautulli", args, rows, total, truncated, audit, api_version="v2")
 

@@ -64,7 +64,8 @@ class NativeArrWriteAdapter:
     """
 
     def __init__(self, native: ServiceQueryAdapter, *, write_mode: str = "confirm", confirmation_store=None,
-                 clock: Callable[[], datetime] | None = None) -> None:
+                 clock: Callable[[], datetime] | None = None,
+                 allowed_majors: dict[str, set[int]] | None = None) -> None:
         if write_mode not in {"confirm", "shadow", "disabled"}:
             raise ValueError("Native Arr writes require confirm, shadow, or disabled mode")
         from arrmes.live_adapter import WriteConfirmationStore
@@ -72,6 +73,16 @@ class NativeArrWriteAdapter:
         self.confirmation_store = confirmation_store or WriteConfirmationStore()
         self._clock = clock or (lambda: datetime.now(timezone.utc))
         self.max_targets = min(native.max_records, 250)
+        self.allowed_majors: dict[str, set[int]] = {
+            "sonarr": {4},
+            "radarr": {6},
+            "lidarr": {3},
+            "readarr": {0, 1},
+            "whisparr": {3},
+        }
+        if allowed_majors:
+            for svc, majors in allowed_majors.items():
+                self.allowed_majors[svc] = set(majors)
 
     def supports(self, name: str) -> bool:
         return name in ARR_ACTIONS and ARR_ACTIONS[name][0] in self.native.configs
@@ -166,11 +177,14 @@ class NativeArrWriteAdapter:
         if config is None or not config.api_key:
             raise _UpstreamError("configured_service_api_key_required", 503)
         status = self._get(service, f"/api/{api}/system/status", audit)
+        valid_names = {service} | ({"chaptarr"} if service == "readarr" else set())
         if (not isinstance(status, dict) or not isinstance(status.get("appName"), str)
-                or status["appName"].casefold() != service):
+                or status["appName"].strip().casefold() not in valid_names):
             raise _UpstreamError("service_identity_mismatch")
         version = status.get("version")
-        if not isinstance(version, str) or re.fullmatch(rf"{major}\.\d+\.\d+(?:\.\d+)?", version) is None:
+        majors = self.allowed_majors.get(service, {major})
+        major_pat = "|".join(str(m) for m in sorted(majors))
+        if not isinstance(version, str) or re.fullmatch(rf"(?:{major_pat})\.\d+\.\d+(?:\.\d+)?", version) is None:
             raise _UpstreamError("unsupported_arr_service_version", 501)
         start = status.get("startTime")
         if self._stamp(start) is None:
@@ -254,7 +268,7 @@ class NativeArrWriteAdapter:
         rows = self._inventory(self._get("radarr", "/api/v3/movie", audit))
         if any(not _label(r.get("title")) for r in rows):
             raise _UpstreamError("invalid_movie_title")
-        matches = [r for r in rows if _norm(r["title"]) == _norm(args["title"])]
+        matches = resolve_title_candidates(args["title"], rows)
         for row in matches:self._year(row)
         matches = [r for r in matches if "year" not in args or r.get("year") == args["year"]]
         if len(matches) != 1:
@@ -361,7 +375,7 @@ class NativeArrWriteAdapter:
         ids = body.get(key)
         if not isinstance(ids, list) or any(not _api_integer(i) for i in ids) or len(set(ids)) != len(ids) or sorted(ids) != expected[key]:
             return False
-        scope_keys = {"episodeIds","movieIds","albumIds","seriesId","artistId","seasonNumber"}
+        scope_keys = {"episodeIds","movieIds","albumIds","bookIds","seriesId","artistId","authorId","seasonNumber"}
         return set(body)&scope_keys == {key}
 
     def confirm_write(self, confirm_id: str, principal: Principal, *, idempotency_key: str | None = None, now: float | None = None):
@@ -412,3 +426,137 @@ class NativeArrWriteAdapter:
             data["observation_note"] = "command_status_identity_or_scope_mismatch"
         # Even a completed command is an indexer search job, not downloaded files.
         return _obs(call.name, "dispatched", data, audit, code)
+
+    def _book(self, author_name: str, book_title: str | None, audit):
+        author = self._exact(self._inventory(self._get("readarr", "/api/v1/author", audit)), author_name, "authorName")
+        if type(author.get("monitored")) is not bool:
+            raise _UpstreamError("invalid_author_monitoring")
+        if not author["monitored"]:
+            raise _Clarify("author_not_monitored")
+        books = self._inventory(
+            self._get("readarr", "/api/v1/book?" + urllib.parse.urlencode({"authorId": author["id"]}, quote_via=urllib.parse.quote), audit),
+            parent_key="authorId",
+            parent_id=author["id"],
+        )
+        if any(not _label(r.get("title")) or type(r.get("monitored")) is not bool for r in books):
+            raise _UpstreamError("invalid_book_search_state")
+        if book_title is not None:
+            books = [self._exact(books, book_title, "title")]
+        selected, undated, now = [], 0, self._now()
+        for row in books:
+            if not row["monitored"]:
+                continue
+            stamp = self._stamp(row.get("releaseDate"))
+            if stamp is None:
+                undated += 1
+                continue
+            if stamp <= now:
+                stats = row.get("statistics") or {}
+                if not isinstance(stats, dict):
+                    raise _UpstreamError("invalid_book_statistics")
+                file_count = stats.get("bookFileCount", 0)
+                if not _api_integer(file_count, zero=True):
+                    raise _UpstreamError("invalid_book_statistics")
+                if book_title is None and file_count > 0:
+                    continue
+                selected.append({
+                    "id": row["id"],
+                    "authorId": row["authorId"],
+                    "title": row["title"],
+                    "monitored": row["monitored"],
+                    "releaseDate": row["releaseDate"],
+                    "book_file_count": file_count,
+                })
+        selected.sort(key=lambda r: r["id"])
+        return {
+            "author_id": author["id"],
+            "author": author["authorName"],
+            "author_monitored": True,
+            "book": book_title,
+            "path_sha256": self._path_identity(author),
+            "scope": "exact_book" if book_title is not None else "explicit_author_monitored_released_missing_books",
+            "undated_books_excluded": undated,
+            "target_snapshot_sha256": _digest(selected),
+            "target_ids": [r["id"] for r in selected],
+            "book_titles": [r["title"] for r in selected],
+            "command": {"name": "BookSearch", "bookIds": [r["id"] for r in selected]},
+        }
+
+    def execute_book_search(self, author: str, principal: Principal, *, book: str | None = None) -> AdapterObservation:
+        """Confirmed native Readarr/Chaptarr book/author indexer search."""
+        audit: list[dict[str, Any]] = []
+        if not self._authorized(principal):
+            return AdapterObservation("denied", "readarr", "book_search", 403, False, {"source": "native_api", "error": "permission_required"}, audit)
+        if self.write_mode == "disabled":
+            return AdapterObservation("denied", "readarr", "book_search", 403, False, {"source": "native_api", "error": "writes_disabled"}, audit)
+        try:
+            target = self._identity("readarr", "v1", 0, audit)
+            target.update(self._book(author, book, audit))
+            if not target["target_ids"]:
+                raise _Clarify("no_eligible_search_targets")
+            if len(target["target_ids"]) > self.max_targets:
+                raise _Clarify("search_target_budget_exceeded_narrow_scope")
+            summary = f"Run BookSearch in readarr for {target['author']!r}; exact target IDs: {target['target_ids']}."
+            if self.write_mode == "shadow":
+                return AdapterObservation("shadow_logged", "readarr", "book_search", 200, False, {"source": "native_api", "summary": summary, "resolved_entity": target}, audit)
+            proxy_call = Call("music_search", {"artist": author, **({"album": book} if book else {})})
+            token = self.confirmation_store.mint(principal, proxy_call, summary=summary, resolved_entity={**target, "adapter_kind": "readarr_book_search"})
+            return AdapterObservation("confirmation_required", "readarr", "book_search", 200, False, {
+                "source": "native_api",
+                "confirm_id": CONFIRMATION_PREFIX + token.confirm_id,
+                "summary": summary,
+                "expires_at": token.expires_at,
+                "resolved_entity": target,
+            }, audit)
+        except _Clarify as exc:
+            return AdapterObservation("clarify_required", "readarr", "book_search", 409, False, {"source": "native_api", "slot": "reference", "reason": str(exc)}, audit)
+        except _UpstreamError as exc:
+            return AdapterObservation("error", "readarr", "book_search", exc.status, False, {"source": "native_api", "error": exc.code, "outcome": "not_dispatched"}, audit)
+
+    def confirm_book_search(self, confirm_id: str, principal: Principal, *, now: float | None = None) -> AdapterObservation:
+        audit: list[dict[str, Any]] = []
+        if not self._authorized(principal) or self.write_mode != "confirm":
+            return AdapterObservation("denied", "readarr", "book_search", 403, False, {"source": "native_api", "error": "permission_required_or_writes_disabled"}, audit)
+        if not isinstance(confirm_id, str) or not confirm_id.startswith(CONFIRMATION_PREFIX):
+            return AdapterObservation("denied", "readarr", "book_search", 403, False, {"source": "native_api", "error": "confirmation_namespace_invalid"}, audit)
+        token, error = self.confirmation_store.redeem(confirm_id[len(CONFIRMATION_PREFIX):], principal, now=now)
+        if error or token is None or token.resolved_entity.get("adapter_kind") != "readarr_book_search":
+            return AdapterObservation("denied", "readarr", "book_search", 403, False, {"source": "native_api", "error": error or "confirmation_not_found"}, audit)
+        expected_entity = {k: v for k, v in token.resolved_entity.items() if k != "adapter_kind"}
+        try:
+            target = self._identity("readarr", "v1", 0, audit)
+            target.update(self._book(token.arguments["artist"], token.arguments.get("album"), audit))
+            if target != expected_entity:
+                return AdapterObservation("denied", "readarr", "book_search", 409, False, {"source": "native_api", "error": "confirmation_target_or_service_changed"}, audit)
+            code, resource = self._http("readarr", "POST", "/api/v1/command", audit, body=target["command"])
+        except _Clarify as exc:
+            return AdapterObservation("denied", "readarr", "book_search", 409, False, {"source": "native_api", "error": "confirmation_target_unavailable", "reason": str(exc)}, audit)
+        except _UpstreamError as exc:
+            return AdapterObservation("error", "readarr", "book_search", exc.status, False, {"source": "native_api", "error": exc.code, "outcome": "not_dispatched"}, audit)
+        data = {
+            "source": "native_api",
+            "outcome": "dispatched",
+            "mutation_attempts": 1,
+            "replayed": False,
+            "target_ids": target["target_ids"],
+            "command_scope_correlated": False,
+            "search_job_status": "unknown",
+            "search_job_completion_verified": False,
+            "media_download_completion_verified": False,
+        }
+        if code not in {201, 202}:
+            return AdapterObservation("error", "readarr", "book_search", code, False, {**data, "outcome": "unknown", "error": "unexpected_command_acceptance_status"}, audit)
+        if self._correlated(resource, target):
+            command_id = resource["id"]
+            data["command_id"] = command_id
+            try:
+                observed = self._get("readarr", f"/api/v1/command/{command_id}", audit)
+                if self._correlated(observed, target, command_id) and isinstance(observed.get("status"), str) and observed["status"] in _JOB_STATES:
+                    data.update(
+                        command_scope_correlated=True,
+                        search_job_status=observed["status"],
+                        search_job_completion_verified=observed["status"] == "completed" and observed.get("result") == "successful",
+                    )
+            except _UpstreamError:
+                data["observation_note"] = "command_status_unavailable"
+        return AdapterObservation("dispatched", "readarr", "book_search", code, False, data, audit)
