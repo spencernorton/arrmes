@@ -1,0 +1,61 @@
+{
+  "schema_version": 1,
+  "title": "Arrmes v9 \u2014 acceptance-v7 Track A vs Track B",
+  "subtitle": "bench-receipt/v1 via scripts/export_bench_receipt.py (load_chart_metrics)",
+  "metrics": [
+    {
+      "key": "pos_track_a",
+      "label": "Positive Track A (raw)"
+    },
+    {
+      "key": "pos_track_b",
+      "label": "Positive Track B (verified)"
+    },
+    {
+      "key": "neg_track_b",
+      "label": "Hard-Negative Track B (verified)"
+    }
+  ],
+  "models": [
+    {
+      "name": "ArrmesNeuralRouterV3 (Full Suite N=2,580)",
+      "metrics": {
+        "pos_track_a": 1.0,
+        "pos_track_b": 1.0,
+        "neg_track_b": 1.0
+      }
+    },
+    {
+      "name": "Qwen3-0.6B v9 Unassisted MLX (N=300 Stratified)",
+      "metrics": {
+        "pos_track_a": 0.92,
+        "pos_track_b": 0.98,
+        "neg_track_b": 0.94
+      }
+    },
+    {
+      "name": "FG-270M v9 Unassisted MLX (N=300 Stratified)",
+      "metrics": {
+        "pos_track_a": 0.84,
+        "pos_track_b": 0.9,
+        "neg_track_b": 0.8867
+      }
+    },
+    {
+      "name": "Qwen3-0.6B v9 overnight-v1 (N=80 Open Eval)",
+      "metrics": {
+        "pos_track_a": 0.8,
+        "pos_track_b": 0.9,
+        "neg_track_b": 0.8625
+      }
+    },
+    {
+      "name": "Deterministic Regex Baseline (Full Suite N=2,580)",
+      "metrics": {
+        "pos_track_a": 0.1312,
+        "pos_track_b": 0.1312,
+        "neg_track_b": 0.19
+      }
+    }
+  ]
+}

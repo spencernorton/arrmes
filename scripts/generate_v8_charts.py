@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
-"""Data-driven chart generator wrapper delegating to `scripts/generate_v9_charts.py`."""
-from __future__ import annotations
+"""Retired shim: v8 charts were a forward to v9; both now use bench_chart.py."""
+import sys
+from pathlib import Path
 
-from generate_v9_charts import generate_all, load_chart_metrics
-
-__all__ = ["generate_all", "load_chart_metrics"]
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 if __name__ == "__main__":
+    from generate_v9_charts import generate_all
     generate_all()
