@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.7.1] - 2026-11-12
+
+### Added
+- Native Windows x86_64 `v10` GGUF, `ArrmesNeuralRouterV3 v10`, and Win32 `K32GetProcessMemoryInfo` memory qualification (`scripts/qualify_windows_v10.py`, `scripts/smoke_portable_model.py`, `.github/workflows/windows-model-smoke.yml`, `experiments/windows-v10-qualification/summary.json`, `experiments/runtime-profile-v10.json`), verifying anonymous SHA-256-checked downloads from `NorviTech/*` and `datasets/NorviTech/arrmes-bench-v7`, three-platform (`macOS ARM64`, `Linux x86_64`, `Windows Server 2025 AMD64`) bitwise-identical `acceptance-v7` router predictions (`2,580/2,580`, `SHA-256 f23e6de69333...`) under the zero-C-extension `stdlib_array` fallback (`4.48 ms` warm p50, `79.27 MiB` Win32 peak working set), and native `llama-server.exe` `b11429` CPU qualification for `FunctionGemma-270M v10 Q4_K_M` (`372.40 ms` warm p50 on 4-vCPU CI, `539.29 MiB` combined Win32 peak working set, `88.75%` `overnight-v1` verified matching Linux CPU and macOS Metal byte-for-byte) and `Qwen3-0.6B v10 Q4_K_M` (`1,210.61 MiB` combined Win32 peak working set, `88.75%` `overnight-v1` verified, `5/5` `v3` `service_query` probes, `8/8` isolated smoke checks) while keeping hosted CI distinct from owned physical Windows hardware and Windows CUDA.
+
 ## [1.7.0] - 2026-11-12
 
 ### Added

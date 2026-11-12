@@ -136,7 +136,7 @@ unavailable from GitHub Releases. Its recorded SHA-256 is
 `c7d6f1eef1eb4cd0f93769dadca7e270f3c3d470cfb542240733859c7d02f255`.
 
 Model-file size is not a RAM requirement. The [measurements](#evidence-and-limits)
-depend on backend, context and hardware; Windows memory remains unmeasured.
+depend on backend, context and hardware; hosted Windows Server 2025 AMD64 Win32 PeakWorkingSetSize RAM is recorded in [Windows CPU qualification](windows-cpu-qualification.md), while owned physical Windows hardware and Windows VRAM remain unmeasured.
 
 Use Python 3.12 or later. From the Arrmes checkout:
 
@@ -188,7 +188,7 @@ py -3.12 -m venv .venv
 After downloading the separate GGUF, verify it with
 `(Get-FileHash C:\Arrmes\model-q4_k_m.gguf -Algorithm SHA256).Hash` against the
 full digest above. Keep its license and notice files. This CPU path has actual
-hosted CI generation evidence for v1.2.0, with the scope recorded above. For NVIDIA,
+hosted CI generation, Win32 PeakWorkingSetSize RAM, and N=80 overnight-v1 qualification evidence for v1.7.1 (v10) and v1.2.0, with the scope recorded in [Windows CPU qualification](windows-cpu-qualification.md). For NVIDIA,
 use the official `llama-b11429-bin-win-cuda-12.4-x64.zip` and its matching
 `cudart-llama-bin-win-cuda-12.4-x64.zip`, then select `--device cuda`.
 The installed driver must support that runtime. Arrmes never installs or alters
@@ -281,13 +281,14 @@ Full cross-platform receipts, SHA-256 digests, and memory accounting are recorde
 - **ArrmesNeuralRouterV3 v10 (`ARRMES_BACKEND=neural-router`, CPU NumPy, `temperature=1.35`)**:
   - **Artifact Size & Digest**: `7,844,743` bytes (`7.84 MB` / `7.48 MiB`), SHA-256 `d91eca610add347575ea6c29e04d1861aba8045b4970c8c72ec2b4ecf1a0be05`, meeting both `<= 400 MB` and `<= 250 MB` stretch budgets.
   - **Apple M4 Pro (`macOS ARM64` CPU)**: Warm model-only `p50 = 0.295 ms` / `p95 = 0.463 ms`, warm routing + verifier `p50 = 0.416 ms` / `p95 = 0.609 ms`, authenticated HTTP loopback (`POST /v1/route`) `p50 = 1.324 ms` / `p95 = 1.707 ms`, peak RSS `112.39 MiB`.
-  - **AMD Ryzen 9 7950X3D (`Linux x86_64` CPU)**: Warm model-only `p50 = 0.516 ms` / `p95 = 0.588 ms`, warm routing + verifier `p50 = 0.714 ms` / `p95 = 0.806 ms`, peak RSS `73.79 MiB`. Produces `2,580 / 2,580` bitwise-identical predictions vs `macOS ARM64` (`SHA-256 64d26c3eef57...`).
+  - **AMD Ryzen 9 7950X3D (`Linux x86_64` CPU)**: Warm model-only `p50 = 0.516 ms` / `p95 = 0.588 ms`, warm routing + verifier `p50 = 0.714 ms` / `p95 = 0.806 ms`, peak RSS `73.79 MiB`. Produces `2,580 / 2,580` bitwise-identical `acceptance-v7` predictions across `macOS ARM64`, `Linux x86_64`, and `Windows Server 2025 AMD64` (`SHA-256 f23e6de69333...`).
+  - **Hosted `Windows Server 2025 AMD64` (`stdlib_array` fallback, 4-vCPU CI, zero C-extension wheels)**: Warm model-only `p50 = 3.967 ms` / `p95 = 4.636 ms`, warm routing + verifier `p50 = 4.476 ms` / `p95 = 5.424 ms`, authenticated HTTP loopback `p50 = 6.301 ms`, Win32 `PeakWorkingSetSize = 79.27 MiB`, `2,580 / 2,580` exact `acceptance-v7` bitwise match (`SHA-256 f23e6de69333...`).
 - **HybridRouterMLX v10 (`ARRMES_BACKEND=hybrid-router-mlx`, Apple M4 Pro CPU + Metal)**:
   - **Combined Footprint, Isolated RSS & Latency**: `354.77 MB` (`338.34 MiB`) serialized weights, `704.58 MiB` isolated peak RSS (`<= 1,536 MiB` budget), warm routing + verifier `p50 = 0.516 ms` / `p95 = 151.114 ms`, `100.0%` `overnight-v1` verified accuracy and `94.96%` positive / `96.21%` hard-negative verified accuracy on sealed `acceptance-v8`.
 - **Portable `v10` GGUF via `llama-server` (`ctx=4096`, `--batch-size 4096`)**:
-  - **`arrmes-functiongemma-270m-v10-q4_k_m.gguf`** (`261,330,112` bytes / `261.33 MB`, SHA-256 `1b72dcd37745d50ff6f63f71e13f4274079239d8989e098a728e1dc277885123`, Gemma Terms of Use): `131.32 ms` warm p50 on Linux Ryzen 9 7950X3D 8-thread CPU (`1,130.63 MiB` combined host RSS, `7.46x` faster than the `980.0 ms` `v9` baseline and well within the `<= 250 ms` CPU budget), `40.73 ms` warm p50 on Linux RTX 4070 Ti SUPER CUDA (`<= 55 ms` budget), `74.93 ms` warm p50 on Apple M4 Pro CPU, and `63.44 ms` warm p50 on Apple M4 Pro Metal (`overnight-v1` verified accuracy: `88.75%` Linux CPU and macOS Metal, `90.00%` macOS CPU and Linux CUDA).
+  - **`arrmes-functiongemma-270m-v10-q4_k_m.gguf`** (`261,330,112` bytes / `261.33 MB`, SHA-256 `1b72dcd37745d50ff6f63f71e13f4274079239d8989e098a728e1dc277885123`, Gemma Terms of Use): `131.32 ms` warm p50 on Linux Ryzen 9 7950X3D 8-thread CPU (`1,130.63 MiB` combined host RSS, `7.46x` faster than the `980.0 ms` `v9` baseline and well within the `<= 250 ms` CPU budget), `40.73 ms` warm p50 on Linux RTX 4070 Ti SUPER CUDA (`<= 55 ms` budget), `74.93 ms` warm p50 on Apple M4 Pro CPU, and `63.44 ms` warm p50 on Apple M4 Pro Metal, plus `372.40 ms` warm p50 (`539.29 MiB` combined Win32 `PeakWorkingSetSize` RAM) on hosted 4-vCPU `Windows Server 2025 AMD64` CI (`overnight-v1` verified accuracy: `88.75%` Linux CPU, Windows x64 CPU, and macOS Metal with bitwise-identical output `SHA-256 6f7b238409bd...`, and `90.00%` macOS CPU and Linux CUDA).
   - **`arrmes-functiongemma-270m-v10-q8_0.gguf`** (`299,760,832` bytes / `299.76 MB`, SHA-256 `462e1720677f8b98e6f05572ecf712b700ad742bd6ccacf4620bf478c7983a31`, Gemma Terms of Use): `148.98 ms` Linux 8-thread CPU warm p50 (`1,149.67 MiB` combined host RSS, `87.50%` `overnight-v1` verified) and `42.58 ms` RTX 4070 Ti SUPER CUDA warm p50 (`88.75%` `overnight-v1` verified).
-  - **`arrmes-qwen3-0.6b-v10-q4_k_m.gguf`** (`396,704,640` bytes / `396.70 MB`, SHA-256 `0e5310b8d22a0c89826b8c9cd9e857656b301b0de4b63cdf27285338ef09dd84`, Apache-2.0): `53.01 ms` RTX 4070 Ti SUPER CUDA warm p50 (`<= 55 ms` budget), `113.73 ms` Apple M4 Pro Metal warm p50, `365.90 ms` Apple M4 Pro CPU warm p50, and `614.02 ms` Linux 8-thread CPU warm p50 (`overnight-v1` verified accuracy: `91.25%` macOS Metal, `92.50%` Linux CPU and Linux CUDA, `95.00%` macOS CPU).
+  - **`arrmes-qwen3-0.6b-v10-q4_k_m.gguf`** (`396,704,640` bytes / `396.70 MB`, SHA-256 `0e5310b8d22a0c89826b8c9cd9e857656b301b0de4b63cdf27285338ef09dd84`, Apache-2.0): `53.01 ms` RTX 4070 Ti SUPER CUDA warm p50 (`<= 55 ms` budget), `113.73 ms` Apple M4 Pro Metal warm p50, `365.90 ms` Apple M4 Pro CPU warm p50, `614.02 ms` Linux 8-thread CPU warm p50, and `2,457.73 ms` warm p50 (`1,210.61 MiB` combined Win32 `PeakWorkingSetSize` RAM) on hosted 4-vCPU `Windows Server 2025 AMD64` CI (`overnight-v1` verified accuracy: `88.75%` Windows x64 CPU, `91.25%` macOS Metal, `92.50%` Linux CPU and Linux CUDA, `95.00%` macOS CPU).
   - **`arrmes-qwen3-0.6b-v10-q8_0.gguf`** (`639,446,912` bytes / `639.45 MB`, SHA-256 `4c834c77558c1ff080c15f7da4c398ee75bc16950b09ee6fe1bee84bdf518059`, Apache-2.0): `59.53 ms` RTX 4070 Ti SUPER CUDA warm p50 (`+4.53 ms` above the `55.0 ms` `Q4_K_M` CUDA target in exchange for `97.50%` `overnight-v1` verified accuracy on both Linux CPU and Linux CUDA).
 - **Apple Silicon Fused MLX `v10` (`ARRMES_BACKEND=mlx`, Apple M4 Pro Metal)**:
   - **`FunctionGemma-270M v10 4-bit MLX`** (`184.37 MB` / `175.83 MiB`, `1,309.31 MiB` isolated whole-process `ru_maxrss` including the 262k-token BPE CPU tokenizer heap; `1,063.32 MiB` `mx.get_peak_memory()` Metal GPU tensor allocator): `39.81 ms` warm routing + verifier p50 (`547.4 tok/s`, `70.00%` raw / `82.50%` verified on `overnight-v1`); **`8-bit MLX`** (`318.39 MB`, `1,436.56 MiB` whole-process `ru_maxrss` / `1,199.62 MiB` Metal GPU allocator): `47.70 ms` p50 (`82.50%` raw / `90.00%` verified on `overnight-v1`).
@@ -332,13 +333,16 @@ Full receipts and 4-phase memory accounting are stored in `experiments/runtime-p
   2 GiB workload budget, at least 8 GiB reserved free and no Plex transcoding.
   All test containers were removed and the lease released. This does not prove
   a native host CUDA build or Windows CUDA behavior.
-- Windows x86_64 CPU: actual native GGUF inference passed in a hosted Windows
-  Server 2025 AMD64 CI runner. Four documented model calls, one controlled
-  activity fixture and all eight operational checks passed with the exact
-  public C7 artifact and official b11429 CPU runtime. This tested installed
-  v1.2.0 product source, separately from later core Python CI and native
-  compilation. It is not owned Windows hardware, broad model accuracy or RAM
-  qualification. [Receipt and offline verification](windows-cpu-qualification.md).
+- Windows x86_64 CPU: native `v10` `Q4_K_M` GGUF inference (`FunctionGemma-270M v10`
+  and `Qwen3-0.6B v10`), Win32 `K32GetProcessMemoryInfo` `PeakWorkingSetSize` RAM
+  accounting (`539.29 MiB` and `1,210.61 MiB` combined peak working set), `N = 80`
+  `overnight-v1` evaluation (`88.75%` verified on both `Q4_K_M` GGUFs), `v3`
+  `service_query` probes, both 8-check isolated smoke suites, and `ArrmesNeuralRouterV3 v10`
+  `N = 2,580` `acceptance-v7` bitwise parity (`SHA-256 f23e6de69333...`) passed on a
+  hosted `Windows Server 2025 AMD64` 4-vCPU CI runner ([run 43238234622](https://github.com/spencernorton/arrmes/actions/runs/43238234622),
+  `experiments/windows-v10-qualification/summary.json`), alongside the retained
+  historical `v1.2.0`/`C7` receipt. Hosted CI execution remains distinct from owned
+  physical Windows hardware and Windows NVIDIA CUDA. [Details and receipts](windows-cpu-qualification.md).
 - Windows NVIDIA: backend/device selection and installation paths are
   implemented, but actual CUDA generation has not been tested.
 - Other ARM64 CPUs, Vulkan and SYCL: implemented native-runtime selection where

@@ -2,27 +2,21 @@ name: Windows CPU model smoke
 on:
   workflow_dispatch:
     inputs:
-      model_url:
-        description: Approved public URL for the fixed c7d6f1ee CPU-exported Q4 artifact
-        required: true
+      threads:
+        description: CPU thread count for native llama-server.exe (default 4 on windows-latest)
+        required: false
+        default: "4"
         type: string
 permissions:
   contents: read
 jobs:
   cpu-generation:
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
           persist-credentials: false
-          path: automation
-      - name: Obtain the qualified product source
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
-        with:
-          ref: e76bfcfa2fd9d9e2397cae9b89ae91a5fc84243a
-          persist-credentials: false
-          path: product
       - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1
         with:
           python-version: "3.12"
@@ -30,37 +24,62 @@ jobs:
       - name: Install core Python dependencies only
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force work | Out-Null
+          New-Item -ItemType Directory -Force work/router, work/bench-v7 | Out-Null
           python -m venv work/venv
           if ($LASTEXITCODE -ne 0) { throw 'Virtual environment creation failed' }
-          & work/venv/Scripts/python.exe -m pip install ./product
+          & work/venv/Scripts/python.exe -m pip install .
           if ($LASTEXITCODE -ne 0) { throw 'Core package installation failed' }
-      - name: Download and verify approved public artifacts
+      - name: Download and verify pinned v10 public artifacts
         shell: pwsh
-        env:
-          MODEL_URL: ${{ inputs.model_url }}
         run: |
-          $modelUri = [Uri]$env:MODEL_URL
-          $githubModel = $modelUri.Host -eq 'github.com' -and $modelUri.AbsolutePath.StartsWith('/spencernorton/arrmes/releases/download/')
-          $hfModel = $modelUri.Host -eq 'huggingface.co' -and $modelUri.AbsolutePath.StartsWith('/NorviTech/')
-          if ($modelUri.Scheme -ne 'https' -or $modelUri.UserInfo -or $modelUri.Query -or $modelUri.Fragment -or -not ($githubModel -or $hfModel)) { throw 'Model must use an approved public HTTPS release origin without credentials/query/fragment' }
           Invoke-WebRequest 'https://github.com/ggml-org/llama.cpp/releases/download/b11429/llama-b11429-bin-win-cpu-x64.zip' -OutFile work/runtime.zip
           if ((Get-FileHash work/runtime.zip -Algorithm SHA256).Hash.ToLowerInvariant() -ne '1283323272b04cd07905816a597a0da810918102de958f4ff6f7bbaa70ed2efe') { throw 'Official CPU runtime SHA-256 mismatch' }
           Expand-Archive work/runtime.zip -DestinationPath work/runtime
-          Invoke-WebRequest $modelUri.AbsoluteUri -OutFile work/model.gguf
-          if ((Get-FileHash work/model.gguf -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'c7d6f1eef1eb4cd0f93769dadca7e270f3c3d470cfb542240733859c7d02f255') { throw 'Approved experimental model SHA-256 mismatch' }
-      - name: Run real CPU generation and controlled fixture smoke
+
+          Invoke-WebRequest 'https://huggingface.co/NorviTech/arrmes-neural-router-v3/resolve/f20f3a62222b2297eea86dae31f710052294bea2/router_weights.npz' -OutFile work/router/router_weights.npz
+          if ((Get-FileHash work/router/router_weights.npz -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'd91eca610add347575ea6c29e04d1861aba8045b4970c8c72ec2b4ecf1a0be05') { throw 'router_weights.npz SHA-256 mismatch' }
+
+          Invoke-WebRequest 'https://huggingface.co/NorviTech/arrmes-neural-router-v3/resolve/f20f3a62222b2297eea86dae31f710052294bea2/router_config.json' -OutFile work/router/router_config.json
+          if ((Get-FileHash work/router/router_config.json -Algorithm SHA256).Hash.ToLowerInvariant() -ne '89c87c0e59308c916f445f44c3768c5b9fc61d3b0858e65ef6474c47912e4dd4') { throw 'router_config.json SHA-256 mismatch' }
+
+          Invoke-WebRequest 'https://huggingface.co/NorviTech/arrmes-functiongemma-270m/resolve/44ab0fecc06a899995402ec409f1ea6701449ab3/arrmes-functiongemma-270m-v10-q4_k_m.gguf' -OutFile work/arrmes-functiongemma-270m-v10-q4_k_m.gguf
+          if ((Get-FileHash work/arrmes-functiongemma-270m-v10-q4_k_m.gguf -Algorithm SHA256).Hash.ToLowerInvariant() -ne '1b72dcd37745d50ff6f63f71e13f4274079239d8989e098a728e1dc277885123') { throw 'FunctionGemma-270M v10 Q4_K_M SHA-256 mismatch' }
+
+          Invoke-WebRequest 'https://huggingface.co/NorviTech/arrmes-qwen3-0.6b/resolve/30e35bc6fa950cd8cbc01dc3b3f41f3323e39e90/arrmes-qwen3-0.6b-v10-q4_k_m.gguf' -OutFile work/arrmes-qwen3-0.6b-v10-q4_k_m.gguf
+          if ((Get-FileHash work/arrmes-qwen3-0.6b-v10-q4_k_m.gguf -Algorithm SHA256).Hash.ToLowerInvariant() -ne '0e5310b8d22a0c89826b8c9cd9e857656b301b0de4b63cdf27285338ef09dd84') { throw 'Qwen3-0.6B v10 Q4_K_M SHA-256 mismatch' }
+
+          Invoke-WebRequest 'https://huggingface.co/datasets/NorviTech/arrmes-bench-v7/resolve/fd8911f72cb23e3aae169994beb017eb07f79582/cases-positive.jsonl' -OutFile work/bench-v7/cases-positive.jsonl
+          if ((Get-FileHash work/bench-v7/cases-positive.jsonl -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'f07774983d3e61b1bd1e5c55a35b1e5c8618cc6e6d95663eadbdca90978cbf52') { throw 'cases-positive.jsonl SHA-256 mismatch' }
+
+          Invoke-WebRequest 'https://huggingface.co/datasets/NorviTech/arrmes-bench-v7/resolve/fd8911f72cb23e3aae169994beb017eb07f79582/cases-negative.jsonl' -OutFile work/bench-v7/cases-negative.jsonl
+          if ((Get-FileHash work/bench-v7/cases-negative.jsonl -Algorithm SHA256).Hash.ToLowerInvariant() -ne '5f58d213d55f44ed3f9638944583141af9047d5aef9436e5ca4d358f72a99c04') { throw 'cases-negative.jsonl SHA-256 mismatch' }
+
+          Invoke-WebRequest 'https://huggingface.co/datasets/NorviTech/arrmes-bench-v7/resolve/fd8911f72cb23e3aae169994beb017eb07f79582/overnight-v1-routing-heldout.jsonl' -OutFile work/bench-v7/overnight-v1-routing-heldout.jsonl
+          if ((Get-FileHash work/bench-v7/overnight-v1-routing-heldout.jsonl -Algorithm SHA256).Hash.ToLowerInvariant() -ne '1ed8e3e83c78a22d37991e7b2ef861464bf2bf6c224c782e81bc352005a31e14') { throw 'overnight-v1-routing-heldout.jsonl SHA-256 mismatch' }
+      - name: Run native Windows v10 GGUF and router qualification
         shell: pwsh
+        env:
+          SMOKE_THREADS: ${{ inputs.threads }}
         run: |
           $executables = @(Get-ChildItem work/runtime -Recurse -File -Filter llama-server.exe)
           if ($executables.Count -ne 1) { throw 'Expected exactly one official llama-server.exe' }
-          & work/venv/Scripts/python.exe automation/scripts/smoke_portable_model.py --model work/model.gguf --llama-server $executables[0].FullName --threads 2 --output work/windows-cpu-model-smoke.json
-          if ($LASTEXITCODE -ne 0) { throw 'Actual CPU model smoke failed' }
+          $threadsInt = [int]$env:SMOKE_THREADS
+          if ($threadsInt -lt 1 -or $threadsInt -gt 32) { throw 'Invalid thread count' }
+          & work/venv/Scripts/python.exe scripts/qualify_windows_v10.py `
+            --router-dir work/router `
+            --bench-v7-dir work/bench-v7 `
+            --fg-gguf work/arrmes-functiongemma-270m-v10-q4_k_m.gguf `
+            --qwen-gguf work/arrmes-qwen3-0.6b-v10-q4_k_m.gguf `
+            --llama-server $executables[0].FullName `
+            --threads $threadsInt `
+            --environment-class hosted_ci_runner `
+            --output work/windows-v10-qualification.json
+          if ($LASTEXITCODE -ne 0) { throw 'Native Windows v10 qualification failed' }
       - name: Retain actual run evidence
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
-          name: windows-cpu-model-smoke
-          path: work/windows-cpu-model-smoke.json
+          name: windows-v10-qualification
+          path: work/windows-v10-qualification.json
           if-no-files-found: warn
           retention-days: 30

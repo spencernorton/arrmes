@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-11-11",
+  "generated_at": "2026-11-12",
   "pipeline_version": "arrmes-v10-clean-r1",
   "engineering_budgets": {
     "router_artifact_max_mib": 15.0,
@@ -14,10 +14,12 @@
   },
   "cross_platform_parity": {
     "router_av7_2580_macos_arm64_vs_linux_x86_64_bitwise_match": true,
-    "router_av7_2580_outputs_sha256": "64d26c3eef5722e578fe4ae3a39cd141f76b987263b88dc18d162fe7a85d1986",
+    "router_av7_2580_outputs_sha256": "f23e6de6933347e47c2765727c7401cff02b22b5096a822c60a63335f19a9198",
     "router_stdlib_fallback_mismatches": 0,
     "windows_x64_retained_ci_reproduced": true,
-    "windows_runner_live_status": "No live Windows host active during 2026-11-11 qualification window; verified offline cryptographic reproduction of retained Windows x64 CI qualification plus pure-stdlib cross-platform parity."
+    "windows_runner_live_status": "Hosted GitHub Actions Windows Server 2025 AMD64 (run 43238234622, 4 vCPU, Python 3.12.10 MSC x64, llama-server.exe b11429) qualified v10 Q4_K_M GGUF inference, Win32 K32GetProcessMemoryInfo PeakWorkingSetSize RAM, overnight-v1 (N=80), v3 service_query, and ArrmesNeuralRouterV3 v10 bitwise parity (SHA-256 f23e6de69333...). Owned physical Windows hardware and Windows NVIDIA CUDA remain unqualified.",
+    "router_av7_2580_macos_arm64_vs_linux_x86_64_vs_windows_x86_64_bitwise_match": true,
+    "windows_x64_v10_ci_qualification_run_id": "43238234622"
   },
   "large_library_catalog_index": {
     "hardware": "Apple M4 Pro (macOS ARM64)",
@@ -719,6 +721,158 @@
         "combined_resident_mib": 676.78,
         "meets_1536mib_budget": true,
         "meets_1500mib_budget": true
+      }
+    },
+    "arrmes_neural_router_v3_windows_x86_64_cpu_stdlib": {
+      "backend": "neural-router v10 (pure-Python stdlib_array fallback, zero C-extension wheels, temperature=1.35)",
+      "environment_class": "hosted_ci_runner",
+      "hardware": "Windows Server 2025 AMD64 (10.0.26100, Intel Xeon 4-vCPU GitHub Actions runner)",
+      "captured_at": "2026-11-12",
+      "ci_run_id": "43238234622",
+      "artifact_bytes": 7844743,
+      "artifact_mb_decimal": 7.84,
+      "artifact_mib": 7.48,
+      "cold_load_ms": 65.064,
+      "first_route_ms": 25.495,
+      "model_only_ms": {
+        "p50": 3.967,
+        "p95": 4.636,
+        "mean": 4.091
+      },
+      "routing_and_verifier_ms": {
+        "p50": 4.476,
+        "p95": 5.424,
+        "mean": 4.643
+      },
+      "http_end_to_end_ms": {
+        "p50": 6.301,
+        "p95": 25.946,
+        "mean": 8.466
+      },
+      "memory_accounting_mib": {
+        "method": "win32_K32GetProcessMemoryInfo",
+        "python_peak_working_set_mib": 79.27
+      },
+      "acceptance_v7_2580": {
+        "positive_exact": 1380,
+        "positive_total": 1380,
+        "negative_v3_exact": 1200,
+        "negative_strict_v2_exact": 1195,
+        "negative_total": 1200,
+        "outputs_sha256": "f23e6de6933347e47c2765727c7401cff02b22b5096a822c60a63335f19a9198",
+        "matches_macos_and_linux_bitwise": true
+      },
+      "overnight_v1_80": {
+        "verified_exact": 80,
+        "total": 80
+      }
+    },
+    "functiongemma_270m_v10_gguf_q4_k_m_windows_x86_64_cpu": {
+      "gguf_file": "arrmes-functiongemma-270m-v10-q4_k_m.gguf",
+      "gguf_sha256": "1b72dcd37745d50ff6f63f71e13f4274079239d8989e098a728e1dc277885123",
+      "family": "functiongemma",
+      "device": "cpu",
+      "threads": 4,
+      "environment_class": "hosted_ci_runner",
+      "hardware": "Windows Server 2025 AMD64 (10.0.26100, 4-vCPU hosted CI runner)",
+      "captured_at": "2026-11-12",
+      "ci_run_id": "43238234622",
+      "artifact_bytes": 261330112,
+      "artifact_mb_decimal": 261.33,
+      "artifact_mib": 249.22,
+      "meets_400mb_budget": true,
+      "meets_250mb_stretch": false,
+      "cold_load_ms": 1652.59,
+      "first_route_ms": 3425.78,
+      "cold_load_plus_first_route_ms": 5078.75,
+      "warm_samples": 77,
+      "model_only_ms": {
+        "p50": 371.925,
+        "p95": 705.62,
+        "mean": 398.792
+      },
+      "routing_and_verifier_ms": {
+        "p50": 372.404,
+        "p95": 706.472,
+        "mean": 399.514
+      },
+      "http_end_to_end_ms": {
+        "p50": 419.299,
+        "p95": 514.702,
+        "mean": 389.266
+      },
+      "mean_generation_tps": 56.45,
+      "overnight_v1_80": {
+        "total": 80,
+        "raw_exact": 65,
+        "raw_accuracy": 0.8125,
+        "verified_exact": 71,
+        "verified_accuracy": 0.8875,
+        "verified_outputs_sha256": "6f7b238409bd5cb289d0b700aa7dd80fd9b9cdf133d8b57589bb1e95df0bb197"
+      },
+      "memory_accounting_mib": {
+        "method": "win32_K32GetProcessMemoryInfo",
+        "llama_server_peak_working_set_mib": 460.02,
+        "llama_server_peak_commit_mib": 257.4,
+        "python_peak_working_set_mib": 79.27,
+        "combined_peak_working_set_mib": 539.29,
+        "meets_1536mib_budget": true,
+        "cuda_before": null,
+        "cuda_during": null
+      }
+    },
+    "qwen3_06b_v10_gguf_q4_k_m_windows_x86_64_cpu": {
+      "gguf_file": "arrmes-qwen3-0.6b-v10-q4_k_m.gguf",
+      "gguf_sha256": "0e5310b8d22a0c89826b8c9cd9e857656b301b0de4b63cdf27285338ef09dd84",
+      "family": "hermes",
+      "device": "cpu",
+      "threads": 4,
+      "environment_class": "hosted_ci_runner",
+      "hardware": "Windows Server 2025 AMD64 (10.0.26100, 4-vCPU hosted CI runner)",
+      "captured_at": "2026-11-12",
+      "ci_run_id": "43238234622",
+      "artifact_bytes": 396704640,
+      "artifact_mb_decimal": 396.7,
+      "artifact_mib": 378.33,
+      "meets_400mb_budget": true,
+      "meets_250mb_stretch": false,
+      "cold_load_ms": 1388.55,
+      "first_route_ms": 14971.57,
+      "cold_load_plus_first_route_ms": 16360.51,
+      "warm_samples": 77,
+      "model_only_ms": {
+        "p50": 2456.941,
+        "p95": 4145.668,
+        "mean": 2622.963
+      },
+      "routing_and_verifier_ms": {
+        "p50": 2457.725,
+        "p95": 4146.74,
+        "mean": 2623.658
+      },
+      "http_end_to_end_ms": {
+        "p50": 2897.56,
+        "p95": 4094.799,
+        "mean": 2828.85
+      },
+      "mean_generation_tps": 11.42,
+      "overnight_v1_80": {
+        "total": 80,
+        "raw_exact": 71,
+        "raw_accuracy": 0.8875,
+        "verified_exact": 71,
+        "verified_accuracy": 0.8875,
+        "verified_outputs_sha256": "8794ffc34bb5bb03b7d4a6a3e2fa98c5dd179291c105255391d7c69a4ebbc49c"
+      },
+      "memory_accounting_mib": {
+        "method": "win32_K32GetProcessMemoryInfo",
+        "llama_server_peak_working_set_mib": 1131.34,
+        "llama_server_peak_commit_mib": 803.28,
+        "python_peak_working_set_mib": 79.27,
+        "combined_peak_working_set_mib": 1210.61,
+        "meets_1536mib_budget": true,
+        "cuda_before": null,
+        "cuda_during": null
       }
     }
   }
