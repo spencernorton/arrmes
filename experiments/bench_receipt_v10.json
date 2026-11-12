@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "title": "ARRMES v1.7.0 (v10) \u2014 Sealed acceptance-v8 Qualification (N=3,135, Full Suite)",
+  "subtitle": "Zero skeleton overlap vs TrainPool-v10, acceptance-v7, and overnight-v1 (Track A raw vs Track B verified)",
+  "metrics": [
+    {
+      "key": "pos_track_a",
+      "label": "Positive Track A (raw, N=1,685)"
+    },
+    {
+      "key": "pos_track_b",
+      "label": "Positive Track B (verified, N=1,685)"
+    },
+    {
+      "key": "neg_track_a",
+      "label": "Hard-Negative Track A (raw, N=1,450)"
+    },
+    {
+      "key": "neg_track_b",
+      "label": "Hard-Negative Track B (verified, N=1,450)"
+    }
+  ],
+  "models": [
+    {
+      "name": "NeuralRouterV3 v10",
+      "metrics": {
+        "pos_track_a": 0.9757,
+        "pos_track_b": 0.9786,
+        "neg_track_a": 0.951,
+        "neg_track_b": 0.9614
+      }
+    },
+    {
+      "name": "HybridRouterMLX v10",
+      "metrics": {
+        "pos_track_a": 0.9318,
+        "pos_track_b": 0.9496,
+        "neg_track_a": 0.8966,
+        "neg_track_b": 0.9621
+      }
+    },
+    {
+      "name": "Qwen3-0.6B v10",
+      "metrics": {
+        "pos_track_a": 0.8154,
+        "pos_track_b": 0.8421,
+        "neg_track_a": 0.8614,
+        "neg_track_b": 0.9524
+      }
+    },
+    {
+      "name": "FunctionGemma-270M v10",
+      "metrics": {
+        "pos_track_a": 0.6279,
+        "pos_track_b": 0.6534,
+        "neg_track_a": 0.7179,
+        "neg_track_b": 0.9159
+      }
+    },
+    {
+      "name": "Regex Baseline",
+      "metrics": {
+        "pos_track_a": 0.1151,
+        "pos_track_b": 0.1151,
+        "neg_track_a": 0.2034,
+        "neg_track_b": 0.2034
+      }
+    }
+  ]
+}

@@ -1,0 +1,725 @@
+{
+  "generated_at": "2026-11-11",
+  "pipeline_version": "arrmes-v10-clean-r1",
+  "engineering_budgets": {
+    "router_artifact_max_mib": 15.0,
+    "router_warm_m4_p50_max_ms": 0.75,
+    "router_warm_linux_x86_64_p50_max_ms": 1.0,
+    "artifact_max_mb": 400.0,
+    "artifact_stretch_mb": 250.0,
+    "cpu_rss_max_mib": 1536.0,
+    "cpu_warm_p50_max_ms": 250.0,
+    "cuda_q4_k_m_warm_p50_max_ms": 55.0,
+    "accel_warm_p50_max_ms": 150.0
+  },
+  "cross_platform_parity": {
+    "router_av7_2580_macos_arm64_vs_linux_x86_64_bitwise_match": true,
+    "router_av7_2580_outputs_sha256": "64d26c3eef5722e578fe4ae3a39cd141f76b987263b88dc18d162fe7a85d1986",
+    "router_stdlib_fallback_mismatches": 0,
+    "windows_x64_retained_ci_reproduced": true,
+    "windows_runner_live_status": "No live Windows host active during 2026-11-11 qualification window; verified offline cryptographic reproduction of retained Windows x64 CI qualification plus pure-stdlib cross-platform parity."
+  },
+  "large_library_catalog_index": {
+    "hardware": "Apple M4 Pro (macOS ARM64)",
+    "radarr_5000_movies": {
+      "items": 5000,
+      "payload_json_mib": 19.82,
+      "index_build_ms": 40.468,
+      "warm_exact_lookup_us": {
+        "p50": 1.33,
+        "p95": 2.92,
+        "mean": 1.55
+      },
+      "warm_diacritic_and_alt_title_lookup_us": {
+        "p50": 0.96,
+        "p95": 2.29,
+        "mean": 1.27
+      },
+      "linear_scan_baseline_ms": {
+        "p50": 28.378,
+        "p95": 29.805
+      },
+      "speedup_vs_linear_scan_x": 21272.9
+    },
+    "sonarr_1500_series": {
+      "items": 1500,
+      "index_build_ms": 4.947,
+      "warm_exact_lookup_us": {
+        "p50": 0.58,
+        "p95": 0.83
+      }
+    },
+    "lidarr_1200_artists": {
+      "items": 1200,
+      "index_build_ms": 1.837,
+      "warm_exact_lookup_us": {
+        "p50": 2.29,
+        "p95": 2.46
+      }
+    }
+  },
+  "profiles": {
+    "arrmes_neural_router_v3_macos_arm64_cpu": {
+      "backend": "neural-router v10 (CPU NumPy, temperature=1.35)",
+      "hardware": "Apple M4 Pro (macOS ARM64)",
+      "captured_at": "2026-11-11",
+      "artifact_bytes": 7844743,
+      "artifact_mb_decimal": 7.84,
+      "artifact_mib": 7.48,
+      "meets_400mb_budget": true,
+      "meets_250mb_stretch": true,
+      "cold_load_ms": 63.057,
+      "first_route_ms": 7.058,
+      "model_only_ms": {
+        "p50": 0.295,
+        "p95": 0.463,
+        "mean": 0.315
+      },
+      "routing_and_verifier_ms": {
+        "p50": 0.416,
+        "p95": 0.609,
+        "mean": 0.445
+      },
+      "http_end_to_end_ms": {
+        "p50": 1.324,
+        "p95": 1.707,
+        "mean": 1.346
+      },
+      "memory_accounting_mib": {
+        "before_model_rss_mib": 40.86,
+        "after_model_load_rss_mib": 66.69,
+        "peak_eval_rss_mib": 112.39
+      }
+    },
+    "arrmes_neural_router_v3_linux_x86_64_cpu": {
+      "backend": "neural-router v10 (CPU NumPy 1T, temperature=1.35)",
+      "hardware": "AMD Ryzen 9 7950X3D (Linux x86_64 CPU)",
+      "captured_at": "2026-11-11",
+      "artifact_bytes": 7844743,
+      "artifact_mb_decimal": 7.84,
+      "artifact_mib": 7.48,
+      "cold_load_ms": 79.397,
+      "first_route_ms": 8.582,
+      "model_only_ms": {
+        "p50": 0.516,
+        "p95": 0.588,
+        "mean": 0.522
+      },
+      "routing_and_verifier_ms": {
+        "p50": 0.714,
+        "p95": 0.806,
+        "mean": 0.727
+      },
+      "memory_accounting_mib": {
+        "before_model_rss_mib": 46.24,
+        "after_model_load_rss_mib": 70.71,
+        "peak_eval_rss_mib": 73.79
+      }
+    },
+    "qwen3_06b_v10_4bit_macos_arm64_mlx": {
+      "backend": "mlx-lm fused (hermes)",
+      "hardware": "Apple M4 Pro (macOS ARM64 Metal)",
+      "captured_at": "2026-11-11",
+      "artifact_bytes": 346930081,
+      "artifact_mb_decimal": 346.93,
+      "artifact_mib": 330.86,
+      "meets_400mb_budget": true,
+      "meets_250mb_stretch": false,
+      "cold_load_ms": 986.39,
+      "first_route_ms": 594.83,
+      "cold_load_plus_first_route_ms": 1581.22,
+      "warm_samples": 77,
+      "model_only_ms": {
+        "p50": 108.47,
+        "p95": 212.968,
+        "mean": 128.703
+      },
+      "routing_and_verifier_ms": {
+        "p50": 111.319,
+        "p95": 215.759,
+        "mean": 131.189
+      },
+      "mean_generation_tps": 255.67,
+      "overnight_v1_80": {
+        "raw_exact": 73,
+        "raw_accuracy": 0.9125,
+        "verified_exact": 76,
+        "verified_accuracy": 0.95,
+        "verified_outputs_sha256": "e0c1dbbe0a80598a9e769720de56030f5b6a1c78d7dc29d9a9f4158ecf465d36"
+      },
+      "memory_accounting_mib": {
+        "note": "On Apple Silicon unified memory, isolated_process_peak_rss_mib measures whole-process OS ru_maxrss (including CPU heap such as FunctionGemma's 262k-token BPE tokenizer) while mlx_metal_unified_peak_mib measures mx.get_peak_memory() inside the Metal GPU tensor allocator only; the two overlap in physical RAM and must not be summed.",
+        "isolated_process_peak_rss_mib": 704.05,
+        "mlx_metal_unified_peak_mib": 1592.15
+      }
+    },
+    "qwen3_06b_v10_8bit_macos_arm64_mlx": {
+      "backend": "mlx-lm fused (hermes)",
+      "hardware": "Apple M4 Pro (macOS ARM64 Metal)",
+      "captured_at": "2026-11-11",
+      "artifact_bytes": 644922571,
+      "artifact_mb_decimal": 644.92,
+      "artifact_mib": 615.05,
+      "meets_400mb_budget": false,
+      "meets_250mb_stretch": false,
+      "cold_load_ms": 432.5,
+      "first_route_ms": 680.88,
+      "cold_load_plus_first_route_ms": 1113.38,
+      "warm_samples": 77,
+      "model_only_ms": {
+        "p50": 131.709,
+        "p95": 216.014,
+        "mean": 141.017
+      },
+      "routing_and_verifier_ms": {
+        "p50": 134.33,
+        "p95": 218.711,
+        "mean": 143.742
+      },
+      "mean_generation_tps": 200.81,
+      "overnight_v1_80": {
+        "raw_exact": 78,
+        "raw_accuracy": 0.975,
+        "verified_exact": 78,
+        "verified_accuracy": 0.975,
+        "verified_outputs_sha256": "6c8d4af9dde99747523c4aa8b2fd7670399c6eaa0faf23100af318deaf3b32bf"
+      },
+      "memory_accounting_mib": {
+        "note": "On Apple Silicon unified memory, isolated_process_peak_rss_mib measures whole-process OS ru_maxrss (including CPU heap such as FunctionGemma's 262k-token BPE tokenizer) while mlx_metal_unified_peak_mib measures mx.get_peak_memory() inside the Metal GPU tensor allocator only; the two overlap in physical RAM and must not be summed.",
+        "isolated_process_peak_rss_mib": 985.78,
+        "mlx_metal_unified_peak_mib": 1864.34
+      }
+    },
+    "functiongemma_270m_v10_4bit_macos_arm64_mlx": {
+      "backend": "mlx-lm fused (functiongemma)",
+      "hardware": "Apple M4 Pro (macOS ARM64 Metal)",
+      "captured_at": "2026-11-11",
+      "artifact_bytes": 184369521,
+      "artifact_mb_decimal": 184.37,
+      "artifact_mib": 175.83,
+      "meets_400mb_budget": true,
+      "meets_250mb_stretch": true,
+      "cold_load_ms": 1353.75,
+      "first_route_ms": 187.66,
+      "cold_load_plus_first_route_ms": 1541.41,
+      "warm_samples": 77,
+      "model_only_ms": {
+        "p50": 37.751,
+        "p95": 54.018,
+        "mean": 39.781
+      },
+      "routing_and_verifier_ms": {
+        "p50": 39.814,
+        "p95": 56.219,
+        "mean": 41.841
+      },
+      "mean_generation_tps": 547.43,
+      "overnight_v1_80": {
+        "raw_exact": 56,
+        "raw_accuracy": 0.7,
+        "verified_exact": 66,
+        "verified_accuracy": 0.825,
+        "verified_outputs_sha256": "68154e3179cd4364ee3ec267427bdfe0bdddf275d3ed0d2836acedbd4a7f72c3"
+      },
+      "memory_accounting_mib": {
+        "note": "On Apple Silicon unified memory, isolated_process_peak_rss_mib measures whole-process OS ru_maxrss (including CPU heap such as FunctionGemma's 262k-token BPE tokenizer) while mlx_metal_unified_peak_mib measures mx.get_peak_memory() inside the Metal GPU tensor allocator only; the two overlap in physical RAM and must not be summed.",
+        "isolated_process_peak_rss_mib": 1309.31,
+        "mlx_metal_unified_peak_mib": 1063.32
+      }
+    },
+    "functiongemma_270m_v10_8bit_macos_arm64_mlx": {
+      "backend": "mlx-lm fused (functiongemma)",
+      "hardware": "Apple M4 Pro (macOS ARM64 Metal)",
+      "captured_at": "2026-11-11",
+      "artifact_bytes": 318390914,
+      "artifact_mb_decimal": 318.39,
+      "artifact_mib": 303.64,
+      "meets_400mb_budget": true,
+      "meets_250mb_stretch": false,
+      "cold_load_ms": 1340.24,
+      "first_route_ms": 171.97,
+      "cold_load_plus_first_route_ms": 1512.21,
+      "warm_samples": 77,
+      "model_only_ms": {
+        "p50": 45.555,
+        "p95": 82.86,
+        "mean": 50.389
+      },
+      "routing_and_verifier_ms": {
+        "p50": 47.702,
+        "p95": 84.946,
+        "mean": 52.558
+      },
+      "mean_generation_tps": 427.41,
+      "overnight_v1_80": {
+        "raw_exact": 66,
+        "raw_accuracy": 0.825,
+        "verified_exact": 72,
+        "verified_accuracy": 0.9,
+        "verified_outputs_sha256": "afe2d04ddfb70c49786e6b41051288400c6ab68ddbd06199ec87711871ab49b5"
+      },
+      "memory_accounting_mib": {
+        "note": "On Apple Silicon unified memory, isolated_process_peak_rss_mib measures whole-process OS ru_maxrss (including CPU heap such as FunctionGemma's 262k-token BPE tokenizer) while mlx_metal_unified_peak_mib measures mx.get_peak_memory() inside the Metal GPU tensor allocator only; the two overlap in physical RAM and must not be summed.",
+        "isolated_process_peak_rss_mib": 1436.56,
+        "mlx_metal_unified_peak_mib": 1199.62
+      }
+    },
+    "hybrid_router_mlx_qwen3_06b_v10_macos_arm64": {
+      "backend": "hybrid-router-mlx (ArrmesNeuralRouterV3 v10 + Qwen3-0.6B v10 4-bit MLX fallback)",
+      "hardware": "Apple M4 Pro (macOS ARM64 CPU + Metal)",
+      "captured_at": "2026-11-11",
+      "artifact_bytes": 354774824,
+      "artifact_mb_decimal": 354.77,
+      "artifact_mib": 338.34,
+      "meets_400mb_budget": true,
+      "meets_250mb_stretch": false,
+      "cold_load_ms": 445.17,
+      "first_route_ms": 0.78,
+      "warm_samples": 77,
+      "mlx_fallback_count_of_80": 14,
+      "overnight_v1_verified_accuracy": 1.0,
+      "routing_and_verifier_ms": {
+        "p50": 0.516,
+        "p95": 151.114,
+        "mean": 41.426
+      },
+      "memory_accounting_mib": {
+        "isolated_process_peak_rss_mib": 704.58,
+        "mlx_metal_unified_peak_mib": 1592.2,
+        "note": "On Apple Silicon unified memory, isolated_process_peak_rss_mib measures whole-process OS ru_maxrss (including CPU heap such as FunctionGemma's 262k-token BPE tokenizer) while mlx_metal_unified_peak_mib measures mx.get_peak_memory() inside the Metal GPU tensor allocator only; the two overlap in physical RAM and must not be summed."
+      }
+    },
+    "qwen3_06b_v10_gguf_q4_k_m_macos_arm64_cpu": {
+      "backend": "llama-server GGUF (cpu, ctx 4096)",
+      "hardware": "Apple M4 Pro (macOS ARM64 cpu)",
+      "captured_at": "2026-11-11",
+      "artifact_bytes": 396704640,
+      "artifact_mb_decimal": 396.7,
+      "artifact_mib": 378.33,
+      "meets_400mb_budget": true,
+      "meets_250mb_stretch": false,
+      "cold_load_ms": 1060.01,
+      "first_route_ms": 10660.62,
+      "cold_load_plus_first_route_ms": 11720.77,
+      "warm_samples": 77,
+      "routing_and_verifier_ms": {
+        "p50": 365.9,
+        "p95": 634.89,
+        "mean": 395.15
+      },
+      "overnight_v1_80": {
+        "raw_exact": 76,
+        "raw_accuracy": 0.95,
+        "verified_exact": 76,
+        "verified_accuracy": 0.95,
+        "verified_outputs_sha256": "389a80bbbe3f38bfdfc13e0777dc5d6ae640c940fb94130d6e526b9ac70ffa8f"
+      }
+    },
+    "qwen3_06b_v10_gguf_q4_k_m_macos_arm64_metal": {
+      "backend": "llama-server GGUF (metal, ctx 4096)",
+      "hardware": "Apple M4 Pro (macOS ARM64 metal)",
+      "captured_at": "2026-11-11",
+      "artifact_bytes": 396704640,
+      "artifact_mb_decimal": 396.7,
+      "artifact_mib": 378.33,
+      "meets_400mb_budget": true,
+      "meets_250mb_stretch": false,
+      "cold_load_ms": 676.06,
+      "first_route_ms": 890.29,
+      "cold_load_plus_first_route_ms": 1566.49,
+      "warm_samples": 77,
+      "routing_and_verifier_ms": {
+        "p50": 113.73,
+        "p95": 222.08,
+        "mean": 125.95
+      },
+      "overnight_v1_80": {
+        "raw_exact": 73,
+        "raw_accuracy": 0.9125,
+        "verified_exact": 73,
+        "verified_accuracy": 0.9125,
+        "verified_outputs_sha256": "3937563adbdaf7c224cf45a43f2afab8c2ad21b0dcbfee9baee42bf0e6ba3c15"
+      }
+    },
+    "functiongemma_270m_v10_gguf_q4_k_m_macos_arm64_cpu": {
+      "backend": "llama-server GGUF (cpu, ctx 4096)",
+      "hardware": "Apple M4 Pro (macOS ARM64 cpu)",
+      "captured_at": "2026-11-11",
+      "artifact_bytes": 261330112,
+      "artifact_mb_decimal": 261.33,
+      "artifact_mib": 249.22,
+      "meets_400mb_budget": true,
+      "meets_250mb_stretch": false,
+      "cold_load_ms": 878.63,
+      "first_route_ms": 1306.44,
+      "cold_load_plus_first_route_ms": 2185.16,
+      "warm_samples": 77,
+      "routing_and_verifier_ms": {
+        "p50": 74.93,
+        "p95": 108.42,
+        "mean": 79.17
+      },
+      "overnight_v1_80": {
+        "raw_exact": 66,
+        "raw_accuracy": 0.825,
+        "verified_exact": 72,
+        "verified_accuracy": 0.9,
+        "verified_outputs_sha256": "6b942ad8fb734f08ea9a6d4cc9acbd685f1f20453a7315b302d4e710e2d69566"
+      }
+    },
+    "functiongemma_270m_v10_gguf_q4_k_m_macos_arm64_metal": {
+      "backend": "llama-server GGUF (metal, ctx 4096)",
+      "hardware": "Apple M4 Pro (macOS ARM64 metal)",
+      "captured_at": "2026-11-11",
+      "artifact_bytes": 261330112,
+      "artifact_mb_decimal": 261.33,
+      "artifact_mib": 249.22,
+      "meets_400mb_budget": true,
+      "meets_250mb_stretch": false,
+      "cold_load_ms": 1080.88,
+      "first_route_ms": 645.69,
+      "cold_load_plus_first_route_ms": 1726.69,
+      "warm_samples": 77,
+      "routing_and_verifier_ms": {
+        "p50": 63.44,
+        "p95": 90.08,
+        "mean": 67.06
+      },
+      "overnight_v1_80": {
+        "raw_exact": 65,
+        "raw_accuracy": 0.8125,
+        "verified_exact": 71,
+        "verified_accuracy": 0.8875,
+        "verified_outputs_sha256": "6f7b238409bd5cb289d0b700aa7dd80fd9b9cdf133d8b57589bb1e95df0bb197"
+      }
+    },
+    "qwen3_06b_v10_gguf_q4_k_m_linux_x86_64_cpu": {
+      "gguf_file": "arrmes-qwen3-0.6b-v10-q4_k_m.gguf",
+      "family": "hermes",
+      "device": "cpu",
+      "threads": 8,
+      "uname": "Linux-7.0.0-43-generic-x86_64-with-glibc2.43",
+      "artifact_bytes": 396704640,
+      "artifact_mb_decimal": 396.7,
+      "artifact_mib": 378.33,
+      "meets_400mb_budget": true,
+      "meets_250mb_stretch": false,
+      "cold_load_ms": 760.88,
+      "first_route_ms": 4098.39,
+      "cold_load_plus_first_route_ms": 4859.37,
+      "warm_samples": 77,
+      "model_only_ms": {
+        "p50": 613.53,
+        "p95": 1251.46,
+        "mean": 675.45
+      },
+      "routing_and_verifier_ms": {
+        "p50": 614.02,
+        "p95": 1252.52,
+        "mean": 675.98
+      },
+      "mean_generation_tps": 41.62,
+      "overnight_v1_80": {
+        "raw_exact": 74,
+        "raw_accuracy": 0.925,
+        "verified_exact": 74,
+        "verified_accuracy": 0.925,
+        "verified_outputs_sha256": "6e7cdebee888bcd5ffc5054889bbe6e6d5c4757363bd7796a4efed3310c2b1e5"
+      },
+      "memory_accounting_mib": {
+        "llama_server_peak_rss_mib": 1132.36,
+        "python_app_rss_mib": 664.57,
+        "combined_resident_mib": 1796.93,
+        "meets_1536mib_budget": false,
+        "meets_1500mib_budget": false
+      }
+    },
+    "qwen3_06b_v10_gguf_q8_0_linux_x86_64_cpu": {
+      "gguf_file": "arrmes-qwen3-0.6b-v10-q8_0.gguf",
+      "family": "hermes",
+      "device": "cpu",
+      "threads": 8,
+      "uname": "Linux-7.0.0-43-generic-x86_64-with-glibc2.43",
+      "artifact_bytes": 639446912,
+      "artifact_mb_decimal": 639.45,
+      "artifact_mib": 609.82,
+      "meets_400mb_budget": false,
+      "meets_250mb_stretch": false,
+      "cold_load_ms": 670.51,
+      "first_route_ms": 4700.89,
+      "cold_load_plus_first_route_ms": 5371.5,
+      "warm_samples": 77,
+      "model_only_ms": {
+        "p50": 739.8,
+        "p95": 1293.35,
+        "mean": 805.16
+      },
+      "routing_and_verifier_ms": {
+        "p50": 740.19,
+        "p95": 1293.87,
+        "mean": 805.57
+      },
+      "mean_generation_tps": 34.17,
+      "overnight_v1_80": {
+        "raw_exact": 78,
+        "raw_accuracy": 0.975,
+        "verified_exact": 78,
+        "verified_accuracy": 0.975,
+        "verified_outputs_sha256": "6c8d4af9dde99747523c4aa8b2fd7670399c6eaa0faf23100af318deaf3b32bf"
+      },
+      "memory_accounting_mib": {
+        "llama_server_peak_rss_mib": 1156.3,
+        "python_app_rss_mib": 664.57,
+        "combined_resident_mib": 1820.87,
+        "meets_1536mib_budget": false,
+        "meets_1500mib_budget": false
+      }
+    },
+    "functiongemma_270m_v10_gguf_q4_k_m_linux_x86_64_cpu": {
+      "gguf_file": "arrmes-functiongemma-270m-v10-q4_k_m.gguf",
+      "family": "functiongemma",
+      "device": "cpu",
+      "threads": 8,
+      "uname": "Linux-7.0.0-43-generic-x86_64-with-glibc2.43",
+      "artifact_bytes": 261330112,
+      "artifact_mb_decimal": 261.33,
+      "artifact_mib": 249.22,
+      "meets_400mb_budget": true,
+      "meets_250mb_stretch": false,
+      "cold_load_ms": 3078.47,
+      "first_route_ms": 805.09,
+      "cold_load_plus_first_route_ms": 3883.65,
+      "warm_samples": 77,
+      "model_only_ms": {
+        "p50": 131.1,
+        "p95": 212.62,
+        "mean": 146.12
+      },
+      "routing_and_verifier_ms": {
+        "p50": 131.32,
+        "p95": 213.36,
+        "mean": 146.54
+      },
+      "mean_generation_tps": 144.76,
+      "overnight_v1_80": {
+        "raw_exact": 65,
+        "raw_accuracy": 0.8125,
+        "verified_exact": 71,
+        "verified_accuracy": 0.8875,
+        "verified_outputs_sha256": "6f7b238409bd5cb289d0b700aa7dd80fd9b9cdf133d8b57589bb1e95df0bb197"
+      },
+      "memory_accounting_mib": {
+        "llama_server_peak_rss_mib": 466.06,
+        "python_app_rss_mib": 664.57,
+        "combined_resident_mib": 1130.63,
+        "meets_1536mib_budget": true,
+        "meets_1500mib_budget": true
+      }
+    },
+    "functiongemma_270m_v10_gguf_q8_0_linux_x86_64_cpu": {
+      "gguf_file": "arrmes-functiongemma-270m-v10-q8_0.gguf",
+      "family": "functiongemma",
+      "device": "cpu",
+      "threads": 8,
+      "uname": "Linux-7.0.0-43-generic-x86_64-with-glibc2.43",
+      "artifact_bytes": 299760832,
+      "artifact_mb_decimal": 299.76,
+      "artifact_mib": 285.87,
+      "meets_400mb_budget": true,
+      "meets_250mb_stretch": false,
+      "cold_load_ms": 1668.31,
+      "first_route_ms": 843.49,
+      "cold_load_plus_first_route_ms": 2511.87,
+      "warm_samples": 77,
+      "model_only_ms": {
+        "p50": 148.77,
+        "p95": 265.77,
+        "mean": 160.13
+      },
+      "routing_and_verifier_ms": {
+        "p50": 148.98,
+        "p95": 266.28,
+        "mean": 160.53
+      },
+      "mean_generation_tps": 132.98,
+      "overnight_v1_80": {
+        "raw_exact": 65,
+        "raw_accuracy": 0.8125,
+        "verified_exact": 70,
+        "verified_accuracy": 0.875,
+        "verified_outputs_sha256": "cc26934d297397d9b32cc0a27aed311555afd1f4b83f52ffa42e3d0488490ccc"
+      },
+      "memory_accounting_mib": {
+        "llama_server_peak_rss_mib": 485.1,
+        "python_app_rss_mib": 664.57,
+        "combined_resident_mib": 1149.67,
+        "meets_1536mib_budget": true,
+        "meets_1500mib_budget": true
+      }
+    },
+    "qwen3_06b_v10_gguf_q4_k_m_linux_cuda": {
+      "gguf_file": "arrmes-qwen3-0.6b-v10-q4_k_m.gguf",
+      "family": "hermes",
+      "device": "cuda",
+      "threads": null,
+      "uname": "Linux-7.0.0-43-generic-x86_64-with-glibc2.43",
+      "artifact_bytes": 396704640,
+      "artifact_mb_decimal": 396.7,
+      "artifact_mib": 378.33,
+      "meets_400mb_budget": true,
+      "meets_250mb_stretch": false,
+      "cold_load_ms": 16027.85,
+      "first_route_ms": 156.53,
+      "cold_load_plus_first_route_ms": 16184.51,
+      "warm_samples": 77,
+      "model_only_ms": {
+        "p50": 52.62,
+        "p95": 91.9,
+        "mean": 65.68
+      },
+      "routing_and_verifier_ms": {
+        "p50": 53.01,
+        "p95": 92.44,
+        "mean": 66.06
+      },
+      "mean_generation_tps": 443.64,
+      "overnight_v1_80": {
+        "raw_exact": 74,
+        "raw_accuracy": 0.925,
+        "verified_exact": 74,
+        "verified_accuracy": 0.925,
+        "verified_outputs_sha256": "594c6fe2ec215abf9e708feb06b288d102746ddb6fe6443196976afdae365fbe"
+      },
+      "memory_accounting_mib": {
+        "llama_server_peak_rss_mib": 12.22,
+        "python_app_rss_mib": 664.57,
+        "combined_resident_mib": 676.79,
+        "meets_1536mib_budget": true,
+        "meets_1500mib_budget": true
+      }
+    },
+    "qwen3_06b_v10_gguf_q8_0_linux_cuda": {
+      "gguf_file": "arrmes-qwen3-0.6b-v10-q8_0.gguf",
+      "family": "hermes",
+      "device": "cuda",
+      "threads": null,
+      "uname": "Linux-7.0.0-43-generic-x86_64-with-glibc2.43",
+      "artifact_bytes": 639446912,
+      "artifact_mb_decimal": 639.45,
+      "artifact_mib": 609.82,
+      "meets_400mb_budget": false,
+      "meets_250mb_stretch": false,
+      "cold_load_ms": 2940.09,
+      "first_route_ms": 144.11,
+      "cold_load_plus_first_route_ms": 3084.27,
+      "warm_samples": 77,
+      "model_only_ms": {
+        "p50": 59.11,
+        "p95": 104.63,
+        "mean": 64.45
+      },
+      "routing_and_verifier_ms": {
+        "p50": 59.53,
+        "p95": 105.17,
+        "mean": 64.84
+      },
+      "mean_generation_tps": 392.95,
+      "overnight_v1_80": {
+        "raw_exact": 78,
+        "raw_accuracy": 0.975,
+        "verified_exact": 78,
+        "verified_accuracy": 0.975,
+        "verified_outputs_sha256": "6c8d4af9dde99747523c4aa8b2fd7670399c6eaa0faf23100af318deaf3b32bf"
+      },
+      "memory_accounting_mib": {
+        "llama_server_peak_rss_mib": 12.22,
+        "python_app_rss_mib": 664.57,
+        "combined_resident_mib": 676.79,
+        "meets_1536mib_budget": true,
+        "meets_1500mib_budget": true
+      }
+    },
+    "functiongemma_270m_v10_gguf_q4_k_m_linux_cuda": {
+      "gguf_file": "arrmes-functiongemma-270m-v10-q4_k_m.gguf",
+      "family": "functiongemma",
+      "device": "cuda",
+      "threads": null,
+      "uname": "Linux-7.0.0-43-generic-x86_64-with-glibc2.43",
+      "artifact_bytes": 261330112,
+      "artifact_mb_decimal": 261.33,
+      "artifact_mib": 249.22,
+      "meets_400mb_budget": true,
+      "meets_250mb_stretch": false,
+      "cold_load_ms": 4062.08,
+      "first_route_ms": 124.54,
+      "cold_load_plus_first_route_ms": 4186.68,
+      "warm_samples": 77,
+      "model_only_ms": {
+        "p50": 40.38,
+        "p95": 53.51,
+        "mean": 43.45
+      },
+      "routing_and_verifier_ms": {
+        "p50": 40.73,
+        "p95": 53.96,
+        "mean": 43.84
+      },
+      "mean_generation_tps": 636.95,
+      "overnight_v1_80": {
+        "raw_exact": 66,
+        "raw_accuracy": 0.825,
+        "verified_exact": 72,
+        "verified_accuracy": 0.9,
+        "verified_outputs_sha256": "bff1238de7b1dc597ce84cffe2044922795924b7509ee68126b157664a61dd19"
+      },
+      "memory_accounting_mib": {
+        "llama_server_peak_rss_mib": 12.21,
+        "python_app_rss_mib": 664.57,
+        "combined_resident_mib": 676.78,
+        "meets_1536mib_budget": true,
+        "meets_1500mib_budget": true
+      }
+    },
+    "functiongemma_270m_v10_gguf_q8_0_linux_cuda": {
+      "gguf_file": "arrmes-functiongemma-270m-v10-q8_0.gguf",
+      "family": "functiongemma",
+      "device": "cuda",
+      "threads": null,
+      "uname": "Linux-7.0.0-43-generic-x86_64-with-glibc2.43",
+      "artifact_bytes": 299760832,
+      "artifact_mb_decimal": 299.76,
+      "artifact_mib": 285.87,
+      "meets_400mb_budget": true,
+      "meets_250mb_stretch": false,
+      "cold_load_ms": 4221.37,
+      "first_route_ms": 99.88,
+      "cold_load_plus_first_route_ms": 4321.32,
+      "warm_samples": 77,
+      "model_only_ms": {
+        "p50": 42.2,
+        "p95": 61.96,
+        "mean": 44.86
+      },
+      "routing_and_verifier_ms": {
+        "p50": 42.58,
+        "p95": 62.37,
+        "mean": 45.25
+      },
+      "mean_generation_tps": 622.86,
+      "overnight_v1_80": {
+        "raw_exact": 66,
+        "raw_accuracy": 0.825,
+        "verified_exact": 71,
+        "verified_accuracy": 0.8875,
+        "verified_outputs_sha256": "00c8976b8618f2e00bb15b9cae9f9098d05b4a20d69cdd09b98594f33c922998"
+      },
+      "memory_accounting_mib": {
+        "llama_server_peak_rss_mib": 12.21,
+        "python_app_rss_mib": 664.57,
+        "combined_resident_mib": 676.78,
+        "meets_1536mib_budget": true,
+        "meets_1500mib_budget": true
+      }
+    }
+  }
+}

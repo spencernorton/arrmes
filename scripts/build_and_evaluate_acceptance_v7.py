@@ -20,7 +20,7 @@ from arrmes.sandbox import NetworkIsolationGuard, SandboxCluster
 from arrmes.services.contract import SUPPORTED_OPERATIONS
 
 ROOT_DIR = Path(__file__).resolve().parents[1]
-BACKUP_AV4_PATH = ROOT / "data" / "acceptance-v4" / "cases.jsonl"
+BACKUP_AV4_PATH = ROOT_DIR / "data" / "acceptance-v4" / "cases.jsonl"
 
 # Locked acceptance-v7 entities: zero overlap with train-v7, train-v8, train-v9, dev-v5, dev-v6, acceptance-v4, acceptance-v6, overnight-v1.
 AV7_TV: list[str] = [

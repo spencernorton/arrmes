@@ -2,15 +2,14 @@
 
 ## Routing backends
 
-| Backend | Runtime | Model |
-| --- | --- | --- |
-| `neural-router` | CPU, no inference dependencies | [Arrmes neural router](https://huggingface.co/NorviTech/arrmes-neural-router-v3), 7.52 MiB |
-| `native-only` | No model; explicit service commands | None |
-| `mlx` | Apple Silicon; install `.[mlx]` | [Qwen3-0.6B](https://huggingface.co/NorviTech/arrmes-qwen3-0.6b) or [FunctionGemma-270M](https://huggingface.co/NorviTech/arrmes-functiongemma-270m) with its matching MLX base and adapter |
-| `llama-server` | Native llama.cpp on CPU or a supported accelerator | Fused GGUF; the published conversion is experimental |
+- **`neural-router`** — CPU runtime with zero external inference dependencies using the [Arrmes neural router](https://huggingface.co/NorviTech/arrmes-neural-router-v3) (`7.48 MiB`).
+- **`hybrid-router-mlx`** — Apple Silicon CPU router paired with fused MLX fallback (`pip install -e '.[mlx]'`).
+- **`native-only`** — Model-free deterministic execution of explicit service commands.
+- **`mlx`** — Apple Silicon Metal inference (`pip install -e '.[mlx]'`) using [Qwen3-0.6B](https://huggingface.co/NorviTech/arrmes-qwen3-0.6b) or [FunctionGemma-270M](https://huggingface.co/NorviTech/arrmes-functiongemma-270m).
+- **`llama-server`** — Portable native `llama.cpp` server on CPU, CUDA, or Metal using fused `Q8_0` or `Q4_K_M` GGUF artifacts.
 
 All backends use the same caller permissions and write-confirmation checks.
-See [measured performance](#arrmes-v7-runtime--footprint-profile-2026-11-02) and
+See [measured performance](#arrmes-v10-cross-platform-runtime--footprint-profile-2026-11-12) and
 [platform qualification](#evidence-and-limits) for tested configurations.
 
 ## Install the package
@@ -29,18 +28,19 @@ That example starts with model-free reads; add a model backend when needed.
 
 ## Neural router
 
-Download the published router from a pinned revision; no training is needed.
+Download the published v10 router and verify its pinned SHA-256 digest; no training is needed.
 From the checkout, on macOS or Linux:
 
 ```sh
 curl --fail --location --create-dirs \
   --output models/arrmes-neural-router-v3/router_weights.npz \
-  https://huggingface.co/NorviTech/arrmes-neural-router-v3/resolve/575eee2d663c4ede27694b8b61202737f8661529/router_weights.npz
+  https://huggingface.co/NorviTech/arrmes-neural-router-v3/resolve/f20f3a62222b2297eea86dae31f710052294bea2/router_weights.npz
 curl --fail --location \
   --output models/arrmes-neural-router-v3/router_config.json \
-  https://huggingface.co/NorviTech/arrmes-neural-router-v3/resolve/575eee2d663c4ede27694b8b61202737f8661529/router_config.json
-printf '%s  %s\n' 17e12b43d64240916b6220e81ba32d863b1f4b6b534c16b2c0c9c559139b7287 \
-  models/arrmes-neural-router-v3/router_weights.npz | shasum -a 256 --check
+  https://huggingface.co/NorviTech/arrmes-neural-router-v3/resolve/f20f3a62222b2297eea86dae31f710052294bea2/router_config.json
+printf '%s  %s\n' \
+  d91eca610add347575ea6c29e04d1861aba8045b4970c8c72ec2b4ecf1a0be05 models/arrmes-neural-router-v3/router_weights.npz \
+  89c87c0e59308c916f445f44c3768c5b9fc61d3b0858e65ef6474c47912e4dd4 models/arrmes-neural-router-v3/router_config.json | shasum -a 256 --check
 ```
 
 With the HTTP setup's client and service variables exported, stop any running
@@ -272,6 +272,27 @@ base file (and after `compose.cuda.yaml` when using both). An empty
 `{"services": {}}` registry is permitted for gateway-only use. Preserve the
 gateway-owner restriction on identity-sensitive media requests.
 
+## Arrmes v10 Cross-Platform Runtime & Footprint Profile (2026-11-12)
+
+![Arrmes v10 Cross-Platform Runtime Profile](figures/arrmes_v10_runtime_latency_memory_footprint.png)
+
+Full cross-platform receipts, SHA-256 digests, and memory accounting are recorded in `experiments/runtime-profile-v10.json`:
+
+- **ArrmesNeuralRouterV3 v10 (`ARRMES_BACKEND=neural-router`, CPU NumPy, `temperature=1.35`)**:
+  - **Artifact Size & Digest**: `7,844,743` bytes (`7.84 MB` / `7.48 MiB`), SHA-256 `d91eca610add347575ea6c29e04d1861aba8045b4970c8c72ec2b4ecf1a0be05`, meeting both `<= 400 MB` and `<= 250 MB` stretch budgets.
+  - **Apple M4 Pro (`macOS ARM64` CPU)**: Warm model-only `p50 = 0.295 ms` / `p95 = 0.463 ms`, warm routing + verifier `p50 = 0.416 ms` / `p95 = 0.609 ms`, authenticated HTTP loopback (`POST /v1/route`) `p50 = 1.324 ms` / `p95 = 1.707 ms`, peak RSS `112.39 MiB`.
+  - **AMD Ryzen 9 7950X3D (`Linux x86_64` CPU)**: Warm model-only `p50 = 0.516 ms` / `p95 = 0.588 ms`, warm routing + verifier `p50 = 0.714 ms` / `p95 = 0.806 ms`, peak RSS `73.79 MiB`. Produces `2,580 / 2,580` bitwise-identical predictions vs `macOS ARM64` (`SHA-256 64d26c3eef57...`).
+- **HybridRouterMLX v10 (`ARRMES_BACKEND=hybrid-router-mlx`, Apple M4 Pro CPU + Metal)**:
+  - **Combined Footprint, Isolated RSS & Latency**: `354.77 MB` (`338.34 MiB`) serialized weights, `704.58 MiB` isolated peak RSS (`<= 1,536 MiB` budget), warm routing + verifier `p50 = 0.516 ms` / `p95 = 151.114 ms`, `100.0%` `overnight-v1` verified accuracy and `94.96%` positive / `96.21%` hard-negative verified accuracy on sealed `acceptance-v8`.
+- **Portable `v10` GGUF via `llama-server` (`ctx=4096`, `--batch-size 4096`)**:
+  - **`arrmes-functiongemma-270m-v10-q4_k_m.gguf`** (`261,330,112` bytes / `261.33 MB`, SHA-256 `1b72dcd37745d50ff6f63f71e13f4274079239d8989e098a728e1dc277885123`, Gemma Terms of Use): `131.32 ms` warm p50 on Linux Ryzen 9 7950X3D 8-thread CPU (`1,130.63 MiB` combined host RSS, `7.46x` faster than the `980.0 ms` `v9` baseline and well within the `<= 250 ms` CPU budget), `40.73 ms` warm p50 on Linux RTX 4070 Ti SUPER CUDA (`<= 55 ms` budget), `74.93 ms` warm p50 on Apple M4 Pro CPU, and `63.44 ms` warm p50 on Apple M4 Pro Metal (`overnight-v1` verified accuracy: `88.75%` Linux CPU and macOS Metal, `90.00%` macOS CPU and Linux CUDA).
+  - **`arrmes-functiongemma-270m-v10-q8_0.gguf`** (`299,760,832` bytes / `299.76 MB`, SHA-256 `462e1720677f8b98e6f05572ecf712b700ad742bd6ccacf4620bf478c7983a31`, Gemma Terms of Use): `148.98 ms` Linux 8-thread CPU warm p50 (`1,149.67 MiB` combined host RSS, `87.50%` `overnight-v1` verified) and `42.58 ms` RTX 4070 Ti SUPER CUDA warm p50 (`88.75%` `overnight-v1` verified).
+  - **`arrmes-qwen3-0.6b-v10-q4_k_m.gguf`** (`396,704,640` bytes / `396.70 MB`, SHA-256 `0e5310b8d22a0c89826b8c9cd9e857656b301b0de4b63cdf27285338ef09dd84`, Apache-2.0): `53.01 ms` RTX 4070 Ti SUPER CUDA warm p50 (`<= 55 ms` budget), `113.73 ms` Apple M4 Pro Metal warm p50, `365.90 ms` Apple M4 Pro CPU warm p50, and `614.02 ms` Linux 8-thread CPU warm p50 (`overnight-v1` verified accuracy: `91.25%` macOS Metal, `92.50%` Linux CPU and Linux CUDA, `95.00%` macOS CPU).
+  - **`arrmes-qwen3-0.6b-v10-q8_0.gguf`** (`639,446,912` bytes / `639.45 MB`, SHA-256 `4c834c77558c1ff080c15f7da4c398ee75bc16950b09ee6fe1bee84bdf518059`, Apache-2.0): `59.53 ms` RTX 4070 Ti SUPER CUDA warm p50 (`+4.53 ms` above the `55.0 ms` `Q4_K_M` CUDA target in exchange for `97.50%` `overnight-v1` verified accuracy on both Linux CPU and Linux CUDA).
+- **Apple Silicon Fused MLX `v10` (`ARRMES_BACKEND=mlx`, Apple M4 Pro Metal)**:
+  - **`FunctionGemma-270M v10 4-bit MLX`** (`184.37 MB` / `175.83 MiB`, `1,309.31 MiB` isolated whole-process `ru_maxrss` including the 262k-token BPE CPU tokenizer heap; `1,063.32 MiB` `mx.get_peak_memory()` Metal GPU tensor allocator): `39.81 ms` warm routing + verifier p50 (`547.4 tok/s`, `70.00%` raw / `82.50%` verified on `overnight-v1`); **`8-bit MLX`** (`318.39 MB`, `1,436.56 MiB` whole-process `ru_maxrss` / `1,199.62 MiB` Metal GPU allocator): `47.70 ms` p50 (`82.50%` raw / `90.00%` verified on `overnight-v1`).
+  - **`Qwen3-0.6B v10 4-bit MLX`** (`346.93 MB` / `330.86 MiB`, `704.05 MiB` whole-process `ru_maxrss` / `1,592.15 MiB` Metal GPU allocator): `111.32 ms` warm routing + verifier p50 (`255.7 tok/s`, `91.25%` raw / `95.00%` verified on `overnight-v1`); **`8-bit MLX`** (`644.92 MB`, `985.78 MiB` whole-process `ru_maxrss` / `1,864.34 MiB` Metal GPU allocator): `134.33 ms` p50 (`97.50%` raw / `97.50%` verified on `overnight-v1`).
+
 ## Arrmes v7 Runtime & Footprint Profile (2026-11-02)
 
 ![Arrmes v7 Cross-Platform Runtime Profile](figures/arrmes_v7_runtime_latency_memory_footprint.png)
@@ -498,11 +519,7 @@ weights, and identify the merge/conversion/quantization changes.
 [Qwen license](https://huggingface.co/Qwen/Qwen3-0.6B/blob/c1899de289a04d12100db370d81485cdf75e47ca/LICENSE),
 [public adapter metadata](https://huggingface.co/NorviTech/arrmes-qwen3-0.6b/tree/8a9bcf224e6f9fd6bf238267093c70360ee837cb),
 [llama.cpp MIT license](https://github.com/ggml-org/llama.cpp/blob/b11429/LICENSE).
-FunctionGemma has separate Gemma terms and is not included in this GGUF export.
-
-No new GGUF is published as a qualified replacement for v1.1.0. Preserve the
-released adapter and benchmark as the baseline until conversion quality and
-platform-specific behavior meet independently frozen acceptance criteria.
+In the historical v1.1.0 export above, FunctionGemma was omitted; beginning in v1.7.0 (`v10`), audited `Q8_0` and `Q4_K_M` GGUF exports are published for both `Qwen3-0.6B v10` (Apache-2.0) and `FunctionGemma-270M v10` (with required Gemma Terms of Use and Prohibited Use Policy notices), superseding the legacy v1.1.0/`C7` baseline after passing `audit_gguf_release.py` and sealed `acceptance-v8` qualification.
 
 ## Runtime selection tradeoff
 

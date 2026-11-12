@@ -157,6 +157,18 @@ _DISCOVER_SVC_RE = re.compile(r"\b(discover|seer|seerr|overseerr|jellyseerr|week
 _ARMIGER_HINT_RE = re.compile(r"\barmiger\b|\bparse\b.*\brelease\b|\.mkv\b", re.I)
 _BITMAGNET_HINT_RE = re.compile(r"\bbitmagnet\b|\bdht\b", re.I)
 _WAYPOINT_HINT_RE = re.compile(r"\bwaypoint\b|\bdh-waypoint\b", re.I)
+_MEDIA_DOMAIN_ANCHOR_RE = re.compile(
+    r"\b(sonarr|radarr|lidarr|prowlarr|readarr|chaptarr|whisparr|bazarr|qbittorrent|qbt|tautulli|plex|"
+    r"seerr|seer|overseerr|jellyseerr|bitmagnet|armiger|waypoint|dh-waypoint|"
+    r"movies?|films?|tv|television|series|shows?|episodes?|seasons?|specials?|ovas?|anime|"
+    r"albums?|artists?|discography|tracks?|songs?|music|performer|band|"
+    r"torrents?|transfers?|seeding|stalled|paused|downloading|"
+    r"subtitles?|subs|captions?|streams?|streaming|playing|watched|viewing|"
+    r"indexers?|requests?|discover|trending|popular|upcoming|monitored|unmonitored|"
+    r"pause|resume|downloads?|queue|library|catalog|status|missing|search|grab|fetch)\b"
+    r"|\.(?:mkv|mp4|avi|ts|iso)\b",
+    re.I,
+)
 _CONDITIONAL_WRITE_RE = re.compile(r"\b(if|unless|except|until|only\s+when|provided\s+that|as\s+long\s+as|fall\s+back\s+to)\b", re.I)
 _NARROW_SCOPE_MUTATION_RE = re.compile(
     r"\b(4k|uhd|2160p|1080p|720p|480p|remux|hdr|flac|mp3|lossless|bitrate|mbps|kb/s|mib/s|"
@@ -380,6 +392,7 @@ class ArrmesNeuralRouterV3:
             self.b2: Any = data["b2"].astype(np.float32)
             self._hidden_dim = int(self.b1.shape[0])
             self._num_classes = int(self.b2.shape[0])
+            self.temperature = float(data["temperature"][0]) if "temperature" in data else 1.0
         else:
             with zipfile.ZipFile(weights_file, "r") as zf:
                 s_w1, self.W1 = _read_npy_float32(zf.read("W1.npy"))
@@ -388,17 +401,29 @@ class ArrmesNeuralRouterV3:
                 s_b2, self.b2 = _read_npy_float32(zf.read("b2.npy"))
                 self._hidden_dim = s_b1[0]
                 self._num_classes = s_b2[0]
+                if "temperature.npy" in zf.namelist():
+                    _, t_arr = _read_npy_float32(zf.read("temperature.npy"))
+                    self.temperature = float(t_arr[0]) if t_arr else 1.0
+                else:
+                    self.temperature = 1.0
+        self.temperature = max(self.temperature, 1e-3)
         self.load_seconds = time.perf_counter() - t0
 
     def predict_proba(self, query: str, context: dict[str, Any] | None = None) -> tuple[str, float, Any]:
         x = featurize_query(query, context)
+        inv_t = 1.0 / self.temperature
         if np is not None:
             h = np.maximum(0.0, x @ self.W1 + self.b1)
-            logits = h @ self.W2 + self.b2
-            logits = logits - np.max(logits)
-            exp_l = np.exp(logits)
-            probs = exp_l / np.sum(exp_l)
+            raw_logits = h @ self.W2 + self.b2
+            scaled = raw_logits * inv_t
+            max_s = float(np.max(scaled))
+            exp_l = np.exp(scaled - max_s)
+            sum_e = float(np.sum(exp_l))
+            probs = exp_l / sum_e
             best_idx = int(np.argmax(probs))
+            self._last_energy = -self.temperature * (max_s + math.log(max(sum_e, 1e-12)))
+            part = np.partition(probs, -2)
+            self._last_margin = float(part[-1] - part[-2])
             return ROUTER_CLASSES[best_idx], float(probs[best_idx]), probs
         # Pure-stdlib sparse matrix-vector product fallback
         h_dim = self._hidden_dim
@@ -420,11 +445,15 @@ class ArrmesNeuralRouterV3:
                 row_off = j * c_dim
                 for c in range(c_dim):
                     logits_list[c] += hj * w2[row_off + c]
-        max_l = max(logits_list)
-        exp_list = [math.exp(v - max_l) for v in logits_list]
+        scaled_list = [v * inv_t for v in logits_list]
+        max_l = max(scaled_list)
+        exp_list = [math.exp(v - max_l) for v in scaled_list]
         sum_e = sum(exp_list)
         probs_list = [v / sum_e for v in exp_list]
         best_idx = max(range(c_dim), key=lambda idx: probs_list[idx])
+        s_probs = sorted(probs_list)
+        self._last_energy = -self.temperature * (max_l + math.log(max(sum_e, 1e-12)))
+        self._last_margin = float(s_probs[-1] - s_probs[-2])
         return ROUTER_CLASSES[best_idx], float(probs_list[best_idx]), probs_list
 
     def _build_call(self, pred_class: str, probs: Any, query: str, context: dict[str, Any] | None) -> tuple[Call, bool]:
@@ -458,6 +487,24 @@ class ArrmesNeuralRouterV3:
             return validate_call("unsupported", {"reason": "complex"}), pred_class != "unsupported:complex"
         if _OUT_OF_SCOPE_RE.search(q_unquoted):
             return validate_call("unsupported", {"reason": "out_of_scope"}), pred_class != "unsupported:out_of_scope"
+        if (
+            selected is None
+            and not quoted
+            and not _MEDIA_DOMAIN_ANCHOR_RE.search(query)
+            and not _DEICTIC_RE.search(q_unquoted)
+            and not _ORDINAL_REF_RE.search(q_unquoted)
+            and pred_class.startswith("clarify:")
+        ):
+            return validate_call("unsupported", {"reason": "out_of_scope"}), pred_class != "unsupported:out_of_scope"
+        if (
+            pred_class in {"torrent_pause", "torrent_resume"}
+            and (_PASSIVE_PAUSE_QUERY_RE.search(q_unquoted) or _PASSIVE_RESUME_QUERY_RE.search(q_unquoted))
+            and not _NEGATED_PAUSE_RE.search(q_unquoted)
+            and not _NEGATED_RESUME_RE.search(q_unquoted)
+            and re.search(r"\b(torrents?|transfers?|qbittorrent)\b", q_unquoted, re.I)
+        ):
+            pred_class = "torrent_list"
+            used_structural = True
 
         if re.search(r"\bno\s+selection\s+list\s+is\s+attached\b|\b(?:second|first|third)\s+selected\b", q_unquoted, re.I):
             return validate_call("clarify", {"slot": "reference"}), pred_class != "clarify:reference"
@@ -555,6 +602,16 @@ class ArrmesNeuralRouterV3:
                 pred_class = ROUTER_CLASSES[best_c]
                 used_structural = True
 
+        if (
+            pred_class == "unsupported:complex"
+            and re.search(r"^\s*(?:rather\s+than|instead\s+of)\b[^,]+,\s*", q_unquoted, re.I)
+            and not _COMPLEX_RE.search(q_unquoted)
+            and not re.search(r"\b(?:and\s+then|followed\s+by|after\s+that|simultaneously)\b", q_unquoted, re.I)
+        ):
+            best_c = max(CONCRETE_V2_INDICES, key=lambda idx: float(probs[idx]))
+            pred_class = ROUTER_CLASSES[best_c]
+            used_structural = True
+
         # Handle clarify / unsupported classes
         if pred_class.startswith("unsupported:"):
             reason = pred_class.split(":", 1)[1]
@@ -572,6 +629,9 @@ class ArrmesNeuralRouterV3:
             return validate_call("clarify", {"slot": slot}), used_structural
 
         action = pred_class
+        if action in {"tv_status", "movie_status"} and (_has_history_intent(q_unquoted) or re.search(r"\b(?:previously\s+watched|last\s+watched|when\b.*\bwatched)\b", q_unquoted, re.I)) and re.search(r"\b(tautulli|plex)\b", q_unquoted, re.I):
+            action = "watch_history"
+            used_structural = True
         if action in {"tv_status", "tv_missing", "tv_search_missing", "now_playing"} and re.search(r"\bradarr\b", q_unquoted, re.I) and not re.search(r"\b(sonarr|plex|tautulli)\b", q_unquoted, re.I):
             action = "movie_search" if action == "tv_search_missing" else "movie_status"
             used_structural = True
@@ -758,6 +818,8 @@ class ArrmesNeuralRouterV3:
             "raw_router_proposal": raw_router_proposal,
             "neural_top1_class": pred_class,
             "neural_confidence": round(confidence, 4),
+            "neural_margin": round(float(getattr(self, "_last_margin", 0.0)), 4),
+            "neural_energy": round(float(getattr(self, "_last_energy", 0.0)), 4),
             "used_structural_guard": used_structural,
             "routing_source": (
                 "explicit_bazarr_deterministic"

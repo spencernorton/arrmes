@@ -1,23 +1,23 @@
 {
   "suite": "arrmes-upstream-container-lab-v1",
-  "generated_at": "2026-11-07T16:36:31Z",
+  "generated_at": "2026-11-11T21:57:59Z",
   "network_isolation": {
     "docker_network": "arrmes_upstream_lab_net",
     "bind_host": "127.0.0.1",
     "production_endpoints_contacted": 0
   },
   "images": {
-    "lscr.io/linuxserver/sonarr:latest": "sha256:3b8c947d7fa173f70e40047d2c8d02835fb8416aeb5ae36def57d9ad15e2f906",
-    "lscr.io/linuxserver/radarr:latest": "sha256:ade5937813c6ae415b29db729386e53fea3ecf067a019849bafbe2d2a6ec02ba",
-    "lscr.io/linuxserver/lidarr:latest": "sha256:d5707cfe084da21a3864c7ef0edd9c0543b5e26c79c551f84dad5ef8683af8c7",
+    "lscr.io/linuxserver/sonarr:latest": "sha256:673dc4609a5672bc8e46069c86ffcea283a86b48d34a6c93d8da8c24a1b87571",
+    "lscr.io/linuxserver/radarr:latest": "sha256:51a9ac2a9eb47afc833541e5fd6c11b86eb9f810694c22fa2429e3078e9194b2",
+    "lscr.io/linuxserver/lidarr:latest": "sha256:a91ef0642c15c9bd7c4260fee98fa99972c61601e37c8a96411d6a9cf0e9ad40",
     "lscr.io/linuxserver/readarr:0.4.19-nightly": "sha256:4f291128d1a5538be73c2a30473d7cdd0820e223dc8b8533b0cbc5659000dcbe",
-    "thespad/whisparr:latest": "sha256:2bde667450a1f099c6bc0da618da782619df8fa49b1e6cddc8fd56ce2dee9a16",
-    "lscr.io/linuxserver/prowlarr:latest": "sha256:431d7efebcef466e56adaa40a7a2fa2b0e85159a037b8bf465eaadbf0cf5bedf",
-    "lscr.io/linuxserver/bazarr:latest": "sha256:7ef0e58216900dbce30b123e0eb65f5cb30e36f126de9474acdd2022fb069c54",
-    "lscr.io/linuxserver/qbittorrent:latest": "sha256:05c1454f9a32967affc1f34f67f8cc0cc57dd805dca45489fe797095a6286556",
-    "lscr.io/linuxserver/tautulli:latest": "sha256:7ca2e262712700ae28ca5b32f9cebf1168e3ea3bfcd97a8da6e040f5ca6227a5",
+    "thespad/whisparr:latest": "sha256:4b138cd04def122bbb09cb2e4e7f5aaf24ec0cdd26c0c86483d5fe798e1a8d2a",
+    "lscr.io/linuxserver/prowlarr:latest": "sha256:6660787a99b2e58203539583663c973b48979fc00ff2cb78dc0ea17429e1f6ef",
+    "lscr.io/linuxserver/bazarr:latest": "sha256:832820dec70bce9e912c6eee7a95baf6551e03dbc63325a7208daaa455423752",
+    "lscr.io/linuxserver/qbittorrent:latest": "sha256:3d4c4545d51a690a0df15a2ff99038823a88a9822df8e794526447b9afbd7384",
+    "lscr.io/linuxserver/tautulli:latest": "sha256:5e8f80cc18f03c606a3567c8a9b37d80812ed8017d2e2f8ff2e2a91b54a3aef1",
     "ghcr.io/bitmagnet-io/bitmagnet:latest": "sha256:b6373349a30193b436ce6b05e21f91aa4934074268105dded1f3b065b8c86f19",
-    "postgres:16-alpine": "sha256:f4610795587492cd4fb887c2dc3de301b813278bb6f616992061141b5f15ac36",
+    "postgres:16-alpine": "sha256:cf78e76683b9ca8c5733cbbdce6c9262b45b6767934dd0a95e671f9a0fc20685",
     "ghcr.io/seerr-team/seerr:latest": "sha256:d8fab675b55ad293ded98fd71efcfd46054cbad9746534ae1cc4794a88c0b3be"
   },
   "live_containers": {
@@ -61,7 +61,7 @@
       "start_time_type": "float"
     },
     "tautulli": {
-      "tautulli_version": "v2.18.2",
+      "tautulli_version": "v2.19.1",
       "tautulli_branch": "master"
     },
     "qbittorrent": {
@@ -96,7 +96,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 20.43,
+      "latency_ms": 19.21,
       "audit": [
         {
           "method": "GET",
@@ -122,7 +122,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 44.16,
+      "latency_ms": 46.73,
       "audit": [
         {
           "method": "GET",
@@ -143,7 +143,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 7.18,
+      "latency_ms": 7.54,
       "audit": [
         {
           "method": "GET",
@@ -164,7 +164,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 17.02,
+      "latency_ms": 20.41,
       "audit": [
         {
           "method": "GET",
@@ -185,7 +185,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 7.63,
+      "latency_ms": 7.76,
       "audit": [
         {
           "method": "GET",
@@ -206,7 +206,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 11.0,
+      "latency_ms": 11.66,
       "audit": [
         {
           "method": "GET",
@@ -227,7 +227,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 6.84,
+      "latency_ms": 5.06,
       "audit": [
         {
           "method": "GET",
@@ -248,7 +248,7 @@
       "returned_count": 6,
       "total_records": 6,
       "truncated": false,
-      "latency_ms": 12.04,
+      "latency_ms": 12.99,
       "audit": [
         {
           "method": "GET",
@@ -269,7 +269,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 6.79,
+      "latency_ms": 9.49,
       "audit": [
         {
           "method": "GET",
@@ -290,7 +290,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 16.87,
+      "latency_ms": 18.63,
       "audit": [
         {
           "method": "GET",
@@ -316,7 +316,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 67.54,
+      "latency_ms": 80.61,
       "audit": [
         {
           "method": "GET",
@@ -337,7 +337,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 9.14,
+      "latency_ms": 9.72,
       "audit": [
         {
           "method": "GET",
@@ -358,7 +358,7 @@
       "returned_count": 250,
       "total_records": 320,
       "truncated": true,
-      "latency_ms": 55.31,
+      "latency_ms": 53.32,
       "audit": [
         {
           "method": "GET",
@@ -380,7 +380,7 @@
       "returned_count": 1,
       "total_records": null,
       "truncated": true,
-      "latency_ms": 30.89,
+      "latency_ms": 19.85,
       "audit": [
         {
           "method": "GET",
@@ -402,7 +402,7 @@
       "returned_count": 160,
       "total_records": null,
       "truncated": true,
-      "latency_ms": 32.48,
+      "latency_ms": 19.25,
       "audit": [
         {
           "method": "GET",
@@ -424,7 +424,7 @@
       "returned_count": 160,
       "total_records": null,
       "truncated": true,
-      "latency_ms": 30.04,
+      "latency_ms": 19.05,
       "audit": [
         {
           "method": "GET",
@@ -445,7 +445,7 @@
       "returned_count": 160,
       "total_records": 160,
       "truncated": false,
-      "latency_ms": 199.49,
+      "latency_ms": 149.35,
       "audit": [
         {
           "method": "GET",
@@ -481,7 +481,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 11.34,
+      "latency_ms": 8.72,
       "audit": [
         {
           "method": "GET",
@@ -502,7 +502,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 7.14,
+      "latency_ms": 6.65,
       "audit": [
         {
           "method": "GET",
@@ -523,7 +523,7 @@
       "returned_count": 6,
       "total_records": 6,
       "truncated": false,
-      "latency_ms": 10.9,
+      "latency_ms": 13.82,
       "audit": [
         {
           "method": "GET",
@@ -544,7 +544,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 9.17,
+      "latency_ms": 11.06,
       "audit": [
         {
           "method": "GET",
@@ -565,7 +565,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 18.82,
+      "latency_ms": 13.43,
       "audit": [
         {
           "method": "GET",
@@ -591,7 +591,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 59.45,
+      "latency_ms": 62.2,
       "audit": [
         {
           "method": "GET",
@@ -612,7 +612,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 15.52,
+      "latency_ms": 12.5,
       "audit": [
         {
           "method": "GET",
@@ -633,7 +633,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 17.89,
+      "latency_ms": 15.33,
       "audit": [
         {
           "method": "GET",
@@ -654,7 +654,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 8.33,
+      "latency_ms": 5.17,
       "audit": [
         {
           "method": "GET",
@@ -675,7 +675,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 11.27,
+      "latency_ms": 10.24,
       "audit": [
         {
           "method": "GET",
@@ -696,7 +696,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 7.51,
+      "latency_ms": 4.56,
       "audit": [
         {
           "method": "GET",
@@ -717,7 +717,7 @@
       "returned_count": 3,
       "total_records": 3,
       "truncated": false,
-      "latency_ms": 9.51,
+      "latency_ms": 7.28,
       "audit": [
         {
           "method": "GET",
@@ -738,7 +738,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 12.21,
+      "latency_ms": 8.97,
       "audit": [
         {
           "method": "GET",
@@ -759,7 +759,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 19.54,
+      "latency_ms": 18.85,
       "audit": [
         {
           "method": "GET",
@@ -785,7 +785,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 41.64,
+      "latency_ms": 48.27,
       "audit": [
         {
           "method": "GET",
@@ -806,7 +806,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 11.35,
+      "latency_ms": 9.88,
       "audit": [
         {
           "method": "GET",
@@ -827,7 +827,7 @@
       "returned_count": 1,
       "total_records": 1,
       "truncated": false,
-      "latency_ms": 61.32,
+      "latency_ms": 105.35,
       "audit": [
         {
           "method": "GET",
@@ -849,7 +849,7 @@
       "returned_count": 1,
       "total_records": 1,
       "truncated": false,
-      "latency_ms": 5.55,
+      "latency_ms": 13.04,
       "audit": [
         {
           "method": "GET",
@@ -870,7 +870,7 @@
       "returned_count": 1,
       "total_records": 1,
       "truncated": false,
-      "latency_ms": 24.49,
+      "latency_ms": 15.48,
       "audit": [
         {
           "method": "GET",
@@ -891,7 +891,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 14.02,
+      "latency_ms": 9.26,
       "audit": [
         {
           "method": "GET",
@@ -912,7 +912,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 11.94,
+      "latency_ms": 5.79,
       "audit": [
         {
           "method": "GET",
@@ -933,7 +933,7 @@
       "returned_count": 2,
       "total_records": 2,
       "truncated": false,
-      "latency_ms": 9.79,
+      "latency_ms": 9.02,
       "audit": [
         {
           "method": "GET",
@@ -954,7 +954,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 9.87,
+      "latency_ms": 5.63,
       "audit": [
         {
           "method": "GET",
@@ -975,7 +975,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 21.63,
+      "latency_ms": 17.88,
       "audit": [
         {
           "method": "GET",
@@ -1001,7 +1001,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 73.45,
+      "latency_ms": 118.86,
       "audit": [
         {
           "method": "GET",
@@ -1022,7 +1022,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 21.3,
+      "latency_ms": 51.02,
       "audit": [
         {
           "method": "GET",
@@ -1043,7 +1043,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 23.0,
+      "latency_ms": 12.25,
       "audit": [
         {
           "method": "GET",
@@ -1069,7 +1069,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 10.33,
+      "latency_ms": 8.45,
       "audit": [
         {
           "method": "GET",
@@ -1090,7 +1090,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 17.19,
+      "latency_ms": 10.87,
       "audit": [
         {
           "method": "GET",
@@ -1111,7 +1111,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 7.18,
+      "latency_ms": 5.2,
       "audit": [
         {
           "method": "GET",
@@ -1132,7 +1132,7 @@
       "returned_count": 7,
       "total_records": 7,
       "truncated": false,
-      "latency_ms": 12.2,
+      "latency_ms": 11.27,
       "audit": [
         {
           "method": "GET",
@@ -1153,7 +1153,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 11.32,
+      "latency_ms": 11.41,
       "audit": [
         {
           "method": "GET",
@@ -1174,7 +1174,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 17.79,
+      "latency_ms": 13.74,
       "audit": [
         {
           "method": "GET",
@@ -1200,7 +1200,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 74.01,
+      "latency_ms": 40.23,
       "audit": [
         {
           "method": "GET",
@@ -1226,7 +1226,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 9.75,
+      "latency_ms": 7.21,
       "audit": [
         {
           "method": "GET",
@@ -1247,7 +1247,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 29.36,
+      "latency_ms": 26.41,
       "audit": [
         {
           "method": "GET",
@@ -1269,7 +1269,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 42.89,
+      "latency_ms": 24.01,
       "audit": [
         {
           "method": "GET",
@@ -1290,7 +1290,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 6.79,
+      "latency_ms": 4.46,
       "audit": [
         {
           "method": "GET",
@@ -1312,7 +1312,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 6.97,
+      "latency_ms": 4.74,
       "audit": [
         {
           "method": "GET",
@@ -1334,7 +1334,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 4.73,
+      "latency_ms": 3.61,
       "audit": [
         {
           "method": "GET",
@@ -1355,7 +1355,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 2.32,
+      "latency_ms": 1.69,
       "audit": [
         {
           "method": "GET",
@@ -1376,7 +1376,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 3.51,
+      "latency_ms": 2.18,
       "audit": [
         {
           "method": "GET",
@@ -1397,7 +1397,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 4.4,
+      "latency_ms": 2.58,
       "audit": [
         {
           "method": "GET",
@@ -1418,7 +1418,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 2.36,
+      "latency_ms": 1.09,
       "audit": [
         {
           "method": "GET",
@@ -1444,7 +1444,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 1.39,
+      "latency_ms": 0.42,
       "audit": [
         {
           "method": "GET",
@@ -1465,7 +1465,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 1.69,
+      "latency_ms": 0.41,
       "audit": [
         {
           "method": "GET",
@@ -1486,7 +1486,7 @@
       "returned_count": null,
       "total_records": null,
       "truncated": false,
-      "latency_ms": 1.79,
+      "latency_ms": 1.0,
       "audit": [
         {
           "method": "POST",
@@ -1511,7 +1511,7 @@
       "returned_count": 1,
       "total_records": 1,
       "truncated": false,
-      "latency_ms": 11.58,
+      "latency_ms": 9.08,
       "audit": [
         {
           "method": "POST",
@@ -1537,7 +1537,7 @@
       "returned_count": 1,
       "total_records": 1,
       "truncated": false,
-      "latency_ms": 4.71,
+      "latency_ms": 3.91,
       "audit": [
         {
           "method": "POST",
@@ -1561,7 +1561,7 @@
       "returned_count": 0,
       "total_records": 0,
       "truncated": false,
-      "latency_ms": 11.05,
+      "latency_ms": 7.63,
       "audit": [
         {
           "method": "GET",
@@ -1583,7 +1583,7 @@
       "returned_count": 1,
       "total_records": 1,
       "truncated": false,
-      "latency_ms": 0.81,
+      "latency_ms": 0.57,
       "audit": [
         {
           "method": "GET",
@@ -1620,7 +1620,7 @@
       "phase1_status": "confirmation_required",
       "phase2_status": "dispatched",
       "ok": true,
-      "command_id": 1,
+      "command_id": 3,
       "search_job_status": "started",
       "audit": [
         {
@@ -1643,7 +1643,7 @@
         },
         {
           "method": "GET",
-          "path": "/api/v3/command/1",
+          "path": "/api/v3/command/3",
           "status": 200,
           "attempt": 1
         }
@@ -1660,7 +1660,7 @@
       "phase2_status": "dispatched",
       "ok": true,
       "command_id": 1,
-      "search_job_status": "completed",
+      "search_job_status": "started",
       "audit": [
         {
           "method": "GET",
@@ -1804,6 +1804,6 @@
     "total_checks": 73,
     "passed_checks": 73,
     "failed_checks": 0,
-    "elapsed_seconds": 21.7
+    "elapsed_seconds": 137.53
   }
 }

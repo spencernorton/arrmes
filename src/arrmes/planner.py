@@ -133,9 +133,10 @@ _SEARCH_DOWNLOAD_TRIGGER_RE = re.compile(
 )
 _NEGATED_WRITE_RE = re.compile(
     rf"\b(?:"
-    rf"(?:do\s+not|don't|dont|never|without|no|instead\s+of|rather\s+than|avoid|refrain\s+from)"
+    rf"(?:do\s+not|don't|dont|never|without|no|instead\s+of|rather\s+than|avoid|refrain\s+from|hold\s+back(?:\s+on)?|hold\s+off(?:\s+on)?|withhold|forgo|abstain\s+from|suppress)"
     rf"(?:\s+(?:ever|actually|automatically|any|a|an|the|new|more|further|or|and|creat(?:e|ing)|mak(?:e|ing))){{0,4}}\s+(?:{_WRITE_ACTION_VERBS_PATTERN})"
-    rf"|(?<!read-)only\s+(?:report|parse|check|list|tell\s+me)"
+    rf"|(?:(?<!read-)only|strictly|solely)\s+(?:report|parse|check|list|itemize|enumerate|inspect|tell\s+me)"
+    rf"|just\s+(?:itemize|enumerate|report|parse)"
     rf"|inventory\s+check\s+only|check\s+.+\s+only"
     rf")\b",
     re.IGNORECASE,
@@ -1100,7 +1101,13 @@ def verify_proposal(
         if not _is_grounded_in_text(args[entity_slot], query) and not _context_role_matches(name, entity_slot, selected, q_unquoted):
             return validate_call("clarify", {"slot": "reference"})
 
-    return validate_call(name, args)
+    if name in V3_BY_NAME:
+        allowed_props = set(V3_BY_NAME[name].properties)
+        args = {k: v for k, v in args.items() if k in allowed_props}
+    try:
+        return validate_call(name, args)
+    except InvalidCall:
+        return validate_call("clarify", {"slot": _infer_clarify_slot(query, selected)})
 
 
 _YEAR_SUFFIX_TITLE_RE = re.compile(

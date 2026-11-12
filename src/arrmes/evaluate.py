@@ -11,7 +11,7 @@ import statistics
 import time
 from typing import Any
 
-from .catalog import V2_BY_NAME, WRITE_EFFECT_ACTIONS, contract_hash, contract_hash_v2
+from .catalog import V2_BY_NAME, V3_BY_NAME, WRITE_EFFECT_ACTIONS_V3, contract_hash, contract_hash_v2, contract_hash_v3
 from .protocol import Call, InvalidCall, decode, normalized
 
 
@@ -19,9 +19,10 @@ def read_cases(path):
     return [json.loads(line) for line in Path(path).read_text().splitlines() if line.strip()]
 
 
-def score(raw: str, expected: dict, family: str) -> dict:
+def score(raw: str, expected: dict, family: str, *, allow_v3: bool | None = None) -> dict:
+    eff_allow_v3 = (expected.get("name") in V3_BY_NAME and expected.get("name") not in V2_BY_NAME) if allow_v3 is None else allow_v3
     try:
-        actual = decode(raw, family)
+        actual = decode(raw, family, allow_v3=eff_allow_v3)
     except InvalidCall:
         return {"schema_valid": False, "action_correct": False,
                 "exact": False, "actual": None}
@@ -99,7 +100,7 @@ def cluster_bootstrap_ci(
     eff_fallback = fallback_key
     clusters: dict[str, list[int]] = {}
     for r in rows:
-        cid = str(r.get("family_id") or r.get("entity_family") or r.get("category") or r.get("id"))
+        cid = str(r.get("family_id") or r.get("entity_family") or r.get("cluster_id") or r.get("category") or r.get("id"))
         clusters.setdefault(cid, []).append(1 if _row_bool_metric(r, key, eff_fallback) else 0)
     cluster_keys = sorted(clusters.keys())
     m = len(cluster_keys)
@@ -138,10 +139,10 @@ def summarize(rows: list[dict], *, provenance_raw_unverified: bool = False) -> d
     n = len(rows)
     kinds = sorted({x["category"] for x in rows})
     controls = [x for x in rows if x["expected"]["name"] in {"clarify", "unsupported"}]
-    writes = [x for x in rows if x["expected"]["name"] in WRITE_EFFECT_ACTIONS]
-    non_writes = [x for x in rows if x["expected"]["name"] not in WRITE_EFFECT_ACTIONS]
+    writes = [x for x in rows if x["expected"]["name"] in WRITE_EFFECT_ACTIONS_V3]
+    non_writes = [x for x in rows if x["expected"]["name"] not in WRITE_EFFECT_ACTIONS_V3]
     unexpected_writes = [x for x in non_writes
-                         if x.get("actual") and x["actual"]["name"] in WRITE_EFFECT_ACTIONS]
+                         if x.get("actual") and x["actual"]["name"] in WRITE_EFFECT_ACTIONS_V3]
     raw_observed_rows = rows if provenance_raw_unverified else [x for x in rows if _has_raw_neural_observation(x)]
     raw_observed_non_writes = (
         non_writes if provenance_raw_unverified else [x for x in non_writes if _has_raw_neural_observation(x)]
@@ -149,12 +150,12 @@ def summarize(rows: list[dict], *, provenance_raw_unverified: bool = False) -> d
     raw_unexpected_writes = [
         x for x in raw_observed_non_writes
         if (
-            (x.get("raw_neural_actual") and x["raw_neural_actual"]["name"] in WRITE_EFFECT_ACTIONS)
+            (x.get("raw_neural_actual") and x["raw_neural_actual"]["name"] in WRITE_EFFECT_ACTIONS_V3)
             or (
                 provenance_raw_unverified
                 and "raw_neural_actual" not in x
                 and x.get("actual")
-                and x["actual"]["name"] in WRITE_EFFECT_ACTIONS
+                and x["actual"]["name"] in WRITE_EFFECT_ACTIONS_V3
             )
         )
     ]
@@ -192,16 +193,22 @@ def summarize(rows: list[dict], *, provenance_raw_unverified: bool = False) -> d
     exact_k = sum(x["exact"] for x in rows)
     verifier_mutated_k = sum(int(bool(x.get("verifier_mutated", False))) for x in rows)
 
+    def _row_service(row_item: dict[str, Any]) -> str:
+        exp_name = row_item["expected"]["name"]
+        if exp_name == "service_query":
+            return str(row_item["expected"].get("arguments", {}).get("service") or V3_BY_NAME["service_query"].service)
+        return V3_BY_NAME[exp_name].service
+
     by_service: dict[str, dict[str, Any]] = {}
     for x in rows:
-        svc = V2_BY_NAME[x["expected"]["name"]].service
+        svc = _row_service(x)
         slot = by_service.setdefault(svc, {"cases": 0, "exact": 0, "action_correct": 0})
         slot["cases"] += 1
         slot["exact"] += int(bool(x["exact"]))
         slot["action_correct"] += int(bool(x["action_correct"]))
     for svc, slot in by_service.items():
         slot["exact_accuracy"] = round(slot["exact"] / slot["cases"], 6) if slot["cases"] else None
-        slot.update(raw_metrics([row for row in rows if V2_BY_NAME[row["expected"]["name"]].service == svc]))
+        slot.update(raw_metrics([row for row in rows if _row_service(row) == svc]))
 
     pred_abstentions = sum(1 for x in rows if x.get("actual") and x["actual"]["name"] in {"clarify", "unsupported"})
 
@@ -267,10 +274,12 @@ def run(model, cases_path: str, output: str, limit: int | None = None):
     target = Path(output)
     target.parent.mkdir(parents=True, exist_ok=True)
     for i, case in enumerate(cases):
+        c_ver_case = getattr(model, "contract_version", "v1")
+        row_allow_v3 = c_ver_case in {"v3", "arrmes.tools.v3"} or case.get("contract_version") in {"v3", "arrmes.tools.v3"}
         inference = model.infer(case["query"], case.get("context"))
-        result = score(inference["raw"], case["expected"], model.family)
+        result = score(inference["raw"], case["expected"], model.family, allow_v3=row_allow_v3)
         raw_unv = inference.get("raw_unverified", inference["raw"])
-        raw_res = score(raw_unv, case["expected"], model.family)
+        raw_res = score(raw_unv, case["expected"], model.family, allow_v3=row_allow_v3)
         row_data = {
             **case,
             **inference,
@@ -288,9 +297,19 @@ def run(model, cases_path: str, output: str, limit: int | None = None):
                               "raw_neural_exact": sum(x["raw_neural_exact"] for x in rows)}), flush=True)
     import importlib.metadata
     c_ver = getattr(model, "contract_version", "v1")
-    c_hash = contract_hash_v2() if c_ver == "v2" else contract_hash()
-    pol_mod = __import__("arrmes.model", fromlist=["POLICY", "POLICY_V2"])
-    pol_str = pol_mod.POLICY_V2 if c_ver == "v2" else pol_mod.POLICY
+    if c_ver in {"v3", "arrmes.tools.v3"}:
+        c_hash = contract_hash_v3()
+    elif c_ver in {"v2", "arrmes.tools.v2"}:
+        c_hash = contract_hash_v2()
+    else:
+        c_hash = contract_hash()
+    pol_mod = __import__("arrmes.model", fromlist=["POLICY", "POLICY_V2", "POLICY_V3"])
+    if c_ver in {"v3", "arrmes.tools.v3"}:
+        pol_str = pol_mod.POLICY_V3
+    elif c_ver in {"v2", "arrmes.tools.v2"}:
+        pol_str = pol_mod.POLICY_V2
+    else:
+        pol_str = pol_mod.POLICY
     receipt = {"schema_version": 2, "model_path": model.path, "adapter": model.adapter,
                "family": model.family, "contract_version": c_ver, "load_seconds": model.load_seconds,
                "started_unix": started, "completed_unix": time.time(),
