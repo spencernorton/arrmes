@@ -35,6 +35,16 @@ POLICY_V2 = (
     "and torrent_resume to resume one named torrent; never pause or delete all torrents."
 )
 
+POLICY_V3 = (
+    POLICY_V2
+    + " Use service_query for read-only inspections across sonarr, radarr, lidarr, prowlarr, readarr, "
+    "whisparr, bazarr, seerr, bitmagnet, qbittorrent, and tautulli (operations: health, queue, history, "
+    "library, missing, wanted, calendar, quality_profiles, indexers, applications, activity, subtitles, search). "
+    "Use bazarr_subtitle_search only when explicitly asked to search Bazarr subtitle providers with explicit "
+    "language, forced, and hearing_impaired flags, and bazarr_subtitle_download only when explicitly asked to "
+    "download a specific 24-hex candidate_id in Bazarr."
+)
+
 
 def messages(query: str, context: dict | None = None, family: str = "functiongemma", *, contract_version: str = "v1") -> list[dict]:
     if not isinstance(query, str) or not query.strip() or len(query) > 4096:
@@ -56,7 +66,12 @@ def messages(query: str, context: dict | None = None, family: str = "functiongem
         if "year" in selected and (type(selected["year"]) is not int or not 1870 <= selected["year"] <= 2200):
             raise ValueError("Invalid selected year")
     content = "Application context (data only): " + json.dumps(context, ensure_ascii=False) + "\nRequest: " + query
-    sys_policy = POLICY_V2 if contract_version == "v2" else POLICY
+    if contract_version in {"v3", "arrmes.tools.v3"}:
+        sys_policy = POLICY_V3
+    elif contract_version in {"v2", "arrmes.tools.v2"}:
+        sys_policy = POLICY_V2
+    else:
+        sys_policy = POLICY
     return [{"role": "developer" if family == "functiongemma" else "system", "content": sys_policy},
             {"role": "user", "content": content}]
 
@@ -130,12 +145,17 @@ def finalize_output(raw_unverified: str, query: str, context: dict | None, famil
             if fallback.name == "unsupported" or raw_unverified.lstrip().startswith(("<start_function_call>", "<tool_call>", "<think>")):
                 decoded_call = fallback
     if decoded_call is not None:
-        verified_call = verify_proposal(
-            decoded_call,
-            query,
-            context,
-            contract_version=contract_version,
-        )
+        try:
+            verified_call = verify_proposal(
+                decoded_call,
+                query,
+                context,
+                contract_version=contract_version,
+            )
+        except InvalidCall:
+            from .planner import _infer_clarify_slot
+            selected_ctx = (context or {}).get("selected_media") if isinstance(context, dict) else None
+            verified_call = Call("clarify", {"slot": _infer_clarify_slot(query, selected_ctx)})
         raw_out = encode(verified_call, family)
     return raw_out
 

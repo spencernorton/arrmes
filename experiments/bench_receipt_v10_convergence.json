@@ -1,0 +1,70 @@
+{
+  "schema_version": 1,
+  "title": "ARRMES Generative Convergence \u2014 v9 (60-iter) vs v10 (Full SFT + RPO-DPO)",
+  "subtitle": "v10 on full N=2,580 acceptance-v7 (v3); v9 on recorded N=300 slice (150 v2 pos + 150 neg); full N=80 overnight-v1",
+  "metrics": [
+    {
+      "key": "av7_pos_raw",
+      "label": "acceptance-v7 Pos Raw"
+    },
+    {
+      "key": "av7_neg_raw",
+      "label": "acceptance-v7 Hard-Neg Raw"
+    },
+    {
+      "key": "av7_neg_ver",
+      "label": "acceptance-v7 Hard-Neg Verified"
+    },
+    {
+      "key": "ov1_ver",
+      "label": "overnight-v1 Verified (N=80)"
+    }
+  ],
+  "models": [
+    {
+      "name": "NeuralRouterV3 v10 (N=2,580)",
+      "metrics": {
+        "av7_pos_raw": 1.0,
+        "av7_neg_raw": 1.0,
+        "av7_neg_ver": 1.0,
+        "ov1_ver": 1.0
+      }
+    },
+    {
+      "name": "Qwen3-0.6B v10 (N=2,580)",
+      "metrics": {
+        "av7_pos_raw": 0.9022,
+        "av7_neg_raw": 0.9517,
+        "av7_neg_ver": 0.9933,
+        "ov1_ver": 0.975
+      }
+    },
+    {
+      "name": "FG-270M v10 (N=2,580)",
+      "metrics": {
+        "av7_pos_raw": 0.7804,
+        "av7_neg_raw": 0.8258,
+        "av7_neg_ver": 0.9408,
+        "ov1_ver": 0.8875
+      }
+    },
+    {
+      "name": "Qwen3-0.6B v9 (N=300 slice)",
+      "metrics": {
+        "av7_pos_raw": 0.92,
+        "av7_neg_raw": 0.4467,
+        "av7_neg_ver": 0.94,
+        "ov1_ver": 0.9
+      }
+    },
+    {
+      "name": "FG-270M v9 (N=300 slice)",
+      "metrics": {
+        "av7_pos_raw": 0.84,
+        "av7_neg_raw": 0.3267,
+        "av7_neg_ver": 0.8867,
+        "ov1_ver": 0.8625
+      }
+    }
+  ]
+}

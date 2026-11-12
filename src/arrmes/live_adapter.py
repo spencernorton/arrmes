@@ -29,7 +29,7 @@ from arrmes.protocol import Call, normalized, validate_call
 
 _REDACT_QUERY_RE = re.compile(r"([?&](?:apikey|api_key|token|key)=)[^&#\s]+", re.IGNORECASE)
 # Read-only POST endpoints (queries expressed as POST bodies); safe to replay.
-_READ_ONLY_POST_SUFFIXES = ("/armiger/parse", "/bitagent/graphql", "/image-gen/v1/infer")
+_READ_ONLY_POST_SUFFIXES = ("/armiger/parse", "/bitagent/graphql", "/image-gen/v1/infer", "/v1/classify", "/v1/batch")
 # Mutations with no verified live implementation behind the gateway. They are
 # rejected before a confirmation token is minted so they are never advertised as executable.
 LIVE_UNSUPPORTED_WRITES = frozenset({"torrent_pause", "torrent_resume"})
@@ -356,6 +356,170 @@ def _valid_command_id(cmd_resp: Any) -> int | str | None:
     return None
 
 
+
+_VALID_WAYPOINT_OPERATIONAL_STATES = frozenset({"online", "ok", "healthy", "ready", "idle", "running", "degraded"})
+
+
+def _is_valid_prob(val: Any) -> bool:
+    import math
+    if isinstance(val, bool):
+        return False
+    if isinstance(val, int):
+        return val in (0, 1)
+    if isinstance(val, float):
+        return math.isfinite(val) and 0.0 <= val <= 1.0
+    return False
+
+
+def _has_valid_optional_str_fields(mapping: dict[str, Any], keys: tuple[str, ...]) -> bool:
+    for key in keys:
+        if key in mapping and mapping[key] is not None:
+            if not isinstance(mapping[key], str) or not mapping[key].strip():
+                return False
+    return True
+
+
+def _is_valid_armiger_prediction(pred: Any) -> bool:
+    """Strictly validate an Armiger classification payload (category label, probability bounds, and head types)."""
+    if not isinstance(pred, dict) or not pred:
+        return False
+    if not _has_valid_optional_str_fields(pred, ("schema_version", "model", "version", "artifact_digest", "name")):
+        return False
+    if "classification" in pred:
+        if not isinstance(pred["classification"], dict) or not pred["classification"]:
+            return False
+        target = pred["classification"]
+    else:
+        target = pred
+    if "category" not in target or target["category"] is None:
+        return False
+    cat = target["category"]
+    if isinstance(cat, dict):
+        lbl = cat.get("label")
+        if not isinstance(lbl, str) or not lbl.strip():
+            return False
+        for pk in ("prob", "confidence", "score"):
+            if pk in cat and not _is_valid_prob(cat[pk]):
+                return False
+    elif isinstance(cat, str):
+        if not cat.strip():
+            return False
+    else:
+        return False
+
+    for pk in ("prob", "confidence", "score"):
+        if pk in target and not _is_valid_prob(target[pk]):
+            return False
+
+    if "junk" in target:
+        jk = target["junk"]
+        if isinstance(jk, dict):
+            if "label" not in jk:
+                return False
+            jl = jk["label"]
+            if isinstance(jl, bool):
+                pass
+            elif isinstance(jl, int):
+                if jl not in (0, 1):
+                    return False
+            elif isinstance(jl, str):
+                if not jl.strip():
+                    return False
+            else:
+                return False
+            for pk in ("prob", "confidence", "score"):
+                if pk in jk and not _is_valid_prob(jk[pk]):
+                    return False
+        elif isinstance(jk, bool):
+            pass
+        elif isinstance(jk, int):
+            if jk not in (0, 1):
+                return False
+        else:
+            return False
+    return True
+
+
+def _is_valid_waypoint_pipeline_item(item: Any) -> bool:
+    if not isinstance(item, dict) or not item:
+        return False
+    has_ident = False
+    for ik in ("id", "name"):
+        if ik in item:
+            if not isinstance(item[ik], str) or not item[ik].strip():
+                return False
+            has_ident = True
+    if not has_ident:
+        return False
+    has_state = False
+    for sk in ("state", "status"):
+        if sk in item:
+            if not isinstance(item[sk], str) or not item[sk].strip():
+                return False
+            has_state = True
+    return has_state
+
+
+def _is_valid_waypoint_batch_item(item: Any) -> bool:
+    if not isinstance(item, dict) or not item:
+        return False
+    has_ident = False
+    for ik in ("batch_id", "id"):
+        if ik in item:
+            ident = item[ik]
+            if isinstance(ident, bool) or ident is None:
+                return False
+            if isinstance(ident, str):
+                if not ident.strip():
+                    return False
+            elif isinstance(ident, int):
+                if ident < 0:
+                    return False
+            else:
+                return False
+            has_ident = True
+    if not has_ident:
+        return False
+    has_state = False
+    for sk in ("status", "state"):
+        if sk in item:
+            if not isinstance(item[sk], str) or not item[sk].strip():
+                return False
+            has_state = True
+    return has_state
+
+
+def _extract_valid_waypoint_status(resp: Any) -> tuple[str, list[dict[str, Any]], list[dict[str, Any]]] | None:
+    """Strictly validate a Waypoint /v1/status payload, operational status, collection types, and entry schemas."""
+    if not isinstance(resp, dict) or not resp:
+        return None
+    if not _has_valid_optional_str_fields(resp, ("schema_version", "version")):
+        return None
+    present_states: list[str] = []
+    for sk in ("status", "state"):
+        if sk in resp:
+            val = resp[sk]
+            if not isinstance(val, str) or not val.strip():
+                return None
+            if val.strip().lower() not in _VALID_WAYPOINT_OPERATIONAL_STATES:
+                return None
+            present_states.append(val.strip())
+    if not present_states:
+        return None
+    norm_status = present_states[0]
+    raw_pipes = resp.get("pipelines", [])
+    raw_batches = resp.get("batches", [])
+    if raw_pipes is None or raw_batches is None:
+        return None
+    if not isinstance(raw_pipes, list) or not isinstance(raw_batches, list):
+        return None
+    if not all(_is_valid_waypoint_pipeline_item(p) for p in raw_pipes):
+        return None
+    if not all(_is_valid_waypoint_batch_item(b) for b in raw_batches):
+        return None
+    return norm_status, raw_pipes, raw_batches
+
+
 class LiveGatewayAdapter(SandboxAdapter):
     """Production adapter connecting Arrmes to the GES API gateway (https://gateway.example.invalid) or SandboxCluster."""
 
@@ -370,6 +534,8 @@ class LiveGatewayAdapter(SandboxAdapter):
         timeout_seconds: float = 12.0,
         max_retries: int = 2,
         qbittorrent_url: str | None = None,
+        armiger_url: str | None = None,
+        waypoint_url: str | None = None,
         request_owner_subject: str | None = None,
         sandbox: bool = False,
         enable_gateway_v3: bool | None = None,
@@ -385,6 +551,8 @@ class LiveGatewayAdapter(SandboxAdapter):
         self.confirmation_store = confirmation_store or WriteConfirmationStore()
         self.timeout_seconds = timeout_seconds
         self.qbittorrent_url = (qbittorrent_url or os.environ.get("ARRMES_QBITTORRENT_URL", "")).rstrip("/")
+        self.armiger_url = (armiger_url or os.environ.get("ARRMES_ARMIGER_URL", "")).rstrip("/")
+        self.waypoint_url = (waypoint_url or os.environ.get("ARRMES_WAYPOINT_URL", "")).rstrip("/")
         # The request service attributes a submission to the owner of the gateway key; it has no
         # verified header for acting on behalf of another user. Live request_media is therefore
         # allowed only for the one Arrmes subject that owns the gateway credential.
@@ -1187,13 +1355,62 @@ class LiveGatewayAdapter(SandboxAdapter):
     def execute_armiger_parse(self, args: dict[str, Any], principal: Principal, *, idempotency_key: str | None, audit: list[dict[str, Any]]) -> AdapterObservation:
         if self._is_sandbox_backend:
             return super().execute_armiger_parse(args, principal, idempotency_key=idempotency_key, audit=audit)
+        rel = args["release_name"]
+        parsed_meta = _parse_release_metadata(rel)
+        # Direct Armiger v3.13.0+ HTTP service path (POST /v1/classify) when armiger_url is configured
+        if self.armiger_url:
+            headers = self._auth_headers_for("armiger", principal=principal)
+            direct_body = {
+                "schema_version": "armiger.classify.v1",
+                "release_name": rel,
+                "name": rel,
+                "files": [{"path": rel, "size": 0}],
+            }
+            code, resp = self._request_json(
+                "POST",
+                "/v1/classify",
+                headers=headers,
+                body=direct_body,
+                audit=audit,
+                base_url_override=self.armiger_url,
+            )
+            if code != 200 or not isinstance(resp, dict):
+                return AdapterObservation(
+                    "error",
+                    "armiger",
+                    "armiger_parse",
+                    code,
+                    False,
+                    resp if isinstance(resp, dict) else {"error": "armiger_direct_classify_failed"},
+                    audit,
+                )
+            # Armiger /v1/classify is a local stateless release-name classifier (zero external provider egress -> effect='read').
+            if not _is_valid_armiger_prediction(resp):
+                return AdapterObservation("error", "armiger", "armiger_parse", 502, False, {"error": "invalid_armiger_classify_response"}, audit)
+            cls_payload = resp["classification"] if "classification" in resp else resp
+            return AdapterObservation(
+                "verified_ok",
+                "armiger",
+                "armiger_parse",
+                200,
+                True,
+                {
+                    **parsed_meta,
+                    "transport": "armiger_direct_v1",
+                    "schema_version": resp.get("schema_version") or "armiger.classify.v1",
+                    "model": resp.get("model") or "armiger-ultra",
+                    "version": resp.get("version") or "unknown",
+                    "artifact_digest": resp.get("artifact_digest"),
+                    "classification": cls_payload,
+                },
+                audit,
+            )
         if not self.enable_gateway_v3:
             return AdapterObservation("unsupported", "armiger", "armiger_parse", 501, False,
                                       {"error": "native_armiger_integration_not_implemented"}, audit)
-        rel = args["release_name"]
-        parsed_meta = _parse_release_metadata(rel)
         infer_body = {
             "model": "armiger-ultra",
+            "schema_version": "armiger.v3.13",
             "inputs": [{"name": rel, "files": [{"path": rel, "size": 0}]}],
         }
         code, submit_resp = self._request_json("POST", "/image-gen/v1/infer", body=infer_body, audit=audit)
@@ -1203,21 +1420,33 @@ class LiveGatewayAdapter(SandboxAdapter):
         job_id = submit_resp.get("job_id")
         if not isinstance(job_id, str) or not job_id.strip():
             return AdapterObservation("error", "armiger", "armiger_parse", 502, False, {"error": "missing_armiger_job_id"}, audit)
-        c2, wait_resp = self._request_json("GET", f"/image-gen/v1/infer/{urllib.parse.quote(job_id.strip(), safe='')}/wait?timeout=10", audit=audit)
+        c2, wait_resp = self._request_json(
+            "GET",
+            f"/image-gen/v1/infer/{urllib.parse.quote(job_id.strip(), safe='')}/wait?timeout_s=10",
+            audit=audit,
+        )
         if c2 != 200 or not isinstance(wait_resp, dict) or wait_resp.get("status") != "completed":
             return AdapterObservation("error", "armiger", "armiger_parse", c2, False,
                                       wait_resp if isinstance(wait_resp, dict) else {"error": "armiger_wait_failed"}, audit)
-        result_obj = wait_resp.get("result") if isinstance(wait_resp.get("result"), dict) else wait_resp
-        preds = (
-            result_obj.get("results")
-            or result_obj.get("predictions")
-            or wait_resp.get("results")
-            or wait_resp.get("predictions")
-            or []
-        )
-        if not isinstance(preds, list):
-            preds = []
-        first_pred = preds[0] if preds and isinstance(preds[0], dict) else {}
+        if "result" in wait_resp:
+            if not isinstance(wait_resp["result"], dict) or not wait_resp["result"]:
+                return AdapterObservation("error", "armiger", "armiger_parse", 502, False, {"error": "invalid_armiger_classify_response"}, audit)
+            result_obj = wait_resp["result"]
+        else:
+            result_obj = wait_resp
+        if not _has_valid_optional_str_fields(wait_resp, ("schema_version", "model", "version", "artifact_digest")) or not _has_valid_optional_str_fields(result_obj, ("schema_version", "model", "version", "artifact_digest")):
+            return AdapterObservation("error", "armiger", "armiger_parse", 502, False, {"error": "invalid_armiger_classify_response"}, audit)
+        preds = None
+        for container in (result_obj, wait_resp):
+            for key in ("results", "predictions"):
+                if key in container:
+                    preds = container[key]
+                    break
+            if preds is not None:
+                break
+        if not isinstance(preds, list) or len(preds) != 1 or not _is_valid_armiger_prediction(preds[0]):
+            return AdapterObservation("error", "armiger", "armiger_parse", 502, False, {"error": "invalid_armiger_classify_response"}, audit)
+        first_pred = preds[0]
         return AdapterObservation(
             "verified_ok",
             "armiger",
@@ -1226,10 +1455,55 @@ class LiveGatewayAdapter(SandboxAdapter):
             True,
             {
                 **parsed_meta,
+                "transport": "gateway_infer_v1",
+                "schema_version": result_obj.get("schema_version") or wait_resp.get("schema_version") or "armiger.v3.13",
                 "model": result_obj.get("model") or wait_resp.get("model") or "armiger-ultra",
                 "version": result_obj.get("version") or wait_resp.get("version"),
                 "artifact_digest": result_obj.get("artifact_digest") or wait_resp.get("artifact_digest"),
                 "classification": first_pred,
+            },
+            audit,
+        )
+
+    def execute_armiger_batch(self, release_names: list[str], principal: Principal | None = None) -> AdapterObservation:
+        """Batch-classify release names against Armiger v3.13.0+ POST /v1/batch."""
+        audit: list[dict[str, Any]] = []
+        if not release_names or not all(isinstance(r, str) and r.strip() for r in release_names):
+            return AdapterObservation("error", "armiger", "armiger_parse", 400, False, {"error": "empty_or_invalid_batch"}, audit)
+        if not self.armiger_url:
+            return AdapterObservation("unsupported", "armiger", "armiger_parse", 501, False, {"error": "armiger_url_not_configured"}, audit)
+        with self._execution_lock:
+            prev_eff = self._active_effect
+            self._active_effect = "read"
+            try:
+                headers = self._auth_headers_for("armiger", principal=principal)
+                body = {
+                    "schema_version": "armiger.batch.v1",
+                    "items": [{"name": r.strip(), "files": [{"path": r.strip(), "size": 0}]} for r in release_names],
+                }
+                code, resp = self._request_json("POST", "/v1/batch", headers=headers, body=body, audit=audit, base_url_override=self.armiger_url)
+            finally:
+                self._active_effect = prev_eff
+        if code != 200 or not isinstance(resp, dict):
+            return AdapterObservation("error", "armiger", "armiger_parse", code, False, resp if isinstance(resp, dict) else {"error": "armiger_batch_failed"}, audit)
+        results = resp.get("results") if isinstance(resp.get("results"), list) else (resp.get("predictions") if isinstance(resp.get("predictions"), list) else None)
+        if not isinstance(results, list) or len(results) != len(release_names):
+            return AdapterObservation("error", "armiger", "armiger_parse", 502, False, {"error": "invalid_armiger_batch_cardinality", "expected_count": len(release_names), "actual_count": len(results) if isinstance(results, list) else 0}, audit)
+        if not _has_valid_optional_str_fields(resp, ("schema_version", "model", "version")) or not all(_is_valid_armiger_prediction(x) for x in results):
+            return AdapterObservation("error", "armiger", "armiger_parse", 502, False, {"error": "invalid_armiger_batch_response"}, audit)
+        return AdapterObservation(
+            "verified_ok",
+            "armiger",
+            "armiger_parse",
+            200,
+            True,
+            {
+                "transport": "armiger_direct_v1",
+                "schema_version": resp.get("schema_version") or "armiger.batch.v1",
+                "model": resp.get("model") or "armiger-ultra",
+                "version": resp.get("version") or "unknown",
+                "count": len(results),
+                "results": results,
             },
             audit,
         )
@@ -1262,14 +1536,80 @@ class LiveGatewayAdapter(SandboxAdapter):
     def execute_waypoint_status(self, args: dict[str, Any], principal: Principal, *, idempotency_key: str | None, audit: list[dict[str, Any]]) -> AdapterObservation:
         if self._is_sandbox_backend:
             return super().execute_waypoint_status(args, principal, idempotency_key=idempotency_key, audit=audit)
+        # Direct DH-Waypoint v1 contract (GET /v1/status + optional GET /v1/manifest)
+        if self.waypoint_url:
+            headers = self._auth_headers_for("dh-waypoint", principal=principal)
+            code, resp = self._request_json("GET", "/v1/status", headers=headers, audit=audit, base_url_override=self.waypoint_url)
+            if code != 200 or not isinstance(resp, dict):
+                return AdapterObservation(
+                    "error",
+                    "dh-waypoint",
+                    "waypoint_status",
+                    code,
+                    False,
+                    resp if isinstance(resp, dict) else {"error": "waypoint_unavailable"},
+                    audit,
+                )
+            parsed_wp = _extract_valid_waypoint_status(resp)
+            if parsed_wp is None:
+                return AdapterObservation("error", "dh-waypoint", "waypoint_status", 502, False, {"error": "invalid_waypoint_status_response"}, audit)
+            wp_status, pipelines, batches = parsed_wp
+            m_code, m_resp = self._request_json("GET", "/v1/manifest", headers=headers, audit=audit, base_url_override=self.waypoint_url)
+            manifest_meta = m_resp if (m_code == 200 and isinstance(m_resp, dict) and bool(m_resp)) else None
+            return AdapterObservation(
+                "verified_ok",
+                "dh-waypoint",
+                "waypoint_status",
+                200,
+                True,
+                {
+                    "transport": "waypoint_direct_v1",
+                    "schema_version": resp.get("schema_version") or "waypoint.status.v1",
+                    "status": wp_status,
+                    "version": resp.get("version") or (manifest_meta.get("version") if manifest_meta else None),
+                    "pipelines": pipelines,
+                    "recent_batch_count": len(batches),
+                    "batches": batches[:5],
+                    "manifest": manifest_meta,
+                    "manifest_status": "ok" if manifest_meta is not None else "unavailable",
+                },
+                audit,
+            )
         if not self.enable_gateway_v3:
             return AdapterObservation("unsupported", "dh-waypoint", "waypoint_status", 501, False,
                                       {"error": "native_waypoint_integration_not_implemented"}, audit)
+        code, resp = self._request_json("GET", "/waypoint/v1/status", audit=audit)
+        if code == 200:
+            parsed_gw_wp = _extract_valid_waypoint_status(resp)
+            if parsed_gw_wp is None:
+                return AdapterObservation("error", "dh-waypoint", "waypoint_status", 502, False, {"error": "invalid_waypoint_status_response"}, audit)
+            gw_status, pipelines, batches = parsed_gw_wp
+            return AdapterObservation(
+                "verified_ok",
+                "dh-waypoint",
+                "waypoint_status",
+                200,
+                True,
+                {
+                    "transport": "gateway_waypoint_v1",
+                    "schema_version": resp.get("schema_version") or "waypoint.status.v1",
+                    "status": gw_status,
+                    "pipelines": pipelines,
+                    "recent_batch_count": len(batches),
+                    "batches": batches[:5],
+                },
+                audit,
+            )
+        if code not in {404, 405, 501}:
+            return AdapterObservation("error", "dh-waypoint", "waypoint_status", code, False,
+                                      resp if isinstance(resp, dict) else {"error": "waypoint_unavailable"}, audit)
         code, resp = self._request_json("GET", "/commskip/api/v1/batches?limit=5", audit=audit)
         if code != 200 or not isinstance(resp, dict):
             return AdapterObservation("error", "dh-waypoint", "waypoint_status", code, False,
                                       resp if isinstance(resp, dict) else {"error": "waypoint_unavailable"}, audit)
-        batches = resp.get("batches") if isinstance(resp.get("batches"), list) else []
+        if not isinstance(resp.get("batches"), list) or not all(_is_valid_waypoint_batch_item(b) for b in resp["batches"]):
+            return AdapterObservation("error", "dh-waypoint", "waypoint_status", 502, False, {"error": "invalid_waypoint_batches_response"}, audit)
+        batches = resp["batches"]
         return AdapterObservation(
             "verified_ok",
             "dh-waypoint",
@@ -1277,6 +1617,7 @@ class LiveGatewayAdapter(SandboxAdapter):
             200,
             True,
             {
+                "transport": "gateway_commskip_compat",
                 "status": "online",
                 "recent_batch_count": len(batches),
                 "batches": batches[:5],
