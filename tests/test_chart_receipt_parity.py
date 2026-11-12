@@ -450,3 +450,29 @@ def test_oof_checkpoint_fingerprint_and_hf_sha_pinner(tmp_path: Path) -> None:
         assert "/resolve/main/" not in doc_txt
         assert re.search(r"/resolve/[0-9a-f]{40}/router_weights\.npz", doc_txt)
         assert re.search(r"/resolve/[0-9a-f]{40}/router_config\.json", doc_txt)
+
+
+def test_windows_v10_qualification_receipt_and_runtime_profile_parity() -> None:
+    """Verify committed Windows Server 2025 AMD64 v10 qualification receipt matches runtime-profile-v10.json."""
+    win = json.loads((ROOT / "experiments" / "windows-v10-qualification" / "summary.json").read_text(encoding="utf-8"))
+    rt10 = json.loads((ROOT / "experiments" / "runtime-profile-v10.json").read_text(encoding="utf-8"))
+    assert win["all_qualification_checks_passed"] is True
+    assert win["environment_class"] == "hosted_ci_runner"
+    assert win["hardware"]["system"] == "Windows"
+    assert win["neural_router_v3_v10"]["acceptance_v7_2580"]["matches_macos_and_linux_bitwise"] is True
+    assert (
+        win["neural_router_v3_v10"]["acceptance_v7_2580"]["outputs_sha256"]
+        == rt10["cross_platform_parity"]["router_av7_2580_outputs_sha256"]
+        == "f23e6de6933347e47c2765727c7401cff02b22b5096a822c60a63335f19a9198"
+    )
+    profs = rt10["profiles"]
+    assert (
+        profs["functiongemma_270m_v10_gguf_q4_k_m_windows_x86_64_cpu"]["memory_accounting_mib"]["combined_peak_working_set_mib"]
+        == win["functiongemma_270m_v10_q4_k_m"]["memory_accounting"]["combined_peak_working_set_mib"]
+        <= 1536.0
+    )
+    assert (
+        profs["qwen3_06b_v10_gguf_q4_k_m_windows_x86_64_cpu"]["memory_accounting_mib"]["combined_peak_working_set_mib"]
+        == win["qwen3_06b_v10_q4_k_m"]["memory_accounting"]["combined_peak_working_set_mib"]
+        <= 1536.0
+    )

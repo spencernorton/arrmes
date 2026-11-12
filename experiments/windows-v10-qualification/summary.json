@@ -1,0 +1,388 @@
+{
+  "schema_version": "arrmes-windows-v10-qualification/v1",
+  "recorded_at": "2026-11-12T14:40:51.808296+00:00",
+  "pipeline_version": "arrmes-v10-clean-r1",
+  "environment_class": "hosted_ci_runner",
+  "qualification_boundary": "Hosted GitHub Actions Windows Server 2025 AMD64 execution measures native Win32 x86_64 CPU GGUF inference, cold/warm/HTTP loopback latencies, Win32 PeakWorkingSetSize RAM, and overnight-v1 raw/verified accuracy, and is kept strictly distinct from owned physical Windows hardware and Windows NVIDIA CUDA driver execution.",
+  "hardware": {
+    "system": "Windows",
+    "release": "2025Server",
+    "version": "10.0.26100",
+    "machine": "AMD64",
+    "processor": "Intel64 Family 6 Model 207 Stepping 2, GenuineIntel",
+    "logical_cpus": 4
+  },
+  "ci": {
+    "GITHUB_ACTIONS": "true",
+    "GITHUB_REPOSITORY": "spencernorton/arrmes",
+    "GITHUB_SHA": "73fdca4b3d655d207bc2b0d53b7c9b3ee0ca1cd6",
+    "GITHUB_RUN_ID": "43238234622",
+    "RUNNER_OS": "Windows",
+    "RUNNER_ARCH": "X64"
+  },
+  "package_version": "1.7.1",
+  "python_version": "3.12.10 (tags/v3.12.10:0cc8128, Apr  8 2025, 12:21:36) [MSC v.1943 64 bit (AMD64)]",
+  "source_manifest_sha256": "c3eb3e8c6c14c8bd4819c4d7db4c4aecc16cc409565c4993d812c073bea7e9c9",
+  "installed_distributions": [
+    {
+      "name": "arrmes",
+      "version": "1.7.1"
+    },
+    {
+      "name": "arrmes",
+      "version": "1.7.1"
+    },
+    {
+      "name": "attrs",
+      "version": "26.1.0"
+    },
+    {
+      "name": "jsonschema",
+      "version": "4.26.0"
+    },
+    {
+      "name": "jsonschema-specifications",
+      "version": "2025.9.1"
+    },
+    {
+      "name": "pip",
+      "version": "25.0.1"
+    },
+    {
+      "name": "referencing",
+      "version": "0.37.0"
+    },
+    {
+      "name": "rpds-py",
+      "version": "2026.9.1"
+    },
+    {
+      "name": "typing_extensions",
+      "version": "4.16.0"
+    }
+  ],
+  "runtime": {
+    "expected_source_commit": "d81235049384534c167caea52b85a694f6103d14",
+    "version_output": "version: 0.6.0-dev (build 11429, commit d81235049)\nbuilt with Clang 20.1.8 for Windows x86_64",
+    "executable_sha256": "7e236243c9b670c6a49410c03186fd575c57a0efe3fd8a21d8727503d571d5b6"
+  },
+  "pinned_hf_artifacts": {
+    "router_weights_npz": {
+      "repo": "NorviTech/arrmes-neural-router-v3",
+      "commit_oid": "f20f3a62222b2297eea86dae31f710052294bea2",
+      "sha256": "d91eca610add347575ea6c29e04d1861aba8045b4970c8c72ec2b4ecf1a0be05"
+    },
+    "router_config_json": {
+      "repo": "NorviTech/arrmes-neural-router-v3",
+      "commit_oid": "f20f3a62222b2297eea86dae31f710052294bea2",
+      "sha256": "89c87c0e59308c916f445f44c3768c5b9fc61d3b0858e65ef6474c47912e4dd4"
+    },
+    "functiongemma_270m_q4_k_m_gguf": {
+      "repo": "NorviTech/arrmes-functiongemma-270m",
+      "commit_oid": "44ab0fecc06a899995402ec409f1ea6701449ab3",
+      "sha256": "1b72dcd37745d50ff6f63f71e13f4274079239d8989e098a728e1dc277885123"
+    },
+    "qwen3_06b_q4_k_m_gguf": {
+      "repo": "NorviTech/arrmes-qwen3-0.6b",
+      "commit_oid": "30e35bc6fa950cd8cbc01dc3b3f41f3323e39e90",
+      "sha256": "0e5310b8d22a0c89826b8c9cd9e857656b301b0de4b63cdf27285338ef09dd84"
+    }
+  },
+  "pinned_bench_v7_dataset": {
+    "repo": "datasets/NorviTech/arrmes-bench-v7",
+    "commit_oid": "fd8911f72cb23e3aae169994beb017eb07f79582",
+    "cases_positive_sha256": "f07774983d3e61b1bd1e5c55a35b1e5c8618cc6e6d95663eadbdca90978cbf52",
+    "cases_negative_sha256": "5f58d213d55f44ed3f9638944583141af9047d5aef9436e5ca4d358f72a99c04",
+    "overnight_v1_sha256": "1ed8e3e83c78a22d37991e7b2ef861464bf2bf6c224c782e81bc352005a31e14"
+  },
+  "neural_router_v3_v10": {
+    "matrix_backend": "stdlib_array",
+    "artifact_bytes": 7844743,
+    "artifact_mib": 7.481,
+    "weights_sha256": "d91eca610add347575ea6c29e04d1861aba8045b4970c8c72ec2b4ecf1a0be05",
+    "config_sha256": "89c87c0e59308c916f445f44c3768c5b9fc61d3b0858e65ef6474c47912e4dd4",
+    "cold_load_ms": 65.064,
+    "first_route_ms": 25.495,
+    "warm_samples": 200,
+    "model_only_ms": {
+      "p50": 3.967,
+      "p95": 4.636,
+      "mean": 4.091
+    },
+    "routing_and_verifier_ms": {
+      "p50": 4.476,
+      "p95": 5.424,
+      "mean": 4.643
+    },
+    "http_loopback_ms": {
+      "p50": 6.301,
+      "p95": 25.946,
+      "mean": 8.466
+    },
+    "python_peak_ram_mib": 79.27,
+    "acceptance_v7_2580": {
+      "positive_exact": 1380,
+      "positive_total": 1380,
+      "negative_v3_exact": 1200,
+      "negative_strict_v2_exact": 1195,
+      "negative_total": 1200,
+      "outputs_sha256": "f23e6de6933347e47c2765727c7401cff02b22b5096a822c60a63335f19a9198",
+      "matches_macos_and_linux_bitwise": true
+    },
+    "overnight_v1_80": {
+      "verified_exact": 80,
+      "total": 80
+    }
+  },
+  "functiongemma_270m_v10_q4_k_m": {
+    "gguf_file": "arrmes-functiongemma-270m-v10-q4_k_m.gguf",
+    "gguf_sha256": "1b72dcd37745d50ff6f63f71e13f4274079239d8989e098a728e1dc277885123",
+    "family": "functiongemma",
+    "device": "cpu",
+    "generation_limits": {
+      "threads": 4,
+      "context_size": 4096,
+      "batch_size": 4096,
+      "slots": 1,
+      "max_tokens": 160,
+      "temperature": 0,
+      "seed": 0
+    },
+    "artifact_bytes": 261330112,
+    "artifact_mb_decimal": 261.33,
+    "artifact_mib": 249.22,
+    "cold_load_ms": 1652.59,
+    "first_route_ms": 3425.78,
+    "cold_load_plus_first_route_ms": 5078.75,
+    "warm_samples": 77,
+    "model_only_ms": {
+      "p50": 371.925,
+      "p95": 705.62,
+      "mean": 398.792
+    },
+    "routing_and_verifier_ms": {
+      "p50": 372.404,
+      "p95": 706.472,
+      "mean": 399.514
+    },
+    "http_loopback_ms": {
+      "p50": 419.299,
+      "p95": 514.702,
+      "mean": 389.266
+    },
+    "mean_generation_tps": 56.45,
+    "overnight_v1": {
+      "total": 80,
+      "raw_exact": 65,
+      "raw_accuracy": 0.8125,
+      "verified_exact": 71,
+      "verified_accuracy": 0.8875,
+      "verified_outputs_sha256": "6f7b238409bd5cb289d0b700aa7dd80fd9b9cdf133d8b57589bb1e95df0bb197"
+    },
+    "v3_service_query_probes": {
+      "passed": 4,
+      "total": 5,
+      "rows": [
+        {
+          "id": "radarr_health",
+          "expected_tool": "service_query",
+          "verified_tool": "service_query",
+          "matches": true
+        },
+        {
+          "id": "sonarr_health",
+          "expected_tool": "service_query",
+          "verified_tool": "clarify",
+          "matches": false
+        },
+        {
+          "id": "prowlarr_indexers",
+          "expected_tool": "service_query",
+          "verified_tool": "service_query",
+          "matches": true
+        },
+        {
+          "id": "bitmagnet_search",
+          "expected_tool": "bitmagnet_search",
+          "verified_tool": "bitmagnet_search",
+          "matches": true
+        },
+        {
+          "id": "negated_write_trap",
+          "expected_tool": "unsupported",
+          "verified_tool": "unsupported",
+          "matches": true
+        }
+      ]
+    },
+    "memory_accounting": {
+      "method": "win32_K32GetProcessMemoryInfo",
+      "llama_server_peak_working_set_mib": 460.02,
+      "llama_server_peak_commit_mib": 257.4,
+      "python_peak_working_set_mib": 79.27,
+      "combined_peak_working_set_mib": 539.29,
+      "meets_1536mib_budget": true,
+      "cuda_before": null,
+      "cuda_during": null
+    }
+  },
+  "qwen3_06b_v10_q4_k_m": {
+    "gguf_file": "arrmes-qwen3-0.6b-v10-q4_k_m.gguf",
+    "gguf_sha256": "0e5310b8d22a0c89826b8c9cd9e857656b301b0de4b63cdf27285338ef09dd84",
+    "family": "hermes",
+    "device": "cpu",
+    "generation_limits": {
+      "threads": 4,
+      "context_size": 4096,
+      "batch_size": 4096,
+      "slots": 1,
+      "max_tokens": 160,
+      "temperature": 0,
+      "seed": 0
+    },
+    "artifact_bytes": 396704640,
+    "artifact_mb_decimal": 396.7,
+    "artifact_mib": 378.33,
+    "cold_load_ms": 1388.55,
+    "first_route_ms": 14971.57,
+    "cold_load_plus_first_route_ms": 16360.51,
+    "warm_samples": 77,
+    "model_only_ms": {
+      "p50": 2456.941,
+      "p95": 4145.668,
+      "mean": 2622.963
+    },
+    "routing_and_verifier_ms": {
+      "p50": 2457.725,
+      "p95": 4146.74,
+      "mean": 2623.658
+    },
+    "http_loopback_ms": {
+      "p50": 2897.56,
+      "p95": 4094.799,
+      "mean": 2828.85
+    },
+    "mean_generation_tps": 11.42,
+    "overnight_v1": {
+      "total": 80,
+      "raw_exact": 71,
+      "raw_accuracy": 0.8875,
+      "verified_exact": 71,
+      "verified_accuracy": 0.8875,
+      "verified_outputs_sha256": "8794ffc34bb5bb03b7d4a6a3e2fa98c5dd179291c105255391d7c69a4ebbc49c"
+    },
+    "v3_service_query_probes": {
+      "passed": 5,
+      "total": 5,
+      "rows": [
+        {
+          "id": "radarr_health",
+          "expected_tool": "service_query",
+          "verified_tool": "service_query",
+          "matches": true
+        },
+        {
+          "id": "sonarr_health",
+          "expected_tool": "service_query",
+          "verified_tool": "service_query",
+          "matches": true
+        },
+        {
+          "id": "prowlarr_indexers",
+          "expected_tool": "service_query",
+          "verified_tool": "service_query",
+          "matches": true
+        },
+        {
+          "id": "bitmagnet_search",
+          "expected_tool": "bitmagnet_search",
+          "verified_tool": "bitmagnet_search",
+          "matches": true
+        },
+        {
+          "id": "negated_write_trap",
+          "expected_tool": "unsupported",
+          "verified_tool": "unsupported",
+          "matches": true
+        }
+      ]
+    },
+    "memory_accounting": {
+      "method": "win32_K32GetProcessMemoryInfo",
+      "llama_server_peak_working_set_mib": 1131.34,
+      "llama_server_peak_commit_mib": 803.28,
+      "python_peak_working_set_mib": 79.27,
+      "combined_peak_working_set_mib": 1210.61,
+      "meets_1536mib_budget": true,
+      "cuda_before": null,
+      "cuda_during": null
+    }
+  },
+  "operational_smoke_8check": {
+    "functiongemma_270m_v10_q4_k_m": {
+      "all_checks_passed": true,
+      "checks": {
+        "actual_cpu_backend_loaded": true,
+        "raw_activity_call_and_fixture_execution": true,
+        "four_native_generations_completed": true,
+        "raw_schema_valid_all_examples": true,
+        "verified_controls_abstain": true,
+        "managed_native_process_stopped": true,
+        "sandbox_stopped": true,
+        "temporary_sandbox_removed": true
+      },
+      "memory": {
+        "native_peak_ram_bytes": 466497536,
+        "vram_bytes": null,
+        "note": "Sampled before native shutdown when OS process counters are available",
+        "native_peak_commit_bytes": 254103552,
+        "python_peak_ram_bytes": 83124224,
+        "method": "win32_K32GetProcessMemoryInfo"
+      },
+      "network_isolation": {
+        "policy": "deny_all_non_loopback_and_unregistered_ports",
+        "allowed_ports": [
+          49921,
+          49922
+        ],
+        "allowed_loopback_connections": 2,
+        "blocked_outbound_attempts_count": 0,
+        "blocked_attempts": [],
+        "evidence_sha256": "a4200b3b83021a135a4b979634ab84d5625bdd94c325f4557cf513c4c2bb5749"
+      }
+    },
+    "qwen3_06b_v10_q4_k_m": {
+      "all_checks_passed": true,
+      "checks": {
+        "actual_cpu_backend_loaded": true,
+        "raw_activity_call_and_fixture_execution": true,
+        "four_native_generations_completed": true,
+        "raw_schema_valid_all_examples": true,
+        "verified_controls_abstain": true,
+        "managed_native_process_stopped": true,
+        "sandbox_stopped": true,
+        "temporary_sandbox_removed": true
+      },
+      "memory": {
+        "native_peak_ram_bytes": 1186156544,
+        "vram_bytes": null,
+        "note": "Sampled before native shutdown when OS process counters are available",
+        "native_peak_commit_bytes": 842194944,
+        "python_peak_ram_bytes": 83124224,
+        "method": "win32_K32GetProcessMemoryInfo"
+      },
+      "network_isolation": {
+        "policy": "deny_all_non_loopback_and_unregistered_ports",
+        "allowed_ports": [
+          49944,
+          49945
+        ],
+        "allowed_loopback_connections": 2,
+        "blocked_outbound_attempts_count": 0,
+        "blocked_attempts": [],
+        "evidence_sha256": "fb709dc2868c1325ed584c2dfe5792d61d66b2f4c6e4add98658ab7154131384"
+      }
+    }
+  },
+  "all_qualification_checks_passed": true
+}
