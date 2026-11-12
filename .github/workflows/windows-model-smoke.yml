@@ -24,7 +24,7 @@ jobs:
       - name: Install core Python dependencies only
         shell: pwsh
         run: |
-          New-Item -ItemType Directory -Force work/router | Out-Null
+          New-Item -ItemType Directory -Force work/router, work/bench-v7 | Out-Null
           python -m venv work/venv
           if ($LASTEXITCODE -ne 0) { throw 'Virtual environment creation failed' }
           & work/venv/Scripts/python.exe -m pip install .
@@ -47,6 +47,15 @@ jobs:
 
           Invoke-WebRequest 'https://huggingface.co/NorviTech/arrmes-qwen3-0.6b/resolve/30e35bc6fa950cd8cbc01dc3b3f41f3323e39e90/arrmes-qwen3-0.6b-v10-q4_k_m.gguf' -OutFile work/arrmes-qwen3-0.6b-v10-q4_k_m.gguf
           if ((Get-FileHash work/arrmes-qwen3-0.6b-v10-q4_k_m.gguf -Algorithm SHA256).Hash.ToLowerInvariant() -ne '0e5310b8d22a0c89826b8c9cd9e857656b301b0de4b63cdf27285338ef09dd84') { throw 'Qwen3-0.6B v10 Q4_K_M SHA-256 mismatch' }
+
+          Invoke-WebRequest 'https://huggingface.co/datasets/NorviTech/arrmes-bench-v7/resolve/fd8911f72cb23e3aae169994beb017eb07f79582/cases-positive.jsonl' -OutFile work/bench-v7/cases-positive.jsonl
+          if ((Get-FileHash work/bench-v7/cases-positive.jsonl -Algorithm SHA256).Hash.ToLowerInvariant() -ne 'f07774983d3e61b1bd1e5c55a35b1e5c8618cc6e6d95663eadbdca90978cbf52') { throw 'cases-positive.jsonl SHA-256 mismatch' }
+
+          Invoke-WebRequest 'https://huggingface.co/datasets/NorviTech/arrmes-bench-v7/resolve/fd8911f72cb23e3aae169994beb017eb07f79582/cases-negative.jsonl' -OutFile work/bench-v7/cases-negative.jsonl
+          if ((Get-FileHash work/bench-v7/cases-negative.jsonl -Algorithm SHA256).Hash.ToLowerInvariant() -ne '5f58d213d55f44ed3f9638944583141af9047d5aef9436e5ca4d358f72a99c04') { throw 'cases-negative.jsonl SHA-256 mismatch' }
+
+          Invoke-WebRequest 'https://huggingface.co/datasets/NorviTech/arrmes-bench-v7/resolve/fd8911f72cb23e3aae169994beb017eb07f79582/overnight-v1-routing-heldout.jsonl' -OutFile work/bench-v7/overnight-v1-routing-heldout.jsonl
+          if ((Get-FileHash work/bench-v7/overnight-v1-routing-heldout.jsonl -Algorithm SHA256).Hash.ToLowerInvariant() -ne '1ed8e3e83c78a22d37991e7b2ef861464bf2bf6c224c782e81bc352005a31e14') { throw 'overnight-v1-routing-heldout.jsonl SHA-256 mismatch' }
       - name: Run native Windows v10 GGUF and router qualification
         shell: pwsh
         env:
@@ -58,6 +67,7 @@ jobs:
           if ($threadsInt -lt 1 -or $threadsInt -gt 32) { throw 'Invalid thread count' }
           & work/venv/Scripts/python.exe scripts/qualify_windows_v10.py `
             --router-dir work/router `
+            --bench-v7-dir work/bench-v7 `
             --fg-gguf work/arrmes-functiongemma-270m-v10-q4_k_m.gguf `
             --qwen-gguf work/arrmes-qwen3-0.6b-v10-q4_k_m.gguf `
             --llama-server $executables[0].FullName `

@@ -33,6 +33,7 @@ for _p in (ROOT / "src", ROOT / "scripts"):
 from arrmes.auth import BearerTokenAuthenticator
 from arrmes.backends import LlamaServerModel
 from arrmes.evaluate import score
+import arrmes.neural_router as _nr_mod
 from arrmes.neural_router import ArrmesNeuralRouterV3
 from arrmes.protocol import decode, normalized
 from arrmes.server import ArrmesRuntimeService, create_http_server
@@ -61,6 +62,13 @@ PINNED_ARTIFACTS = {
     },
 }
 EXPECTED_ROUTER_AV7_SHA256 = "f23e6de6933347e47c2765727c7401cff02b22b5096a822c60a63335f19a9198"
+PINNED_BENCH_V7 = {
+    "repo": "datasets/NorviTech/arrmes-bench-v7",
+    "commit_oid": "fd8911f72cb23e3aae169994beb017eb07f79582",
+    "cases_positive_sha256": "f07774983d3e61b1bd1e5c55a35b1e5c8618cc6e6d95663eadbdca90978cbf52",
+    "cases_negative_sha256": "5f58d213d55f44ed3f9638944583141af9047d5aef9436e5ca4d358f72a99c04",
+    "overnight_v1_sha256": "1ed8e3e83c78a22d37991e7b2ef861464bf2bf6c224c782e81bc352005a31e14",
+}
 
 
 def _pct_summary(values: list[float]) -> dict[str, float]:
@@ -125,16 +133,19 @@ def _measure_http_loopback(model: Any, queries: list[dict[str, Any]], *, timeout
 
 
 def _query_cuda_telemetry() -> dict[str, Any] | None:
-    res = subprocess.run(
-        [
-            "nvidia-smi",
-            "--query-gpu=name,driver_version,memory.total,memory.used,memory.free",
-            "--format=csv,noheader,nounits",
-        ],
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    try:
+        res = subprocess.run(
+            [
+                "nvidia-smi",
+                "--query-gpu=name,driver_version,memory.total,memory.used,memory.free",
+                "--format=csv,noheader,nounits",
+            ],
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError:
+        return None
     if res.returncode != 0 or not res.stdout.strip():
         return None
     parts = [p.strip() for p in res.stdout.strip().splitlines()[0].split(",")]
@@ -204,6 +215,7 @@ def qualify_neural_router(router_dir: Path, av7_pos: list[dict[str, Any]], av7_n
     npz_bytes = (router_dir / "router_weights.npz").stat().st_size
 
     return {
+        "matrix_backend": "numpy" if getattr(_nr_mod, "np", None) is not None else "stdlib_array",
         "artifact_bytes": npz_bytes,
         "artifact_mib": round(npz_bytes / (1024.0 * 1024.0), 3),
         "weights_sha256": npz_sha,
@@ -382,6 +394,7 @@ def main() -> int:
     ap.add_argument("--llama-server", type=Path, required=True)
     ap.add_argument("--device", type=str, default="cpu", choices=("cpu", "cuda"))
     ap.add_argument("--threads", type=int, default=4)
+    ap.add_argument("--bench-v7-dir", type=Path, default=None, help="Directory containing NorviTech/arrmes-bench-v7 JSONL files")
     ap.add_argument("--max-ov1", type=int, default=80)
     ap.add_argument("--environment-class", type=str, default="hosted_ci_runner", choices=("hosted_ci_runner", "physical_hardware"))
     ap.add_argument("--output", type=Path, required=True)
@@ -406,21 +419,26 @@ def main() -> int:
         for p in sorted(pkg_dir.rglob("*.py"))
     }
 
-    av7_pos = [
-        json.loads(l)
-        for l in (ROOT / "data/acceptance-v7/cases-positive.jsonl").read_text(encoding="utf-8").splitlines()
-        if l.strip()
-    ]
-    av7_neg = [
-        json.loads(l)
-        for l in (ROOT / "data/acceptance-v7/cases-negative.jsonl").read_text(encoding="utf-8").splitlines()
-        if l.strip()
-    ]
-    ov1_all = [
-        json.loads(l)
-        for l in (ROOT / "data/overnight-v1/routing-heldout.jsonl").read_text(encoding="utf-8").splitlines()
-        if l.strip()
-    ]
+    if args.bench_v7_dir is not None:
+        bdir = args.bench_v7_dir.resolve()
+        pos_path = bdir / "cases-positive.jsonl"
+        neg_path = bdir / "cases-negative.jsonl"
+        ov1_path = bdir / "overnight-v1-routing-heldout.jsonl"
+    else:
+        pos_path = ROOT / "data/acceptance-v7/cases-positive.jsonl"
+        neg_path = ROOT / "data/acceptance-v7/cases-negative.jsonl"
+        ov1_path = ROOT / "data/overnight-v1/routing-heldout.jsonl"
+
+    if file_sha256(pos_path) != PINNED_BENCH_V7["cases_positive_sha256"]:
+        raise ValueError("cases-positive.jsonl SHA-256 mismatch against NorviTech/arrmes-bench-v7")
+    if file_sha256(neg_path) != PINNED_BENCH_V7["cases_negative_sha256"]:
+        raise ValueError("cases-negative.jsonl SHA-256 mismatch against NorviTech/arrmes-bench-v7")
+    if file_sha256(ov1_path) != PINNED_BENCH_V7["overnight_v1_sha256"]:
+        raise ValueError("overnight-v1-routing-heldout.jsonl SHA-256 mismatch against NorviTech/arrmes-bench-v7")
+
+    av7_pos = [json.loads(l) for l in pos_path.read_text(encoding="utf-8").splitlines() if l.strip()]
+    av7_neg = [json.loads(l) for l in neg_path.read_text(encoding="utf-8").splitlines() if l.strip()]
+    ov1_all = [json.loads(l) for l in ov1_path.read_text(encoding="utf-8").splitlines() if l.strip()]
     ov1_rows = ov1_all[: max(6, min(len(ov1_all), args.max_ov1))]
 
     rtr_res = qualify_neural_router(args.router_dir.resolve(), av7_pos, av7_neg, ov1_all)
@@ -510,6 +528,7 @@ def main() -> int:
             "executable_sha256": file_sha256(args.llama_server.resolve()),
         },
         "pinned_hf_artifacts": PINNED_ARTIFACTS,
+        "pinned_bench_v7_dataset": PINNED_BENCH_V7,
         "neural_router_v3_v10": rtr_res,
         "functiongemma_270m_v10_q4_k_m": fg_res,
         "qwen3_06b_v10_q4_k_m": qwen_res,

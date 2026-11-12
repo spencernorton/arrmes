@@ -48,7 +48,7 @@ bytes, SHA-256 `1283323272b04cd07905816a597a0da810918102de958f4ff6f7bbaa70ed2efe
 and anonymously fetches and SHA-256-verifies the pinned `v10` Hugging Face
 artifacts (`NorviTech/arrmes-neural-router-v3@f20f3a62222b2297eea86dae31f710052294bea2`,
 `NorviTech/arrmes-functiongemma-270m@44ab0fecc06a899995402ec409f1ea6701449ab3`,
-and `NorviTech/arrmes-qwen3-0.6b@30e35bc6fa950cd8cbc01dc3b3f41f3323e39e90`).
+and `NorviTech/arrmes-qwen3-0.6b@30e35bc6fa950cd8cbc01dc3b3f41f3323e39e90`) plus the public benchmark split (`datasets/NorviTech/arrmes-bench-v7@fd8911f72cb23e3aae169994beb017eb07f79582`).
 It then runs `scripts/qualify_windows_v10.py` across all three models plus both
 8-check isolated smoke suites and uploads `work/windows-v10-qualification.json`.
 See [Windows CPU qualification](windows-cpu-qualification.md) for the recorded
