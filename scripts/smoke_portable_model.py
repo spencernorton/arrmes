@@ -7,6 +7,7 @@ accuracy benchmark. Native Windows CI results are not owned-hardware tests.
 from __future__ import annotations
 
 import argparse
+import ctypes
 from datetime import datetime, timezone
 import hashlib
 import importlib.metadata
@@ -21,7 +22,12 @@ import time
 from urllib.parse import urlsplit
 
 
-MODEL_SHA256 = "c7d6f1eef1eb4cd0f93769dadca7e270f3c3d470cfb542240733859c7d02f255"
+MODEL_SHA256 = "0e5310b8d22a0c89826b8c9cd9e857656b301b0de4b63cdf27285338ef09dd84"
+APPROVED_MODELS = {
+    "0e5310b8d22a0c89826b8c9cd9e857656b301b0de4b63cdf27285338ef09dd84": "hermes",
+    "1b72dcd37745d50ff6f63f71e13f4274079239d8989e098a728e1dc277885123": "functiongemma",
+    "c7d6f1eef1eb4cd0f93769dadca7e270f3c3d470cfb542240733859c7d02f255": "hermes",
+}
 RUNTIME_COMMIT = "d81235049384534c167caea52b85a694f6103d14"
 
 
@@ -33,22 +39,122 @@ def file_sha256(path):
     return digest.hexdigest()
 
 
-def run_smoke(model_path, executable, *, threads=2, expected_sha256=MODEL_SHA256):
+class _WinProcessMemoryCounters(ctypes.Structure):
+    _fields_ = [
+        ("cb", ctypes.c_ulong),
+        ("PageFaultCount", ctypes.c_ulong),
+        ("PeakWorkingSetSize", ctypes.c_size_t),
+        ("WorkingSetSize", ctypes.c_size_t),
+        ("QuotaPeakPagedPoolUsage", ctypes.c_size_t),
+        ("QuotaPagedPoolUsage", ctypes.c_size_t),
+        ("QuotaPeakNonPagedPoolUsage", ctypes.c_size_t),
+        ("QuotaNonPagedPoolUsage", ctypes.c_size_t),
+        ("PagefileUsage", ctypes.c_size_t),
+        ("PeakPagefileUsage", ctypes.c_size_t),
+    ]
+
+
+def measure_process_memory(pid: int | None) -> dict[str, int | str | None]:
+    """Read native child and Python peak resident bytes without third-party packages."""
+    native_peak: int | None = None
+    native_commit: int | None = None
+    python_peak: int | None = None
+    method = "unmeasured"
+
+    if os.name == "nt":
+        try:
+            kernel32 = ctypes.WinDLL("kernel32", use_last_error=True)
+            kernel32.OpenProcess.argtypes = [ctypes.c_ulong, ctypes.c_int, ctypes.c_ulong]
+            kernel32.OpenProcess.restype = ctypes.c_void_p
+            kernel32.CloseHandle.argtypes = [ctypes.c_void_p]
+            kernel32.CloseHandle.restype = ctypes.c_int
+            kernel32.GetCurrentProcess.argtypes = []
+            kernel32.GetCurrentProcess.restype = ctypes.c_void_p
+            kernel32.K32GetProcessMemoryInfo.argtypes = [
+                ctypes.c_void_p,
+                ctypes.POINTER(_WinProcessMemoryCounters),
+                ctypes.c_ulong,
+            ]
+            kernel32.K32GetProcessMemoryInfo.restype = ctypes.c_int
+
+            py_pmc = _WinProcessMemoryCounters()
+            py_pmc.cb = ctypes.sizeof(_WinProcessMemoryCounters)
+            if kernel32.K32GetProcessMemoryInfo(kernel32.GetCurrentProcess(), ctypes.byref(py_pmc), py_pmc.cb):
+                python_peak = int(py_pmc.PeakWorkingSetSize)
+                method = "win32_K32GetProcessMemoryInfo"
+
+            if isinstance(pid, int) and pid > 0:
+                handle = kernel32.OpenProcess(0x1000, 0, pid) or kernel32.OpenProcess(0x0410, 0, pid)
+                if handle:
+                    try:
+                        pmc = _WinProcessMemoryCounters()
+                        pmc.cb = ctypes.sizeof(_WinProcessMemoryCounters)
+                        if kernel32.K32GetProcessMemoryInfo(handle, ctypes.byref(pmc), pmc.cb):
+                            native_peak = int(pmc.PeakWorkingSetSize)
+                            native_commit = int(pmc.PeakPagefileUsage)
+                    finally:
+                        kernel32.CloseHandle(handle)
+        except Exception:
+            pass
+    else:
+        try:
+            import resource
+
+            ru = resource.getrusage(resource.RUSAGE_SELF).ru_maxrss
+            python_peak = int(ru) if sys.platform == "darwin" else int(ru * 1024)
+            method = "posix_rusage"
+        except Exception:
+            pass
+        if isinstance(pid, int) and pid > 0:
+            status_path = Path(f"/proc/{pid}/status")
+            if status_path.is_file():
+                for line in status_path.read_text(encoding="utf-8", errors="ignore").splitlines():
+                    if line.startswith("VmHWM:"):
+                        parts = line.split()
+                        if len(parts) >= 2 and parts[1].isdigit():
+                            native_peak = int(parts[1]) * 1024
+                            method = "linux_proc_vmhwm"
+
+    return {
+        "native_peak_ram_bytes": native_peak,
+        "native_peak_commit_bytes": native_commit,
+        "python_peak_ram_bytes": python_peak,
+        "vram_bytes": None,
+        "method": method,
+    }
+
+
+def run_smoke(model_path, executable, *, threads=2, expected_sha256=MODEL_SHA256, family=None):
     # A receipt exists before identity checks, imports or native startup can
     # fail. Only safe exception types/stages are retained, never exception text
     # that might contain paths, URLs, headers or native subprocess output.
-    receipt = {"schema_version": 1, "recorded_at": datetime.now(timezone.utc).isoformat(),
+    receipt = {
+        "schema_version": 1,
+        "recorded_at": datetime.now(timezone.utc).isoformat(),
         "track": "four_documented_examples_operational_smoke_not_accuracy_acceptance",
         "hardware": {"system": platform.system(), "release": platform.release(), "machine": platform.machine()},
         "qualification": "Actual execution in the recorded environment only. A hosted Windows runner is CI qualification, not owned Windows hardware.",
         "model": {"expected_sha256": expected_sha256},
         "runtime": {"expected_source_commit": RUNTIME_COMMIT},
-        "generation": {"device": "cpu", "threads": threads, "context_size": 4096,
-                       "slots": 1, "max_tokens": 64, "temperature": 0, "seed": 0},
-        "ci": {name: os.environ.get(name) for name in ("GITHUB_ACTIONS", "GITHUB_REPOSITORY", "GITHUB_SHA", "GITHUB_RUN_ID", "RUNNER_OS", "RUNNER_ARCH")},
+        "generation": {
+            "device": "cpu",
+            "threads": threads,
+            "context_size": 4096,
+            "slots": 1,
+            "max_tokens": 64,
+            "temperature": 0,
+            "seed": 0,
+        },
+        "ci": {
+            name: os.environ.get(name)
+            for name in ("GITHUB_ACTIONS", "GITHUB_REPOSITORY", "GITHUB_SHA", "GITHUB_RUN_ID", "RUNNER_OS", "RUNNER_ARCH")
+        },
         "python_version": sys.version,
-        "memory": {"native_peak_ram_bytes": None, "vram_bytes": None, "note": "Not measured by this operational smoke"},
-        "checks": {}, "rows": [], "all_checks_passed": False}
+        "memory": {"native_peak_ram_bytes": None, "vram_bytes": None, "note": "Sampled before native shutdown when OS process counters are available"},
+        "checks": {},
+        "rows": [],
+        "all_checks_passed": False,
+    }
     checks = receipt["checks"]
     model = None
     temporary = None
@@ -70,10 +176,18 @@ def run_smoke(model_path, executable, *, threads=2, expected_sha256=MODEL_SHA256
         receipt["model"].update(bytes=Path(model_path).stat().st_size, sha256=actual_sha256)
         if actual_sha256 != expected_sha256:
             raise ValueError("Model SHA-256 differs from the approved release artifact")
+        resolved_family = family or APPROVED_MODELS.get(actual_sha256, "hermes")
         receipt["model"]["file"] = Path(model_path).name
+        receipt["model"]["family"] = resolved_family
         stage = "runtime_identity"
-        version = subprocess.run([str(executable), "--version"], stdout=subprocess.PIPE,
-                                 stderr=subprocess.STDOUT, text=True, timeout=15, check=True).stdout.strip()
+        version = subprocess.run(
+            [str(executable), "--version"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            text=True,
+            timeout=15,
+            check=True,
+        ).stdout.strip()
         if RUNTIME_COMMIT[:7] not in version:
             raise ValueError("Native runtime does not report the pinned llama.cpp source revision")
         receipt["runtime"].update(version_output=version, executable_sha256=file_sha256(executable))
@@ -88,23 +202,37 @@ def run_smoke(model_path, executable, *, threads=2, expected_sha256=MODEL_SHA256
 
         stage = "source_identity"
         package = Path(arrmes.__file__).resolve().parent
-        files = {"src/arrmes/" + path.relative_to(package).as_posix(): file_sha256(path)
-                 for path in sorted(package.rglob("*.py"))}
-        receipt.update(source_file_sha256=files,
+        files = {
+            "src/arrmes/" + path.relative_to(package).as_posix(): file_sha256(path)
+            for path in sorted(package.rglob("*.py"))
+        }
+        receipt.update(
+            source_file_sha256=files,
             source_manifest_sha256=hashlib.sha256(json.dumps(files, sort_keys=True).encode()).hexdigest(),
             source_scope="Actual imported/installed Arrmes Python package bytes, including platform line endings",
-            package_version=arrmes.__version__)
+            package_version=arrmes.__version__,
+        )
         stage = "environment_identity"
-        receipt["installed_distributions"] = sorted(({"name": dist.metadata["Name"], "version": dist.version}
-            for dist in importlib.metadata.distributions()), key=lambda row: row["name"].lower())
+        receipt["installed_distributions"] = sorted(
+            ({"name": dist.metadata["Name"], "version": dist.version} for dist in importlib.metadata.distributions()),
+            key=lambda row: row["name"].lower(),
+        )
         stage = "sandbox_startup"
         temporary = tempfile.TemporaryDirectory(prefix="arrmes_portable_cpu_smoke_")
         cluster = SandboxCluster(Path(temporary.name))
         cluster.start()
         stage = "model_startup"
         started = time.perf_counter()
-        model = create_model(str(model_path), "hermes", contract_version="v2", backend="llama-server",
-            device="cpu", executable=str(executable), context_size=4096, threads=threads)
+        model = create_model(
+            str(model_path),
+            resolved_family,
+            contract_version="v2",
+            backend="llama-server",
+            device="cpu",
+            executable=str(executable),
+            context_size=4096,
+            threads=threads,
+        )
         receipt["model_load_seconds"] = time.perf_counter() - started
         checks["actual_cpu_backend_loaded"] = model.backend == "llama-server" and model.device == "cpu"
         stage = "fixture_setup"
@@ -121,8 +249,6 @@ def run_smoke(model_path, executable, *, threads=2, expected_sha256=MODEL_SHA256
         with guard:
             for name, query, expected in examples:
                 row = {"id": name, "query": query, "expected_tool": expected}
-                # Append before inference, so a failing generation does not
-                # erase earlier raw outputs or the identity of the failed case.
                 receipt["rows"].append(row)
                 stage = "generation"
                 receipt["active_case"] = name
@@ -135,31 +261,46 @@ def run_smoke(model_path, executable, *, threads=2, expected_sha256=MODEL_SHA256
                 stage = "proposal_decode"
                 raw_call = None
                 try:
-                    raw_call = decode(inference["raw_unverified"], "hermes")
+                    raw_call = decode(inference["raw_unverified"], resolved_family)
                     row["raw_proposal"] = normalized(raw_call)
                 except InvalidCall as exc:
                     row["raw_error_type"] = type(exc).__name__
-                verified = decode(inference["raw"], "hermes")
+                verified = decode(inference["raw"], resolved_family)
                 row["verified_proposal"] = normalized(verified)
                 row["raw_expected_tool_matches"] = raw_call is not None and raw_call.name == expected
                 row["verified_expected_tool_matches"] = verified.name == expected
                 if name == "activity_read":
                     stage = "fixture_execution"
-                    trace = executor.execute_raw_proposal(inference["raw"], principal, family="hermes", query=query)
-                    row["fixture_execution"] = {"terminal_state": trace.terminal_state,
+                    trace = executor.execute_raw_proposal(
+                        inference["raw"], principal, family=resolved_family, query=query
+                    )
+                    row["fixture_execution"] = {
+                        "terminal_state": trace.terminal_state,
                         "steps_executed": trace.steps_executed,
-                        "observation": trace.observation.data if trace.observation else None}
+                        "observation": trace.observation.data if trace.observation else None,
+                    }
                     checks["raw_activity_call_and_fixture_execution"] = (
-                        raw_call is not None and raw_call.name == "now_playing" and raw_call.arguments == {}
-                        and trace.terminal_state == "completed")
+                        raw_call is not None
+                        and raw_call.name == "now_playing"
+                        and raw_call.arguments == {}
+                        and trace.terminal_state == "completed"
+                    )
         receipt.pop("active_case", None)
+        child_pid = getattr(getattr(model, "_process", None), "pid", None)
+        receipt["memory"].update(measure_process_memory(child_pid))
         stage = "summary_checks"
         checks["four_native_generations_completed"] = len(receipt["rows"]) == 4 and all(
             row["inference"].get("raw_unverified") and row["inference"].get("generation_tokens", 0) > 0
-            for row in receipt["rows"])
-        checks["raw_schema_valid_all_examples"] = len(receipt["rows"]) == 4 and all("raw_proposal" in row for row in receipt["rows"])
-        checks["verified_controls_abstain"] = all(row["verified_proposal"]["name"] in {"unsupported", "clarify"}
-            for row in receipt["rows"] if row["id"] in {"unsafe_control", "wildcard_control"})
+            for row in receipt["rows"]
+        )
+        checks["raw_schema_valid_all_examples"] = len(receipt["rows"]) == 4 and all(
+            "raw_proposal" in row for row in receipt["rows"]
+        )
+        checks["verified_controls_abstain"] = all(
+            row["verified_proposal"]["name"] in {"unsupported", "clarify"}
+            for row in receipt["rows"]
+            if row["id"] in {"unsafe_control", "wildcard_control"}
+        )
     except Exception as exc:
         fail(stage, exc)
     finally:
@@ -188,8 +329,6 @@ def run_smoke(model_path, executable, *, threads=2, expected_sha256=MODEL_SHA256
             try:
                 evidence = guard.evidence_summary()
                 if "failure" in receipt:
-                    # Failure diagnostics must not publish a blocked private
-                    # hostname accidentally mentioned by a failed component.
                     evidence.pop("blocked_attempts", None)
                     evidence["blocked_target_details_omitted"] = True
                 receipt["network_isolation"] = evidence
@@ -204,15 +343,36 @@ def main():
     parser.add_argument("--model", type=Path, required=True)
     parser.add_argument("--llama-server", type=Path, required=True)
     parser.add_argument("--threads", type=int, default=2)
+    parser.add_argument("--expected-sha256", type=str, default=None)
+    parser.add_argument("--family", type=str, default=None, choices=("hermes", "functiongemma"))
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
-    receipt = run_smoke(args.model.resolve(), args.llama_server.resolve(), threads=args.threads)
+    extra_kw = {}
+    if args.expected_sha256 is not None:
+        extra_kw["expected_sha256"] = args.expected_sha256.lower()
+    if args.family is not None:
+        extra_kw["family"] = args.family
+    receipt = run_smoke(
+        args.model.resolve(),
+        args.llama_server.resolve(),
+        threads=args.threads,
+        **extra_kw,
+    )
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(receipt, indent=2) + "\n", encoding="utf-8")
-    print(json.dumps({"all_checks_passed": receipt["all_checks_passed"], "checks": receipt["checks"],
-        "raw_expected_tool_matches": sum(row.get("raw_expected_tool_matches", False) for row in receipt["rows"]),
-        "verified_expected_tool_matches": sum(row.get("verified_expected_tool_matches", False) for row in receipt["rows"]),
-        **({"failure": receipt["failure"]} if "failure" in receipt else {})}))
+    print(
+        json.dumps(
+            {
+                "all_checks_passed": receipt["all_checks_passed"],
+                "checks": receipt["checks"],
+                "raw_expected_tool_matches": sum(row.get("raw_expected_tool_matches", False) for row in receipt["rows"]),
+                "verified_expected_tool_matches": sum(
+                    row.get("verified_expected_tool_matches", False) for row in receipt["rows"]
+                ),
+                **({"failure": receipt["failure"]} if "failure" in receipt else {}),
+            }
+        )
+    )
     raise SystemExit(0 if receipt["all_checks_passed"] else 1)
 
 
