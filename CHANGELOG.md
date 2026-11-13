@@ -1,5 +1,10 @@
 # Changelog
 
+## [1.7.2] - 2026-11-12
+
+### Changed
+- Synchronized front-page benchmark and runtime documentation (`README.md`) and public `NorviTech/*` Hugging Face organization and `v10` model cards with the completed `v1.7.1` native `Windows Server 2025 AMD64` qualification (`experiments/windows-v10-qualification/summary.json`, `experiments/runtime-profile-v10.json`), recording three-platform (`macOS ARM64`, `Linux x86_64`, `Windows Server 2025 AMD64`) bitwise-identical `ArrmesNeuralRouterV3 v10` `acceptance-v7` outputs (`2,580/2,580`, `SHA-256 f23e6de69333...`) under the pure-stdlib `array` backend (`79.27 MiB` Win32 `PeakWorkingSetSize`) and native `llama-server.exe` `Q4_K_M` CPU qualification (`88.75%` `overnight-v1` verified across both `FunctionGemma-270M v10` at `539.29 MiB` and `Qwen3-0.6B v10` at `1,210.61 MiB` combined Win32 `PeakWorkingSetSize`).
+
 ## [1.7.1] - 2026-11-12
 
 ### Added
